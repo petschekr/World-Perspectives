@@ -41,7 +41,7 @@ function getPlatform (request: express3.Request): string {
 	if (UA.indexOf("android") != -1) {
 		return "Android";
 	}
-	if (UA.indexOf("iPhone") != -1 || UA.indexOf("iPod") != -1 || UA.indexOf("iPad") != -1) {
+	if (UA.indexOf("iphone") != -1 || UA.indexOf("ipod") != -1 || UA.indexOf("ipad") != -1) {
 		return "iOS";
 	}
 	return "Desktop";
