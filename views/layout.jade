@@ -1,0 +1,52 @@
+doctype html
+html
+	head(lang="en")
+		meta(charset="utf-8")
+		meta(http-equiv="X-UA-Compatible", content="IE=Edge")
+
+		title #{title} - World Perspectives
+		// For Mozilla Persona
+		script(src="https://login.persona.org/include.js")
+
+		// Sets initial viewport load and disables zooming
+		meta(name="viewport", content="initial-scale=1, maximum-scale=1, user-scalable=no")
+		meta(name="apple-mobile-web-app-capable", content="yes")
+		meta(name="apple-mobile-web-app-status-bar-style", content="transparent")
+		
+		link(href="/ratchet/css/ratchet.min.css", rel="stylesheet")
+		script(src="/ratchet/js/ratchet.min.js")
+
+		// Stylesheets for iOS and Android depending on User Agent
+		case mobileOS
+			when "iOS"
+				link(href="/ratchet/css/ratchet-theme-ios.min.css")
+			when "Android"
+				link(href="/ratchet/css/ratchet-theme-android.min.css")
+
+		link(rel="stylesheet", href="/css/persona.css")
+		link(rel="stylesheet", href="/css/wpp.css")
+		//script(src="//code.jquery.com/jquery-1.11.0.min.js")
+		script(src="/js/jquery-1.11.0.min.js")
+		script(src="/js/wpp.js")
+	body
+		block header
+			header.bar.bar-nav
+				h1.title Ratchet (#{title})
+		.content
+			block content
+				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
+				.card
+					ul.table-view
+						li.table-view-cell
+							a.push-right(href="http://goratchet.com")
+								strong Ratchet documentation
+						li.table-view-cell
+							a.push-right(href="https://github.com/twbs/ratchet/")
+								strong Ratchet on Github
+						li.table-view-cell
+							a.push-right(href="https://groups.google.com/forum/#!forum/goratchet")
+								strong Ratchet Google group
+						li.table-view-cell
+							a.push-right(href="https://twitter.com/goratchet")
+								strong Ratchet on Twitter
+		block footer
