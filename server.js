@@ -50,7 +50,7 @@ app.get("/", function (request, response) {
     var platform = getPlatform(request);
     var loggedIn = !!request.session["email"];
     var email = request.session["email"];
-    response.render("index", { title: "Home", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+    response.render("index", { title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
         if (err)
             console.error(err);
         response.send(html);

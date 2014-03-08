@@ -31,7 +31,23 @@ html
 	body
 		block header
 			header.bar.bar-nav
-				h1.title Ratchet (#{title})
+				if !loggedIn
+					button.btn.btn-primary.pull-left Login
+				h1.title= title
+			footer
+				nav.bar.bar-tab
+					a.tab-item.active(href="#")
+						span.icon.icon-search
+						span.tab-label Explore
+					a.tab-item(href="#")
+						span.icon.icon-check
+						span.tab-label Register
+					a.tab-item(href="#")
+						span.icon.icon-list
+						span.tab-label My Schedule
+					a.tab-item(href="#")
+						span.icon.icon-compose
+						span.tab-label Feedback
 		.content
 			block content
 				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
