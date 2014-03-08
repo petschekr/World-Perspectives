@@ -58,6 +58,23 @@ app.get("/", function(request: express3.Request, response: express3.Response): v
 	});
 });
 
+var adminEmails: string[] = ["petschekr@gmail.com", "petschekr@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"]
+// Admin pages
+app.get("/admin", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	if (!loggedIn || adminEmails.indexOf(email) != -1) {
+		response.redirect("/?message=authfail")
+		return;
+	}
+	response.render("admin", {title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});
+
 // 404 Not Found
 app.use(function(request: express3.Request, response: express3.Response, next): void {
 	response.render("404", {title: "404 Not Found", url: request.url}, function(err: any, html: string): void {

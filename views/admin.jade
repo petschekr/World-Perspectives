@@ -1,0 +1,19 @@
+extends layout
+
+block header
+	header.bar.bar-nav
+		h1.title= title
+
+block content
+	ul.table-view
+		li.table-view-cell
+			a.navigate-right
+				strong Attendence
+		li.table-view-cell
+			a.navigate-right
+				strong Sessions
+		li.table-view-cell
+			a.navigate-right
+				strong Feedback
+		br
+		p.content-padded= email

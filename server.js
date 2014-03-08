@@ -57,6 +57,24 @@ app.get("/", function (request, response) {
     });
 });
 
+var adminEmails = ["petschekr@gmail.com", "petschekr@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"];
+
+// Admin pages
+app.get("/admin", function (request, response) {
+    var platform = getPlatform(request);
+    var loggedIn = !!request.session["email"];
+    var email = request.session["email"];
+    if (!loggedIn || adminEmails.indexOf(email) != -1) {
+        response.redirect("/?message=authfail");
+        return;
+    }
+    response.render("admin", { title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+        if (err)
+            console.error(err);
+        response.send(html);
+    });
+});
+
 // 404 Not Found
 app.use(function (request, response, next) {
     response.render("404", { title: "404 Not Found", url: request.url }, function (err, html) {
