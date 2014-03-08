@@ -1,5 +1,9 @@
-.bar {
+.bar, .btn {
 	-webkit-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+}
+.btn-block {
+	width: 95%;
+	margin: 0 auto;
 }

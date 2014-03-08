@@ -17,7 +17,7 @@ app.use(express.session({
 	secret: "5e3e4acccc5de18e9e44c5c34da5da7f658301e35c5da6471b8cee83b855d587"
 }));
 require("express-persona")(app, {
-	audience: "http://localhost:" + PORT // Change this for production uses
+	audience: "http://192.168.70.32:" + PORT // Change this for production uses
 });
 
 app.set("views", __dirname + "/views");
@@ -46,26 +46,28 @@ function getPlatform (request: express3.Request): string {
 	}
 	return "Desktop";
 }
+var adminEmails: string[] = ["petschekr@gmail.com", "petschekr@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"]
 
 app.get("/", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	response.render("index", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email}, function(err: any, html: string): void {
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	response.render("index", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
 		if (err)
 			console.error(err);
 		response.send(html);
 	});
 });
 
-var adminEmails: string[] = ["petschekr@gmail.com", "petschekr@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"]
 // Admin pages
 app.get("/admin", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	if (!loggedIn || adminEmails.indexOf(email) != -1) {
-		response.redirect("/?message=authfail")
+	if (!loggedIn || adminEmails.indexOf(email) == -1) {
+		console.warn("/admin request rejected. Email: " + email + ", loggedIn: " + loggedIn);
+		response.redirect("/");
 		return;
 	}
 	response.render("admin", {title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email}, function(err: any, html: string): void {

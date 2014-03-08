@@ -1,9 +1,9 @@
 $(document).ready(function () {
     // Mozilla Persona login
-    $("#login-button").click(function () {
+    $("#login").click(function () {
         navigator.id.request();
     });
-    $("#logout-button").click(function () {
+    $("#signout").click(function () {
         navigator.id.logout();
     });
 
@@ -21,7 +21,7 @@ $(document).ready(function () {
                 success: function (res, status, xhr) {
                     if (res.status == "okay") {
                         localStorage["email"] = res.email;
-                        window.location.href = "/classes";
+                        window.location.href = "/";
                     } else {
                         alert("There was an error logging you in: " + JSON.stringify(res));
                         navigator.id.logout();

@@ -1,0 +1,12 @@
+#settings.modal
+	header.bar.bar-nav
+		a.icon.icon-close.pull-right(href="#settings")
+		h1.title Settings
+
+	.content
+		if admin
+			br
+			a.btn.btn-primary.btn-block(href="/admin") Admin Panel
+		if loggedIn
+			br
+			button#signout.btn.btn-negative.btn-block Sign Out

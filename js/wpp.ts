@@ -13,10 +13,10 @@ interface Navigator {
 
 $(document).ready(function(): void {
 	// Mozilla Persona login
-	$("#login-button").click(function(): void {
+	$("#login").click(function(): void {
 		navigator.id.request();
 	});
-	$("#logout-button").click(function(): void {
+	$("#signout").click(function(): void {
 		navigator.id.logout();
 	});
 
@@ -34,7 +34,7 @@ $(document).ready(function(): void {
 				success: function(res, status, xhr) {
 					if (res.status == "okay") {
 						localStorage["email"] = res.email;
-						window.location.href = "/classes";
+						window.location.href = "/";
 					}
 					else {
 						alert("There was an error logging you in: " + JSON.stringify(res));

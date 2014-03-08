@@ -11,10 +11,9 @@ html
 		// Sets initial viewport load and disables zooming
 		meta(name="viewport", content="initial-scale=1, maximum-scale=1, user-scalable=no")
 		meta(name="apple-mobile-web-app-capable", content="yes")
-		meta(name="apple-mobile-web-app-status-bar-style", content="transparent")
+		meta(name="apple-mobile-web-app-status-bar-style", content="black")
 		
 		link(href="/ratchet/css/ratchet.min.css", rel="stylesheet")
-		script(src="/ratchet/js/ratchet.min.js")
 
 		// Stylesheets for iOS and Android depending on User Agent
 		case mobileOS
@@ -27,12 +26,15 @@ html
 		link(rel="stylesheet", href="/css/wpp.css")
 		//script(src="//code.jquery.com/jquery-1.11.0.min.js")
 		script(src="/js/jquery-1.11.0.min.js")
+		script(src="/ratchet/js/ratchet.min.js")
 		script(src="/js/wpp.js")
 	body
+		include settings
 		block header
 			header.bar.bar-nav
 				if !loggedIn
-					button.btn.btn-primary.pull-left Login
+					button#login.btn.btn-primary.pull-left Login
+				a.icon.icon-gear.pull-right(href="#settings")
 				h1.title= title
 			footer
 				nav.bar.bar-tab
