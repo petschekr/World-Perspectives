@@ -1,7 +1,38 @@
 extends layout
 
+block content
+  ul.table-view
+      li.table-view-cell.media
+          a.push-right
+            img.media-object.pull-left(src='http://placehold.it/42x42')
+            .media-body
+              | Jules Becker
+              p
+                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+        li.table-view-cell.media
+          a.push-right
+            img.media-object.pull-left(src='http://placehold.it/42x42')
+            .media-body
+              | Ryan Petschek
+              p
+                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+        li.table-view-cell.media
+          a.push-right
+            img.media-object.pull-left(src='http://placehold.it/42x42')
+            .media-body
+              | John Doe
+              p
+                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+        li.table-view-cell.media
+          a.push-right
+            img.media-object.pull-left(src='http://placehold.it/42x42')
+            .media-body
+              | Mr. Llanque
+              p
+                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+
 block tabs
-	+tab("Explore", "#", "icon-search", true)
-	+tab("Register", "/register", "icon-check", false)
-	+tab("My Schedule", "/schedule", "icon-list", false)
-	+tab("Feedback", "/feedback", "icon-compose", false)
+    +tab("Explore", "#", "icon-search", true)
+    +tab("Register", "/register", "icon-check", false)
+    +tab("My Schedule", "/schedule", "icon-list", false)
+    +tab("Feedback", "/feedback", "icon-compose", false)
