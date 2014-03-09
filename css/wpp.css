@@ -16,3 +16,7 @@ input {
 #login-message, #login-2 {
 	display: none;
 }
+img.logo {
+	text-align: center;
+	margin-top: 20px;
+}

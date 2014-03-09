@@ -47,6 +47,7 @@ app.set("view engine", "jade");
 app.use("/css", express.static("css"));
 app.use("/js", express.static("js"));
 app.use("/ratchet", express.static("ratchet"));
+app.use("/img", express.static("img"));
 
 function createNonce (cb: (nonce: string) => any, bytes: number = 32): void {
 	crypto.randomBytes(bytes, function (err, buffer): void {
@@ -74,7 +75,7 @@ app.get("/", function(request: express3.Request, response: express3.Response): v
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
-	response.render("index", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
+	response.render("index", {title: "World Perspectives Symposium", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
 		if (err)
 			console.error(err);
 		response.send(html);

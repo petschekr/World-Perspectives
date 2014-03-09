@@ -1,1 +1,36 @@
 extends layout
+
+block header
+	header.bar.bar-nav
+		h1.title= title
+	footer
+		nav.bar.bar-tab
+			a.tab-item(href="/explore")
+				span.icon.icon-search
+				span.tab-label Explore
+			a.tab-item(href="/register")
+				span.icon.icon-check
+				span.tab-label Register
+			a.tab-item(href="/schedule")
+				span.icon.icon-list
+				span.tab-label My Schedule
+			a.tab-item(href="/feedback")
+				span.icon.icon-compose
+				span.tab-label Feedback
+block content
+	div(style="text-align: center;")
+		img.logo(src="/img/WPPLogo.png", alt="World Perspective Program | GFA", width="142", height="172")
+	.card
+		ul.table-view
+			li.table-view-cell
+				a.push-right(href="/explore")
+					strong Explore the presentations
+			li.table-view-cell
+				a.push-right(href="/register")
+					strong Register for presentations
+			li.table-view-cell
+				a.push-right(href="/schedule")
+					strong View your schedule
+			li.table-view-cell
+				a.push-right(href="/feedback")
+					strong Provide feedback

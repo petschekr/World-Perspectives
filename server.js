@@ -41,6 +41,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     app.use("/css", express.static("css"));
     app.use("/js", express.static("js"));
     app.use("/ratchet", express.static("ratchet"));
+    app.use("/img", express.static("img"));
 
     function createNonce(cb, bytes) {
         if (typeof bytes === "undefined") { bytes = 32; }
@@ -69,7 +70,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
         var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
-        response.render("index", { title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
+        response.render("index", { title: "World Perspectives Symposium", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
             if (err)
                 console.error(err);
             response.send(html);
