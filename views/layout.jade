@@ -31,6 +31,15 @@ html
 	body
 		include modals/settings
 		include modals/login
+		mixin tab(name, url, iconClass, active)
+			if active
+				a.tab-item.active(href=url)
+					span.icon(class=iconClass)
+					span.tab-label= name
+			else
+				a.tab-item(href=url)
+					span.icon(class=iconClass)
+					span.tab-label= name
 		block header
 			header.bar.bar-nav
 				if !loggedIn
@@ -39,15 +48,6 @@ html
 				h1.title= title
 			footer
 				nav.bar.bar-tab
-					mixin tab(name, url, iconClass, active)
-						if active
-							a.tab-item.active(href=url)
-								span.icon(class=iconClass)
-								span.tab-label= name
-						else
-							a.tab-item(href=url)
-								span.icon(class=iconClass)
-								span.tab-label= name
 					block tabs
 		.content
 			block content
