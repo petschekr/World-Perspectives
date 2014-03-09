@@ -30,7 +30,12 @@ app.use(express.cookieParser());
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.session({
-	secret: "5e3e4acccc5de18e9e44c5c34da5da7f658301e35c5da6471b8cee83b855d587"
+	secret: "5e3e4acccc5de18e9e44c5c34da5da7f658301e35c5da6471b8cee83b855d587",
+	cookie: {
+		path: "/",
+		httpOnly: true,
+		maxAge: 3600000 * 24 * 7 // 1 week
+	}
 }));
 require("express-persona")(app, {
 	audience: "http://192.168.70.32:" + PORT // Change this for production uses
