@@ -81,6 +81,18 @@ app.get("/", function(request: express3.Request, response: express3.Response): v
 		response.send(html);
 	});
 });
+app.get("/explore", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	response.render("explore", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});
+
 
 app.get("/login", function(request: express3.Request, response: express3.Response): void {
 	var code = request.query.code;

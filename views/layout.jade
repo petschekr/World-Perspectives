@@ -6,7 +6,7 @@ html
 
 		title= title
 		// For Mozilla Persona
-		script(src="https://login.persona.org/include.js")
+		//script(src="https://login.persona.org/include.js")
 
 		// Sets initial viewport load and disables zooming
 		meta(name="viewport", content="initial-scale=1, maximum-scale=1, user-scalable=no")
@@ -39,33 +39,23 @@ html
 				h1.title= title
 			footer
 				nav.bar.bar-tab
-					a.tab-item.active(href="#")
-						span.icon.icon-search
-						span.tab-label Explore
-					a.tab-item(href="#")
-						span.icon.icon-check
-						span.tab-label Register
-					a.tab-item(href="#")
-						span.icon.icon-list
-						span.tab-label My Schedule
-					a.tab-item(href="#")
-						span.icon.icon-compose
-						span.tab-label Feedback
+					mixin tab(name, url, iconClass, active)
+						if active
+							a.tab-item.active(href=url)
+								span.icon(class=iconClass)
+								span.tab-label= name
+						else
+							a.tab-item(href=url)
+								span.icon(class=iconClass)
+								span.tab-label= name
+					block tabs
 		.content
 			block content
 				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
-				.card
-					ul.table-view
-						li.table-view-cell
-							a.push-right(href="http://goratchet.com")
-								strong Ratchet documentation
-						li.table-view-cell
-							a.push-right(href="https://github.com/twbs/ratchet/")
-								strong Ratchet on Github
-						li.table-view-cell
-							a.push-right(href="https://groups.google.com/forum/#!forum/goratchet")
-								strong Ratchet Google group
-						li.table-view-cell
-							a.push-right(href="https://twitter.com/goratchet")
-								strong Ratchet on Twitter
-		block footer
+				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
+				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
+			block footer
+				// So that the bottom icon bar doesn't cut off content
+				br
+				br
+				br
