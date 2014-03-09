@@ -7,3 +7,12 @@
 	width: 95%;
 	margin: 0 auto;
 }
+input {
+	border-radius: 0 !important;
+}
+#login-message {
+	text-align: center;
+}
+#login-message, #login-2 {
+	display: none;
+}

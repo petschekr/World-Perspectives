@@ -29,11 +29,12 @@ html
 		script(src="/ratchet/js/ratchet.min.js")
 		script(src="/js/wpp.js")
 	body
-		include settings
+		include modals/settings
+		include modals/login
 		block header
 			header.bar.bar-nav
 				if !loggedIn
-					button#login.btn.btn-primary.pull-left Login
+					a.btn.btn-primary.pull-left(href="#login") Login
 				a.icon.icon-gear.pull-right(href="#settings")
 				h1.title= title
 			footer

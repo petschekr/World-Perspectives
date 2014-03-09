@@ -1,66 +1,56 @@
 declare var $;
-interface Navigator {
-	id: {
-		request: () => any;
-		watch: (options: {
-			loggedInUser?: string;
-			onlogin: (assertion: string) => any;
-			onlogout: () => any;
-		}) => void;
-		logout: () => any;
-	}
-}
 
 $(document).ready(function(): void {
-	// Mozilla Persona login
-	$("#login").click(function(): void {
-		navigator.id.request();
+	$("#login-1 button").click(function(): void {
+		var username: string = $("#login-1 > input").val().trim();
+		$.ajax({
+			type: "POST",
+			url: "/login",
+			data: {username: username},
+			success: function(res, status, xhr) {
+				if (res.success) {
+					$("#login-message").text("Code sent to " + username + "@gfacademy.org").fadeIn();
+					$("#login-2").fadeIn();
+				}
+				else {
+					alert("There was an error logging you in: " + res.error);
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error logging you in: " + JSON.stringify(err));
+			}
+		});
+	});
+	$("#login-2 button").click(function(): void {
+		var username: string = $("#login-1 > input").val().trim();
+		var code: string = $("#login-2 > input").val().trim();
+		$.ajax({
+			type: "GET",
+			url: "/login",
+			data: {code: code, username: username},
+			success: function(res, status, xhr) {
+				if (res.success) {
+					window.location.reload();
+				}
+				else {
+					alert("There was an error logging you in: " + res.error);
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error logging you in: " + JSON.stringify(err));
+			}
+		});
 	});
 	$("#signout").click(function(): void {
-		navigator.id.logout();
-	});
-
-	var user: string = localStorage["email"];
-	if (!user) {
-		user = null;
-	}
-	navigator.id.watch({
-		loggedInUser: user,
-		onlogin: function (assertion) {
-			$.ajax({
-				type: "POST",
-				url: "/persona/verify",
-				data: {assertion: assertion},
-				success: function(res, status, xhr) {
-					if (res.status == "okay") {
-						localStorage["email"] = res.email;
-						window.location.href = "/";
-					}
-					else {
-						alert("There was an error logging you in: " + JSON.stringify(res));
-						navigator.id.logout();
-					}
-				},
-				error: function(xhr, status, err) {
-					navigator.id.logout();
-					console.error(err);
-					alert("There was an error logging you in");
-				}
-			});
-		},
-		onlogout: function() {
-			$.ajax({
-				type: "POST",
-				url: "/persona/logout",
-				success: function(res, status, xhr) {
-					localStorage["email"] = "";
-					window.location.reload();
-				},
-				error: function(xhr, status, err) {
-					console.error(err);
-					alert("There was an error logging you out");
-				}
-			});
-		}
+		$.ajax({
+			type: "GET",
+			url: "/logout",
+			data: {},
+			success: function(res, status, xhr) {
+				window.location.reload();
+			}
+		});
 	});
 });
