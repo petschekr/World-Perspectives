@@ -17,7 +17,7 @@ $(document).ready(function () {
                 if (res.success) {
                     $("#login-message").text("Code sent to " + username + "@gfacademy.org").fadeIn();
                     $("#login-2").fadeIn();
-					$("#login-1 button").attr("disabled", "disabled");
+                    $("#login-1 button").attr("disabled", "disabled");
 
                     // Persist the state in an iOS web app
                     if (window.navigator.standalone) {
@@ -33,7 +33,6 @@ $(document).ready(function () {
                 console.error(err);
                 alert("There was an error logging you in: " + JSON.stringify(err));
             }
-		
         });
     });
     $("#login-2 button").click(function () {

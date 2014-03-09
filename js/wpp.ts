@@ -22,6 +22,7 @@ $(document).ready(function(): void {
 				if (res.success) {
 					$("#login-message").text("Code sent to " + username + "@gfacademy.org").fadeIn();
 					$("#login-2").fadeIn();
+					$("#login-1 button").attr("disabled", "disabled");
 					// Persist the state in an iOS web app
 					if (window.navigator.standalone) {
 						localStorage.setItem("login-username", username);
