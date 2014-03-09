@@ -95,6 +95,7 @@ app.get("/login", function(request: express3.Request, response: express3.Respons
 			return;
 		}
 		request.session["email"] = user.email;
+		Collections.Users.update({username: username}, {$set: {code: ""}}, {"w": 0}, function() {});
 		response.json({
 			"success": "Logged in successfully"
 		});
@@ -129,11 +130,13 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 			to: string;
 			subject: string;
 			text: string;
+			html: string;
 		} = {
 			from: "World Perspectives Program <petschekr@gmail.com>",
 			to: email,
 			subject: "Login Code",
-			text: "Your login code is: " + code
+			text: "Your login code is:\n\n" + code,
+			html: "<h4>Your login code is:</h4><span>" + code + "</span>"
 		};
 		smtpTransport.sendMail(mailOptions, function(err: any, emailResponse: any): void {
 			if (err) {
