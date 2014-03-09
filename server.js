@@ -63,7 +63,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         }
         return "Desktop";
     }
-    var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"];
+    var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
 
     app.get("/", function (request, response) {
         var platform = getPlatform(request);

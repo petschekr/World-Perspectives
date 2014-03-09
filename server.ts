@@ -68,7 +68,7 @@ function getPlatform (request: express3.Request): string {
 	}
 	return "Desktop";
 }
-var adminEmails: string[] = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "amirza@gfacademy.org", "vllanque@gfacademy.org"]
+var adminEmails: string[] = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
 
 app.get("/", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
