@@ -20,3 +20,10 @@ img.logo {
 	text-align: center;
 	margin-top: 20px;
 }
+/* Remove unnecessary whitespace on the Explore page */
+.table-view.explore {
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+	border-top: none;
+	border-bottom: none;
+}
