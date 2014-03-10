@@ -1,6 +1,15 @@
 extends layout
 
+block header
+	header.bar.bar-nav
+		h1.title= title
+	footer
+		nav.bar.bar-tab
+			+tab("Explore", "/explore", "icon-search", false)
+			+tab("Register", "/register", "icon-check", false)
+			+tab("My Schedule", "/schedule", "icon-list", false)
+			+tab("Feedback", "/feedback", "icon-compose", false)
 block content
 	.content-padded
 		h3 Oh no! We couldn't find what you're looking for.
-		h5 <code>#{url}</code> doesn't exist
+		h5 <code>#{url}</code> doesn't exist	
