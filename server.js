@@ -1,6 +1,55 @@
 ﻿var StartUpTime = Date.now();
 var PORT = 8080;
 
+var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
+
+var Schedule = [
+    {
+        title: "Advisory",
+        start: new Date("Apr 23, 2014 8:00 EDT"),
+        end: new Date("Apr 23, 2014 8:15 EDT")
+    },
+    {
+        title: "Introduction",
+        start: new Date("Apr 23, 2014 8:20 EDT"),
+        end: new Date("Apr 23, 2014 8:45 EDT")
+    },
+    {
+        title: "Global Health in Local Context",
+        start: new Date("Apr 23, 2014 8:50 EDT"),
+        end: new Date("Apr 23, 2014 9:40 EDT"),
+        sessionNumber: 1
+    },
+    {
+        title: "Globalizaton and its Discontents",
+        start: new Date("Apr 23, 2014 9:50 EDT"),
+        end: new Date("Apr 23, 2014 10:40 EDT"),
+        sessionNumber: 2
+    },
+    {
+        title: "Lunch",
+        start: new Date("Apr 23, 2014 10:45 EDT"),
+        end: new Date("Apr 23, 2014 11:30 EDT")
+    },
+    {
+        title: "Science, Technology, and Change",
+        start: new Date("Apr 23, 2014 11:40 EDT"),
+        end: new Date("Apr 23, 2014 12:30 EDT"),
+        sessionNumber: 3
+    },
+    {
+        title: "The Power of Incentives in Decision-Making",
+        start: new Date("Apr 23, 2014 12:40 EDT"),
+        end: new Date("Apr 23, 2014 1:30 EDT"),
+        sessionNumber: 4
+    },
+    {
+        title: "Advisory",
+        start: new Date("Apr 23, 2014 1:40 EDT"),
+        end: new Date("Apr 23, 2014 2:00 EDT")
+    }
+];
+
 var http = require("http");
 var crypto = require("crypto");
 
@@ -63,7 +112,6 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         }
         return "Desktop";
     }
-    var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
 
     app.get("/", function (request, response) {
         var platform = getPlatform(request);
