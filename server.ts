@@ -128,7 +128,7 @@ app.get("/logout", function(request: express3.Request, response: express3.Respon
 app.post("/login", function(request: express3.Request, response: express3.Response): void {
 	var username: string = request.body.username;
 	if (!username) {
-		response.json(400, {
+		response.json({
 			"error": "FirstClass username not provided"
 		});
 		return;

@@ -123,7 +123,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     app.post("/login", function (request, response) {
         var username = request.body.username;
         if (!username) {
-            response.json(400, {
+            response.json({
                 "error": "FirstClass username not provided"
             });
             return;
