@@ -11,6 +11,11 @@ $(document).ready(function(): void {
 			$("#login-2").show();
 			$("#login").addClass("active");
 		}
+		// Prevent links from exiting the view
+		$("a").live("click", function (e) {
+			e.preventDefault();
+			window.location = $(this).attr("href");
+		});
 	}
 	$("#login-1 button").click(function(): void {
 		var username: string = $("#login-1 > input").val().trim();
