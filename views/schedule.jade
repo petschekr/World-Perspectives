@@ -9,25 +9,17 @@ block tabs
 block content
 	//#timemarker
 	ul.table-view.schedule
-		mixin scheduleItem(title, startTime, endTime, fade)
-			if fade
-				- var fadeValue = "0.3";
-			else
-				- var fadeValue = "1";
-			li.table-view-cell(style="opacity: #{fadeValue}")= title
+		- var i = 0;
+		each scheduleBlock in renderSchedule
+			- var fadeValue = (realSchedule[i].end.getTime() < Date.now()) ? "0.3" : "1";
+			- i++;
+			li.table-view-cell(style="opacity: #{fadeValue}")= scheduleBlock.title
 				p
-					if endTime
-						span.badge.badge-positive= startTime
+					if scheduleBlock.end
+						span.badge.badge-positive= scheduleBlock.start
 						| &nbsp;-&nbsp;
-						span.badge.badge-negative= endTime
+						span.badge.badge-negative= scheduleBlock.end
 					else
-						span.badge= startTime
-		if !loggedIn
-			//- Show default schedule
-			- var i = 0;
-			each scheduleBlock in renderSchedule
-				- var completed = (realSchedule[i].end.getTime() < Date.now());
-				- i++;
-				+scheduleItem(scheduleBlock.title, scheduleBlock.start, scheduleBlock.end, completed)
+						span.badge= scheduleBlock.start
 	if !loggedIn
 		p.content-padded(style="text-align: center;") <i>Please log in to see a personalized schedule</i>
