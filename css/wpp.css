@@ -27,6 +27,10 @@ img.logo {
 	border-top: none;
 	border-bottom: none;
 }
+.table-view.schedule {
+	margin-top: 0 !important;
+	border-top: none;
+}
 code {
 	padding: 2px 4px;
 	font-size: 90%;

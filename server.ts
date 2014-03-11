@@ -50,13 +50,13 @@ var Schedule: ScheduleItem[] = [
 	{
 		title: "The Power of Incentives in Decision-Making",
 		start: new Date("Apr 23, 2014 12:40 EDT"),
-		end: new Date("Apr 23, 2014 1:30 EDT"),
+		end: new Date("Apr 23, 2014 13:30 EDT"),
 		sessionNumber: 4
 	},
 	{
 		title: "Advisory",
-		start: new Date("Apr 23, 2014 1:40 EDT"),
-		end: new Date("Apr 23, 2014 2:00 EDT")
+		start: new Date("Apr 23, 2014 13:40 EDT"),
+		end: new Date("Apr 23, 2014 14:00 EDT")
 	}
 ];
 
@@ -122,6 +122,19 @@ function getPlatform (request: express3.Request): string {
 	}
 	return "Desktop";
 }
+function getTime(date: Date): string {
+	var dateString: string = "";
+	if (date.getHours() == 12)
+		dateString += date.getHours();
+	else
+		dateString += (date.getHours() % 12);
+	dateString += ":";
+	dateString += date.getMinutes();
+	dateString += (date.getMinutes().toString().length == 1 ? "0" : "");
+	dateString += " ";
+	dateString += (date.getHours() >= 12 ? "PM" : "AM");
+	return dateString;
+}
 
 app.get("/", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
@@ -145,7 +158,34 @@ app.get("/explore", function(request: express3.Request, response: express3.Respo
 		response.send(html);
 	});
 });
-
+app.get("/schedule", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var scheduleForJade: any = [];
+	for (var i: number = 0, len: number = Schedule.length; i < len; i++) {
+		var scheduleItem: any = {
+			title: Schedule[i].title,
+			start: getTime(Schedule[i].start),
+			end: getTime(Schedule[i].end)
+		}
+		scheduleForJade.push(scheduleItem);
+	}
+	response.render("schedule", {
+		title: "My Schedule",
+		mobileOS: platform,
+		loggedIn: loggedIn,
+		email: email,
+		admin: admin,
+		renderSchedule: scheduleForJade,
+		realSchedule: Schedule
+	}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});
 
 app.get("/login", function(request: express3.Request, response: express3.Response): void {
 	var code = request.query.code;

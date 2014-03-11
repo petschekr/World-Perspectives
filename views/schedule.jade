@@ -1,0 +1,33 @@
+extends layout
+
+block tabs
+	+tab("Explore", "/explore", "icon-search", false)
+	+tab("Register", "/register", "icon-check", false)
+	+tab("My Schedule", "", "icon-list", true)
+	+tab("Feedback", "/feedback", "icon-compose", false)
+
+block content
+	//#timemarker
+	ul.table-view.schedule
+		mixin scheduleItem(title, startTime, endTime, fade)
+			if fade
+				- var fadeValue = "0.3";
+			else
+				- var fadeValue = "1";
+			li.table-view-cell(style="opacity: #{fadeValue}")= title
+				p
+					if endTime
+						span.badge.badge-positive= startTime
+						| &nbsp;-&nbsp;
+						span.badge.badge-negative= endTime
+					else
+						span.badge= startTime
+		if !loggedIn
+			//- Show default schedule
+			- var i = 0;
+			each scheduleBlock in renderSchedule
+				- var completed = (realSchedule[i].end.getTime() < Date.now());
+				- i++;
+				+scheduleItem(scheduleBlock.title, scheduleBlock.start, scheduleBlock.end, completed)
+	if !loggedIn
+		p.content-padded(style="text-align: center;") <i>Please log in to see a personalized schedule</i>
