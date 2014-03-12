@@ -7,13 +7,13 @@ block header
 block content
 	ul.table-view
 		li.table-view-cell
-			a.navigate-right
-				strong Attendence
+			a.navigate-right(href="/admin/attendance", data-transition="slide-in")
+				strong Attendance
 		li.table-view-cell
-			a.navigate-right
+			a.navigate-right(href="/admin/sessions", data-transition="slide-in")
 				strong Sessions
 		li.table-view-cell
-			a.navigate-right
+			a.navigate-right(href="/admin/feedback", data-transition="slide-in")
 				strong Feedback
 	p.content-padded= email
-	a.btn.btn-negative.btn-block.btn-outlined(href="/") Exit
+	a.btn.btn-negative.btn-block.btn-outlined(href="/", data-transition="fade") Exit

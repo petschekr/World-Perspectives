@@ -15,21 +15,18 @@ html
 		
 		link(href="/ratchet/css/ratchet.css", rel="stylesheet")
 
-		link(rel="stylesheet", href="/css/persona.css")
 		link(rel="stylesheet", href="/css/wpp.css")
 		//script(src="//code.jquery.com/jquery-1.11.0.min.js")
 		script(src="/js/jquery-1.11.0.min.js")
 		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
 	body
-		include modals/settings
-		include modals/login
 		mixin tab(name, url, iconClass, active)
 			if active
 				- var activeClass = "active"
 			else
 				- var activeClass = ""
-			a.tab-item(href=url, class=activeClass)
+			a.tab-item(href=url, class=activeClass, data-transition="fade")
 				span.icon(class=iconClass)
 				span.tab-label= name
 		block header
@@ -38,9 +35,8 @@ html
 					a.btn.btn-primary.pull-left(href="#login") Login
 				a.icon.icon-gear.pull-right(href="#settings")
 				h1.title= title
-			footer
-				nav.bar.bar-tab
-					block tabs
+			nav.bar.bar-tab
+				block tabs
 		.content
 			block content
 				p.content-padded Thanks for downloading Ratchet. This is an example HTML page that's linked up to compiled Ratchet CSS and JS, has the proper meta tags and the HTML structure. Need some more help before you start filling this with your own content? Check out some Ratchet resources:
@@ -51,6 +47,8 @@ html
 				br
 				br
 				br
+		include modals/settings
+		include modals/login
 		if !loggedIn
 			script.
 				window.onhashchange = function() {
