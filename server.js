@@ -305,7 +305,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         response.render("404", { title: "404 Not Found", url: request.url }, function (err, html) {
             if (err)
                 console.error(err);
-            response.send(html);
+            response.send(404, html);
         });
     });
 

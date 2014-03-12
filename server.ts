@@ -321,7 +321,7 @@ app.use(function(request: express3.Request, response: express3.Response, next): 
 	response.render("404", {title: "404 Not Found", url: request.url}, function(err: any, html: string): void {
 		if (err)
 			console.error(err);
-		response.send(html);
+		response.send(404, html);
 	});
 });
 
