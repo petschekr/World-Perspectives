@@ -80,12 +80,11 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             maxAge: 3600000 * 24 * 7
         }
     }));
-    require("express-persona")(app, {
-        audience: "http://192.168.70.32:" + PORT
-    });
 
     app.set("views", __dirname + "/views");
     app.set("view engine", "jade");
+    app.use(express.errorHandler());
+    app.locals.pretty = true;
 
     app.use("/css", express.static("css"));
     app.use("/js", express.static("js"));
@@ -294,6 +293,51 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
         response.render("admin", { title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+    app.get("/admin/attendance", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        response.render("admin/attendance", { title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+    app.get("/admin/attendance/:sessionNumber", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var sessionNumber = parseInt(request.params["sessionNumber"], 10);
+        if (isNaN(sessionNumber)) {
+            response.redirect("/admin/attendance");
+            return;
+        }
+        response.render("admin/attendance", { title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+    app.get("/admin/sessions", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        response.render("admin/sessions", { title: "Sessions", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+    app.get("/admin/feedback", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        response.render("admin/feedback", { title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
             if (err)
                 console.error(err);
             response.send(html);

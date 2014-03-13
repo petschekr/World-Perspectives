@@ -1,0 +1,46 @@
+extends ../layout
+
+block header
+	header.bar.bar-nav
+		if sessionNumber
+			- var backURL = "/admin/attendance";
+		else
+			- var backURL = "/admin";
+		a.btn.btn-link.btn-nav.pull-left(href=backURL, data-transition="slide-out")
+			span.icon.icon-left-nav
+			| Back
+		h1.title= title
+
+block content
+	//- TODO: Ability to overide an entry
+	if !sessionNumber
+		ul.table-view.attendance
+			li.table-view-cell
+				a.navigate-right(href="/admin/attendance/1", data-transition="slide-in")
+					span.badge.badge-positive 19
+					span.badge.badge-negative 2
+					| Session 1 Attendance
+			li.table-view-cell
+				a.navigate-right(href="/admin/attendance/2", data-transition="slide-in")
+					span.badge.badge-positive 20
+					span.badge.badge-negative 1
+					| Session 2 Attendance
+			li.table-view-cell
+				a.navigate-right(href="/admin/attendance/3", data-transition="slide-in")
+					span.badge.badge-positive 18
+					span.badge.badge-negative 3
+					| Session 3 Attendance
+			li.table-view-cell
+				a.navigate-right(href="/admin/attendance/4", data-transition="slide-in")
+					span.badge.badge-positive 19
+					span.badge.badge-negative 10
+					| Session 4 Attendance
+	else
+		h5.content-padded Absent
+		ul.table-view
+			li.table-view-cell Student 1
+			li.table-view-cell Student 2
+		h5.content-padded Present
+		ul.table-view
+			li.table-view-cell Student 1
+			li.table-view-cell Student 2
