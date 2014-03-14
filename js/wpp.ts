@@ -11,23 +11,26 @@ $(document).ready(function(): void {
 			$("#login-2").show();
 			$("#login").addClass("active");
 		}
-		// Prevent links from exiting the view
-		$("a").live("click", function (e) {
-			e.preventDefault();
-			window.location = $(this).attr("href");
-		});
 	}
+	var processing: boolean = false;
 	$("#login-1 button").click(function(): void {
+		if (processing)
+			return;
+		else
+			processing = true;
 		var username: string = $("#login-1 > input").val().trim();
+		$("#login-1 button").text("Sending code...");
+		$("#login-1 button").attr("disabled", "disabled");
 		$.ajax({
 			type: "POST",
 			url: "/login",
 			data: {username: username},
 			success: function(res, status, xhr) {
+				processing = false;
 				if (res.success) {
 					$("#login-message").text("Code sent to " + username + "@gfacademy.org").fadeIn();
 					$("#login-2").fadeIn();
-					$("#login-1 button").attr("disabled", "disabled");
+					$("#login-1 button").text("Code sent");
 					// Persist the state in an iOS web app
 					if (window.navigator.standalone) {
 						localStorage.setItem("login-username", username);
@@ -36,6 +39,7 @@ $(document).ready(function(): void {
 					}
 				}
 				else {
+					processing = false;
 					alert("There was an error logging you in: " + res.error);
 				}
 			},
@@ -46,6 +50,10 @@ $(document).ready(function(): void {
 		});
 	});
 	$("#login-2 button").click(function(): void {
+		if (processing)
+			return;
+		else
+			processing = true;
 		var username: string = $("#login-1 > input").val().trim();
 		var code: string = $("#login-2 > input").val().trim();
 		$.ajax({
@@ -53,6 +61,7 @@ $(document).ready(function(): void {
 			url: "/login",
 			data: {code: code, username: username},
 			success: function(res, status, xhr) {
+				processing = false;
 				if (res.success) {
 					if (window.navigator.standalone) {
 						localStorage.setItem("login-username", "");
@@ -62,6 +71,7 @@ $(document).ready(function(): void {
 					window.location.reload();
 				}
 				else {
+					processing = false;
 					alert("There was an error logging you in: " + res.error);
 				}
 			},
