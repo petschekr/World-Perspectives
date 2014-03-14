@@ -52,6 +52,7 @@ html
 		if !loggedIn
 			script.
 				window.onhashchange = function() {
+					window.location.hash = "";
 					return false;
 				};
 				$(document).ready(function() {
