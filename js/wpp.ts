@@ -91,4 +91,33 @@ $(document).ready(function(): void {
 			}
 		});
 	});
+
+	$("#mediabutton").click(function(e): void{
+		$("input[type=file]").click();
+	});
+	$("input[type=file]").on("change", function(): void {
+		var files: FileList = this.files;
+
+		var xhr: XMLHttpRequest = new XMLHttpRequest();
+		if (xhr.upload) {
+			xhr.upload.onprogress = function(e: any): void {
+				var done: number = e.position || e.loaded;
+				var total: number = e.totalSize || e.total;
+				var percentDone: number = Math.floor(done / total * 1000) / 10
+				// Update progress bar
+			};
+		}
+		xhr.onreadystatechange = function(e: any): void {
+			if (4 == this.readyState) {
+				console.log(['xhr upload complete', e]);
+			}
+		};
+		xhr.open("POST", "/admin/presentations/media", true);
+
+		var mediaData: FormData = new FormData();
+		for (var i: number = 0; i < files.length; i++) {
+			mediaData.append(i.toString(), files[i]);
+		}
+		xhr.send(mediaData);
+	});
 });

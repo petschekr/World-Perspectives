@@ -52,6 +52,7 @@ var Schedule = [
 
 var http = require("http");
 var crypto = require("crypto");
+var fs = require("fs");
 
 var MongoClient = require("mongodb").MongoClient;
 MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
@@ -67,11 +68,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var app = express();
 
     app.use(express.compress());
-
-    //app.use(express.bodyParser());
+    app.use(express.bodyParser());
     app.use(express.cookieParser());
-    app.use(express.json());
-    app.use(express.urlencoded());
     app.use(express.session({
         secret: "5e3e4acccc5de18e9e44c5c34da5da7f658301e35c5da6471b8cee83b855d587",
         cookie: {
@@ -323,16 +321,38 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             response.send(html);
         });
     });
-    app.get("/admin/sessions", AdminAuth, function (request, response) {
+    app.get("/admin/presentations", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        response.render("admin/sessions", { title: "Sessions", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+        var presentations = [];
+        response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
             if (err)
                 console.error(err);
             response.send(html);
         });
     });
+
+    // Media upload for presentations
+    app.post("/admin/presentations/media", AdminAuth, function (request, response) {
+        var key;
+        for (key in request.files) {
+            var file = request.files[key];
+            if (file.type.indexOf("image/") == -1 && file.type.indexOf("video/") == -1) {
+                fs.unlink(file.path, function (err) {
+                    if (err)
+                        throw err;
+                    console.log("Deleted item with MIME type: " + file.type);
+                });
+            } else {
+                console.log("Valid file with MIME type: " + file.type);
+            }
+        }
+
+        //console.log(request.files);
+        response.send({});
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];

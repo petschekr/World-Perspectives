@@ -1,0 +1,18 @@
+#create.modal
+	header.bar.bar-nav
+		a.icon.icon-close.pull-right(href="#create")
+		h1.title Create Presentation
+
+	.content
+		br
+		.input-group
+			input(type="text", placeholder="Name")
+			input(type="text", placeholder="Title")
+		br
+		input(type="url", placeholder="URL to YouTube video or image")
+		br
+		input(type="file", multiple, style="display: none")
+		button#mediabutton.btn.btn-primary.btn-block.btn-outlined Choose videos / photos
+		br
+		textarea(rows="5", placeholder="Abstract")
+		button.btn.btn-positive.btn-block Create

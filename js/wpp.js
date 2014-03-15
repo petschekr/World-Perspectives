@@ -85,4 +85,33 @@ $(document).ready(function () {
             }
         });
     });
+
+    $("#mediabutton").click(function (e) {
+        $("input[type=file]").click();
+    });
+    $("input[type=file]").on("change", function () {
+        var files = this.files;
+
+        var xhr = new XMLHttpRequest();
+        if (xhr.upload) {
+            xhr.upload.onprogress = function (e) {
+                var done = e.position || e.loaded;
+                var total = e.totalSize || e.total;
+                var percentDone = Math.floor(done / total * 1000) / 10;
+                // Update progress bar
+            };
+        }
+        xhr.onreadystatechange = function (e) {
+            if (4 == this.readyState) {
+                console.log(['xhr upload complete', e]);
+            }
+        };
+        xhr.open("POST", "/admin/presentations/media", true);
+
+        var mediaData = new FormData();
+        for (var i = 0; i < files.length; i++) {
+            mediaData.append(i.toString(), files[i]);
+        }
+        xhr.send(mediaData);
+    });
 });
