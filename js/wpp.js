@@ -103,14 +103,13 @@ $(document).ready(function () {
 
                 // Update progress bar
                 $("#mediaprogress > div").css("width", percentDone + "%");
-                if (percentDone >= 100)
-                    $("#mediaprogress > div").css("width", "0%");
-                $("#mediaprogress").fadeOut();
             };
         }
         xhr.onreadystatechange = function (e) {
             if (4 == this.readyState) {
-                console.log(['xhr upload complete', e]);
+                $("#mediaprogress").fadeOut(400, function () {
+                    $("#mediaprogress > div").css("width", "0%");
+                });
             }
         };
         xhr.open("POST", "/admin/presentations/media", true);

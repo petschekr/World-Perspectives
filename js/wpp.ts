@@ -108,14 +108,13 @@ $(document).ready(function(): void {
 				var percentDone: number = Math.floor(done / total * 1000) / 10
 				// Update progress bar
 				$("#mediaprogress > div").css("width", percentDone + "%");
-				if (percentDone >= 100)
-					$("#mediaprogress > div").css("width", "0%");
-					$("#mediaprogress").fadeOut();
 			};
 		}
 		xhr.onreadystatechange = function(e: any): void {
 			if (4 == this.readyState) {
-				console.log(['xhr upload complete', e]);
+				$("#mediaprogress").fadeOut(400, function(): void {
+					$("#mediaprogress > div").css("width", "0%");
+				});
 			}
 		};
 		xhr.open("POST", "/admin/presentations/media", true);
