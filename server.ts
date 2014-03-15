@@ -362,9 +362,10 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 		}
 		else {
 			console.log("Valid file with MIME type: " + file.type);
+			// Delete the temporary file
+			fs.unlink(file.path);
 		}
-	}
-	//console.log(request.files);
+	};
 	response.send({});
 });
 

@@ -347,9 +347,11 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             } else {
                 console.log("Valid file with MIME type: " + file.type);
             }
-        }
 
-        //console.log(request.files);
+            // Delete the temporary file
+            fs.unlink(file.path);
+        }
+        ;
         response.send({});
     });
 

@@ -89,8 +89,10 @@ $(document).ready(function () {
     $("#mediabutton").click(function (e) {
         $("input[type=file]").click();
     });
+    $("#mediaprogress").hide();
     $("input[type=file]").on("change", function () {
         var files = this.files;
+        $("#mediaprogress").show();
 
         var xhr = new XMLHttpRequest();
         if (xhr.upload) {
@@ -98,7 +100,12 @@ $(document).ready(function () {
                 var done = e.position || e.loaded;
                 var total = e.totalSize || e.total;
                 var percentDone = Math.floor(done / total * 1000) / 10;
+
                 // Update progress bar
+                $("#mediaprogress > div").css("width", percentDone + "%");
+                if (percentDone >= 100)
+                    $("#mediaprogress > div").css("width", "0%");
+                $("#mediaprogress").fadeOut();
             };
         }
         xhr.onreadystatechange = function (e) {
