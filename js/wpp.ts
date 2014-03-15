@@ -2,6 +2,15 @@ declare var $;
 interface Navigator {
 	standalone: boolean;
 }
+interface HTMLElement {
+	src: string;
+	type: string;
+	preload: string;
+	play: () => void;
+}
+interface Window {
+	URL: any;
+}
 
 $(document).ready(function(): void {
 	if (window.navigator.standalone) {
@@ -124,5 +133,36 @@ $(document).ready(function(): void {
 			mediaData.append(i.toString(), files[i]);
 		}
 		xhr.send(mediaData);
+
+		// Create thumbnails
+		for (var i = 0; i < files.length; i++) {
+			var file = files[i];
+			
+			var imageType: RegExp = /image.*/;
+			var videoType: RegExp = /video.*/;
+
+			var image: boolean = !!file.type.match(imageType);
+			var video: boolean = !!file.type.match(videoType);
+			if (!image && !video)
+				continue;
+
+			if (image) {
+				var element: HTMLElement = document.createElement("img");
+			}
+			if (video) {
+				var element: HTMLElement = document.createElement("video");
+			}
+			element.classList.add("thumbnail");
+			element.onload = function(e): void {
+				window.URL.revokeObjectURL(this.src);
+			}
+			element.src = window.URL.createObjectURL(file);
+			if (video) {
+				//element.preload = "metadata";
+				element.play();
+			}
+			
+			document.getElementById("thumbnails").appendChild(element);
+		}
 	});
 });

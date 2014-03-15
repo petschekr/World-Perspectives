@@ -71,3 +71,13 @@ h5, h6 {
 	-webkit-transition: width 0.6s ease;
 	transition: width 0.6s ease;
 }
+
+#thumbnails {
+	margin-top: 13px;
+	margin-bottom: -5px;
+}
+.thumbnail {
+	width: 30%;
+	height: 100px;
+	margin: 5px;
+}

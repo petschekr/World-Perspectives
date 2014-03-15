@@ -119,5 +119,35 @@ $(document).ready(function () {
             mediaData.append(i.toString(), files[i]);
         }
         xhr.send(mediaData);
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+
+            var imageType = /image.*/;
+            var videoType = /video.*/;
+
+            var image = !!file.type.match(imageType);
+            var video = !!file.type.match(videoType);
+            if (!image && !video)
+                continue;
+
+            if (image) {
+                var element = document.createElement("img");
+            }
+            if (video) {
+                var element = document.createElement("video");
+            }
+            element.classList.add("thumbnail");
+            element.onload = function (e) {
+                window.URL.revokeObjectURL(this.src);
+            };
+            element.src = window.URL.createObjectURL(file);
+            if (video) {
+                //element.preload = "metadata";
+                element.play();
+            }
+
+            document.getElementById("thumbnails").appendChild(element);
+        }
     });
 });
