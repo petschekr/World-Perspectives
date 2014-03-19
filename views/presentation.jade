@@ -1,0 +1,34 @@
+extends layout
+
+block tabs
+
+if fromAdmin
+	block header
+		header.bar.bar-nav
+			a.btn.btn-link.btn-nav.pull-left(href="/admin/presentations", data-transition="slide-out")
+				span.icon.icon-left-nav
+				| Back
+			h1.title= title
+
+if !fromAdmin
+	block tabs
+		+tab("Explore", "/explore", "icon-search", true)
+		+tab("Register", "/register", "icon-check", false)
+		+tab("My Schedule", "/schedule", "icon-list", false)
+		+tab("Feedback", "/feedback", "icon-compose", false)
+block content
+	.presentation-info
+		iframe.youtube(type="text/html", src="http://www.youtube.com/embed/1ReHUMUb9gY", allowfullscreen, frameborder="0")
+		h2.content-padded= presentation.presenter
+		h1.content-padded= presentation.title
+	.presentation-buttons
+		button.btn
+			span.icon.icon-download
+			| &nbsp;PDF
+		button.btn
+			span.icon.icon-share
+			| &nbsp;Share
+		button.btn.btn-primary
+			span.icon.icon-person
+			| &nbsp;Check In
+	p.content-padded= presentation.abstract

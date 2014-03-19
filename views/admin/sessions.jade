@@ -15,12 +15,13 @@ block content
 		ul.table-view.explore
 			for presentation in presentations
 				li.table-view-cell.media
-					a.push-right
-						img.media-object.pull-left(src='http://placehold.it/42x42')
+					a.push-right(href="/admin/presentations/#{presentation.sessionID}", data-transition="slide-in")
+						img.media-object.pull-left(src="http://placehold.it/42x42")
 						.media-body
-							| Jules Becker
-							p
-							| Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+							strong= presentation.title
+							br
+							small= presentation.presenter
+							p= presentation.abstract
         
 	else
 		p.content-padded(style="text-align: center;"): i No presentations created yet

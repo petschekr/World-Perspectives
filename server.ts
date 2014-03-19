@@ -342,9 +342,29 @@ app.get("/admin/presentations", AdminAuth, function(request: express3.Request, r
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	var presentations: Presentation[] = [];
-	response.render("admin/sessions", {title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
-		if (err)
+
+	Collections.Presentations.find().toArray(function(err: any, presentations: Presentation[]): void {
+		response.render("admin/sessions", {title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
+app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		response.render("presentation", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
 			console.error(err);
 		response.send(html);
 	});

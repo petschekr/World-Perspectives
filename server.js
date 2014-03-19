@@ -325,9 +325,29 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        var presentations = [];
-        response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
-            if (err)
+
+        Collections.Presentations.find().toArray(function (err, presentations) {
+            response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+    app.get("/admin/presentations/:id", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            response.render("presentation", { title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
                 console.error(err);
             response.send(html);
         });
