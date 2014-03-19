@@ -132,21 +132,19 @@ $(document).ready(function () {
                 continue;
 
             if (image) {
-                var element = document.createElement("img");
+                var element = document.createElement("div");
+                element.style.backgroundImage = "url(" + window.URL.createObjectURL(file) + ")";
             }
             if (video) {
                 var element = document.createElement("video");
-            }
-            element.classList.add("thumbnail");
-            element.onload = function (e) {
-                window.URL.revokeObjectURL(this.src);
-            };
-            element.src = window.URL.createObjectURL(file);
-            if (video) {
-                //element.preload = "metadata";
+                element.src = window.URL.createObjectURL(file);
                 element.play();
             }
+            element.classList.add("thumbnail");
 
+            /*element.onload = function(e): void {
+            window.URL.revokeObjectURL(this.src);
+            }*/
             document.getElementById("thumbnails").appendChild(element);
         }
     });

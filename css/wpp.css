@@ -79,5 +79,21 @@ h5, h6 {
 .thumbnail {
 	width: 30%;
 	height: 100px;
-	margin: 5px;
+	margin: 0.6%;
+	background-size: cover;
+	background-position: 50% 50%;
+	display: inline-block;
+}
+select {
+	height: 40px;
+	padding: 10px 15px;
+	border: 1px solid rgba(0,0,0,.2);
+
+	width: 100%;
+	margin-bottom: 15px;
+	line-height: 21px;
+	background-color: #fff;
+	border-radius: 0;
+	outline: none;
+	-webkit-appearance: none;
 }
