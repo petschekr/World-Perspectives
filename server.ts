@@ -358,7 +358,16 @@ app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Reques
 	var presentationID = request.params.id;
 
 	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
-		response.render("presentation", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation}, function(err: any, html: string): void {
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		response.render("presentation", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);

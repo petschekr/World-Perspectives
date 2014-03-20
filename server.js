@@ -341,7 +341,16 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var presentationID = request.params.id;
 
         Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
-            response.render("presentation", { title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation }, function (err, html) {
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);

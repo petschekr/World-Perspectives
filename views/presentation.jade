@@ -19,15 +19,17 @@ if !fromAdmin
 block content
 	.presentation-info
 		iframe.youtube(type="text/html", src="http://www.youtube.com/embed/1ReHUMUb9gY", allowfullscreen, frameborder="0")
-		h2.content-padded= presentation.presenter
+		h2.content-padded #{presentation.presenter}
+			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
 	.presentation-buttons
 		button.btn
 			span.icon.icon-download
 			| &nbsp;PDF
-		button.btn
-			span.icon.icon-share
-			| &nbsp;Share
+		//
+			a.btn(href="mailto:?to=&subject=Check%20out%20this%20presentation&body=")
+				span.icon.icon-share
+				| &nbsp;Share
 		button.btn.btn-primary
 			span.icon.icon-person
 			| &nbsp;Check In

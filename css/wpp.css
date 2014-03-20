@@ -106,8 +106,7 @@ select {
 }
 .presentation-info h1 {
 	font-size: 20px;
-	/*font-style: italic;*/
-	/*font-weight: normal;*/
+	color: #353535;
 }
 .presentation-info h2 {
 	font-size: 16px;
@@ -116,6 +115,11 @@ select {
 	margin-bottom: 7px;
 	padding-bottom: 7px;
 	border-bottom: 1px solid #eee;
+}
+.presentation-info h2 small {
+	float: right;
+	margin-top: 1px;
+	opacity: 0.3;
 }
 .presentation-buttons {
 	padding: 10px;
