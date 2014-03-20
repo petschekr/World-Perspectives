@@ -341,6 +341,10 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var presentationID = request.params.id;
 
         Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/admin/presentations");
+                return;
+            }
             var startTime;
             var endTime;
             for (var i = 0; i < Schedule.length; i++) {

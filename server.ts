@@ -358,6 +358,10 @@ app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Reques
 	var presentationID = request.params.id;
 
 	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/admin/presentations");
+			return;
+		}
 		var startTime: string;
 		var endTime: string;
 		for (var i: number = 0; i < Schedule.length; i++) {
