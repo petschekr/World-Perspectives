@@ -17,8 +17,10 @@ if !fromAdmin
 		+tab("My Schedule", "/schedule", "icon-list", false)
 		+tab("Feedback", "/feedback", "icon-compose", false)
 block content
+	- var youtubeID = presentation.media.mainVideo;
 	.presentation-info
-		iframe.youtube(type="text/html", src="http://www.youtube.com/embed/1ReHUMUb9gY", allowfullscreen, frameborder="0")
+		if youtubeID
+			iframe.youtube(type="text/html", src="http://www.youtube.com/embed/#{youtubeID}", allowfullscreen, frameborder="0")
 		h2.content-padded #{presentation.presenter}
 			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
