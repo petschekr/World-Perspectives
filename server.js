@@ -371,7 +371,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var data = {
             "name": request.body.name || "",
             "title": request.body.title || "",
-            "mediaURL": request.body.mediaURL || undefined,
+            "youtubeID": request.body.youtubeID || undefined,
             "uploadedMedia": [],
             "abstract": request.body.abstract || "",
             "session": parseInt(request.body.session, 10)
@@ -400,7 +400,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             presenter: data.name,
             title: data.title,
             media: {
-                mainVideo: data.mediaURL,
+                mainVideo: data.youtubeID,
                 images: [],
                 videos: []
             },

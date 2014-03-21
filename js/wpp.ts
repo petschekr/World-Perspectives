@@ -202,14 +202,14 @@ $(document).ready(function(): void {
 		var data: {
 			name: string;
 			title: string;
-			mediaURL: string;
+			youtubeID: string;
 			uploadedMedia: string;
 			abstract: string;
 			session: string;
 		} = {
 			"name": $("#create input").get(0).value,
 			"title": $("#create input").get(1).value,
-			"mediaURL": $("#create input").get(3).value,
+			"youtubeID": $("#create input").get(3).value,
 			"uploadedMedia": JSON.stringify(uploadedMedia),
 			"abstract": $("#create textarea").val(),
 			"session": undefined
@@ -221,11 +221,20 @@ $(document).ready(function(): void {
 			alert("You must fill out the presentation's title, abstract and presenter");
 			return;
 		}
-		if (data.mediaURL === "") {
+		if (data.youtubeID === "") {
 			var message: string = "Are you sure you want to create this presentation without a video? (You can add this later too)";
 			if (!confirm(message)) {
 				return;
 			}
+		}
+		else {
+			var youtubeURL: RegExp = /https?:\/\/.*?\.youtube.*\/watch\?v=(.*)/i;
+			var youtubeID: any = data.youtubeID.match(youtubeURL);
+			if (!youtubeID || typeof(youtubeID[1]) != "string" || youtubeID[1].length < 1) {
+				alert("Invalid YouTube URL");
+				return;
+			}
+			data.youtubeID = youtubeID[1];
 		}
 		$.ajax({
 			type: "POST",

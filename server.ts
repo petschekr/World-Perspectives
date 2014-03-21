@@ -400,7 +400,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 	var data: {
 		name: string;
 		title: string;
-		mediaURL: string;
+		youtubeID: string;
 		uploadedMedia: string[];
 		abstract: string;
 		session: number;
@@ -408,7 +408,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 	} = {
 		"name": request.body.name || "",
 		"title": request.body.title || "",
-		"mediaURL": request.body.mediaURL || undefined,
+		"youtubeID": request.body.youtubeID || undefined,
 		"uploadedMedia": [],
 		"abstract": request.body.abstract || "",
 		"session": parseInt(request.body.session, 10)
@@ -438,7 +438,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		presenter: data.name,
 		title: data.title,
 		media: {
-			mainVideo: data.mediaURL,
+			mainVideo: data.youtubeID,
 			images: [],
 			videos: []
 		},
