@@ -57,12 +57,23 @@ var Schedule: ScheduleItem[] = [
 		title: "Advisory",
 		start: new Date("Apr 23, 2014 13:40 EDT"),
 		end: new Date("Apr 23, 2014 14:00 EDT")
+interface Presentation {
+	sessionNumber: number;
+	sessionID: string;
+	attendanceCode: string;
+	//presenter: Student;
+	presenter: string;
+	title: string;
+	media: {mainVideo?: string; images?: string[]; videos?: string[]};
+	abstract: string;
+}
 	}
 ];
 
 var http = require("http");
 var crypto = require("crypto");
 var fs = require("fs");
+var path = require("path");
 
 var MongoClient = require("mongodb").MongoClient;
 MongoClient.connect("mongodb://localhost:27017/wpp", function(err: any, db: mongodb.Db) {
@@ -71,12 +82,18 @@ if (err)
 
 var Collections: {
 	Users: mongodb.Collection;
+	Schedule: mongodb.Collection;
+	Presentations: mongodb.Collection;
 } = {
-	Users: db.collection("users")
+	Users: db.collection("users"),
+	Schedule: db.collection("schedule"),
+	Presentations: db.collection("presentations")
 };
 
 var nodemailer = require("nodemailer");
+var async = require("async");
 var express = require("express");
+var mime = require("mime");
 var app: express3.Application = express();
 
 app.use(express.compress());
@@ -100,6 +117,7 @@ app.use("/css", express.static("css"));
 app.use("/js", express.static("js"));
 app.use("/ratchet", express.static("ratchet"));
 app.use("/img", express.static("img"));
+app.use("/media", express.static("media"));
 
 function createNonce (cb: (nonce: string) => any, bytes: number = 32): void {
 	crypto.randomBytes(bytes, function (err, buffer): void {
@@ -378,28 +396,155 @@ app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Reques
 		});
 	});
 });
+app.post("/admin/presentations", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var data: {
+		name: string;
+		title: string;
+		mediaURL: string;
+		uploadedMedia: string[];
+		abstract: string;
+		session: number;
+		//email: string;
+	} = {
+		"name": request.body.name || "",
+		"title": request.body.title || "",
+		"mediaURL": request.body.mediaURL || undefined,
+		"uploadedMedia": [],
+		"abstract": request.body.abstract || "",
+		"session": parseInt(request.body.session, 10)
+	};
+	try {
+		if (request.body.uploadedMedia)
+			data.uploadedMedia = JSON.parse(request.body.uploadedMedia);
+	}
+	catch (e) {
+		response.send({
+			"status": "failure",
+			"reason": "Invalid JSON"
+		});
+		return;
+	}
+	if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+		response.send({
+			"status": "failure",
+			"reason": "Invalid information"
+		});
+		return;
+	}
+	var presentation: Presentation = {
+		sessionNumber: data.session,
+		sessionID: undefined,
+		attendanceCode: undefined,
+		presenter: data.name,
+		title: data.title,
+		media: {
+			mainVideo: data.mediaURL,
+			images: [],
+			videos: []
+		},
+		abstract: data.abstract
+	}
+	var imageType: RegExp = /image.*/;
+	var videoType: RegExp = /video.*/;
+	for (var i: number = 0; i < data.uploadedMedia.length; i++) {
+		var file: string = data.uploadedMedia[i];
+		var mimeType: string = mime.lookup(file);
+		var image: boolean = !!mimeType.match(imageType);
+		var video: boolean = !!mimeType.match(videoType);
+		if (image) {
+			presentation.media.images.push(file);
+		}
+		if (video) {
+			presentation.media.videos.push(file);
+		}
+	}
+	// Generate a sessionID
+	presentation.sessionID = crypto.randomBytes(8).toString("hex");
+	// Generate an attendance code (6 digits)
+	var code: NodeBuffer = crypto.randomBytes(3);
+	presentation.attendanceCode = parseInt(code.toString("hex"), 16).toString().substr(0,6);
+	// Retrieve the presenter (or create them if they don't exist in the DB)
+	// TODO: name -> email conversion
+
+	Collections.Presentations.insert(presentation, {w:1}, function(err): void {
+		if (err) {
 			console.error(err);
-		response.send(html);
+			response.send({
+				"status": "failure",
+				"reason": "The database encountered an error"
+			});
+			return;
+		}
+
+		response.send({
+			"status": "success",
+			"url": "/admin/presentations/" + presentation.sessionID
+		});
 	});
 });
 // Media upload for presentations
 app.post("/admin/presentations/media", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var key: string;
+	var files: any[] = [];
+	var urls: string[] = [];
+	var ids: string[] = [];
 	for (key in request.files) {
 		var file: any = request.files[key];
+		files.push(file);
+	}
+	async.eachSeries(files, function(file: any, callback: Function) {
 		if (file.type.indexOf("image/") == -1 && file.type.indexOf("video/") == -1) {
 			fs.unlink(file.path, function (err: Error): void {
-				if (err) throw err;
+				if (err) {
+					console.error(err);
+					callback(err);
+				}
 				console.log("Deleted item with MIME type: " + file.type);
+				urls.push(null);
+				ids.push(null);
+				callback();
 			});
 		}
-		else {
-			console.log("Valid file with MIME type: " + file.type);
-			// Delete the temporary file
+		console.log("Valid file with MIME type: " + file.type);
+		var id: string = crypto.randomBytes(16).toString("hex");
+		// Move the temp file
+		var sourceFile = fs.createReadStream(file.path);
+		var newFileName: string = "/media/" + id + path.extname(file.path);
+		var destFile = fs.createWriteStream(__dirname + newFileName);
+		sourceFile.pipe(destFile);
+		sourceFile.on("end", function(): void {
+			// Delete the temp file
+			fs.unlink(file.path, function(err: Error): void {
+				if (err) {
+					console.error(err)
+					callback(err);
+				}
+				urls.push(newFileName);
+				ids.push(id + path.extname(file.path));
+				callback();
+			});
+		});
+		sourceFile.on("error", function(err: Error): void {
+			// Delete the temp files
+			// Who cares if these return errors
 			fs.unlink(file.path);
+			fs.unlink(__dirname + newFileName);
+			callback(err);
+		});
+	}, function(err: Error) {
+		if (err) {
+			response.send({
+				"status": "error",
+				"reason": err
+			});
+			return;
 		}
-	};
-	response.send({});
+		response.send({
+			"status": "success",
+			"urls": urls,
+			"ids": ids
+		});
+	});
 });
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {

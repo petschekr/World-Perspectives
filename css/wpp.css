@@ -75,11 +75,12 @@ h5, h6 {
 #thumbnails {
 	margin-top: 13px;
 	margin-bottom: -5px;
+	text-align: center;
 }
 .thumbnail {
 	width: 30%;
 	height: 100px;
-	margin: 0.6%;
+	margin: 5px;
 	background-size: cover;
 	background-position: 50% 50%;
 	display: inline-block;

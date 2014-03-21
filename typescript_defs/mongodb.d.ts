@@ -260,6 +260,7 @@ declare module "mongodb" {
 		nextObject(callback: (err:any, doc: any) => void);
 		explain(callback: (err, result) => void);
 		//stream(): CursorStream;
+		stream(): any;
 
 		close(callback?: (err, result) => void);
 		isClosed(): Boolean;

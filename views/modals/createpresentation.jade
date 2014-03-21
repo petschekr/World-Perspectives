@@ -9,7 +9,11 @@
 			input(type="text", placeholder="Name")
 			input(type="text", placeholder="Title")
 		br
-		input(type="url", placeholder="URL to YouTube video or image")
+		input(type="file", style="display: none;")
+		button#pdfbutton.btn.btn-primary.btn-block.btn-outlined Select PDF of paper
+		p.content-padded
+
+		input(type="url", placeholder="URL to YouTube video")
 		br
 		input(type="file", multiple, style="display: none;")
 		button#mediabutton.btn.btn-primary.btn-block.btn-outlined Choose videos / photos
@@ -18,4 +22,11 @@
 		#thumbnails
 		br
 		textarea(rows="5", placeholder="Abstract")
-		button.btn.btn-positive.btn-block Create
+		br
+		select
+			option Session 1 (8:50 AM - 9:40 PM)
+			option Session 2 (9:50 AM - 10:40 PM)
+			option Session 3 (11:40 AM - 12:30 PM)
+			option Session 4 (12:40 PM - 1:30 PM)
+		button#createbutton.btn.btn-positive.btn-block Create
+		br

@@ -53,6 +53,7 @@ var Schedule = [
 var http = require("http");
 var crypto = require("crypto");
 var fs = require("fs");
+var path = require("path");
 
 var MongoClient = require("mongodb").MongoClient;
 MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
@@ -60,11 +61,15 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         throw err;
 
     var Collections = {
-        Users: db.collection("users")
+        Users: db.collection("users"),
+        Schedule: db.collection("schedule"),
+        Presentations: db.collection("presentations")
     };
 
     var nodemailer = require("nodemailer");
+    var async = require("async");
     var express = require("express");
+    var mime = require("mime");
     var app = express();
 
     app.use(express.compress());
@@ -88,6 +93,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     app.use("/js", express.static("js"));
     app.use("/ratchet", express.static("ratchet"));
     app.use("/img", express.static("img"));
+    app.use("/media", express.static("media"));
 
     function createNonce(cb, bytes) {
         if (typeof bytes === "undefined") { bytes = 32; }
@@ -361,31 +367,150 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+    app.post("/admin/presentations", AdminAuth, function (request, response) {
+        var data = {
+            "name": request.body.name || "",
+            "title": request.body.title || "",
+            "mediaURL": request.body.mediaURL || undefined,
+            "uploadedMedia": [],
+            "abstract": request.body.abstract || "",
+            "session": parseInt(request.body.session, 10)
+        };
+        try  {
+            if (request.body.uploadedMedia)
+                data.uploadedMedia = JSON.parse(request.body.uploadedMedia);
+        } catch (e) {
+            response.send({
+                "status": "failure",
+                "reason": "Invalid JSON"
+            });
+            return;
+        }
+        if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+            response.send({
+                "status": "failure",
+                "reason": "Invalid information"
+            });
+            return;
+        }
+        var presentation = {
+            sessionNumber: data.session,
+            sessionID: undefined,
+            attendanceCode: undefined,
+            presenter: data.name,
+            title: data.title,
+            media: {
+                mainVideo: data.mediaURL,
+                images: [],
+                videos: []
+            },
+            abstract: data.abstract
+        };
+        var imageType = /image.*/;
+        var videoType = /video.*/;
+        for (var i = 0; i < data.uploadedMedia.length; i++) {
+            var file = data.uploadedMedia[i];
+            var mimeType = mime.lookup(file);
+            var image = !!mimeType.match(imageType);
+            var video = !!mimeType.match(videoType);
+            if (image) {
+                presentation.media.images.push(file);
+            }
+            if (video) {
+                presentation.media.videos.push(file);
+            }
+        }
+
+        // Generate a sessionID
+        presentation.sessionID = crypto.randomBytes(8).toString("hex");
+
+        // Generate an attendance code (6 digits)
+        var code = crypto.randomBytes(3);
+        presentation.attendanceCode = parseInt(code.toString("hex"), 16).toString().substr(0, 6);
+
+        // Retrieve the presenter (or create them if they don't exist in the DB)
+        // TODO: name -> email conversion
+        Collections.Presentations.insert(presentation, { w: 1 }, function (err) {
+            if (err) {
                 console.error(err);
-            response.send(html);
+                response.send({
+                    "status": "failure",
+                    "reason": "The database encountered an error"
+                });
+                return;
+            }
+
+            response.send({
+                "status": "success",
+                "url": "/admin/presentations/" + presentation.sessionID
+            });
         });
     });
 
     // Media upload for presentations
     app.post("/admin/presentations/media", AdminAuth, function (request, response) {
         var key;
+        var files = [];
+        var urls = [];
+        var ids = [];
         for (key in request.files) {
             var file = request.files[key];
+            files.push(file);
+        }
+        async.eachSeries(files, function (file, callback) {
             if (file.type.indexOf("image/") == -1 && file.type.indexOf("video/") == -1) {
                 fs.unlink(file.path, function (err) {
-                    if (err)
-                        throw err;
+                    if (err) {
+                        console.error(err);
+                        callback(err);
+                    }
                     console.log("Deleted item with MIME type: " + file.type);
+                    urls.push(null);
+                    ids.push(null);
+                    callback();
                 });
-            } else {
-                console.log("Valid file with MIME type: " + file.type);
             }
+            console.log("Valid file with MIME type: " + file.type);
+            var id = crypto.randomBytes(16).toString("hex");
 
-            // Delete the temporary file
-            fs.unlink(file.path);
-        }
-        ;
-        response.send({});
+            // Move the temp file
+            var sourceFile = fs.createReadStream(file.path);
+            var newFileName = "/media/" + id + path.extname(file.path);
+            var destFile = fs.createWriteStream(__dirname + newFileName);
+            sourceFile.pipe(destFile);
+            sourceFile.on("end", function () {
+                // Delete the temp file
+                fs.unlink(file.path, function (err) {
+                    if (err) {
+                        console.error(err);
+                        callback(err);
+                    }
+                    urls.push(newFileName);
+                    ids.push(id + path.extname(file.path));
+                    callback();
+                });
+            });
+            sourceFile.on("error", function (err) {
+                // Delete the temp files
+                // Who cares if these return errors
+                fs.unlink(file.path);
+                fs.unlink(__dirname + newFileName);
+                callback(err);
+            });
+        }, function (err) {
+            if (err) {
+                response.send({
+                    "status": "error",
+                    "reason": err
+                });
+                return;
+            }
+            response.send({
+                "status": "success",
+                "urls": urls,
+                "ids": ids
+            });
+        });
     });
 
     app.get("/admin/feedback", AdminAuth, function (request, response) {

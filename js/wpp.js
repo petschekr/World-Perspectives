@@ -1,3 +1,4 @@
+var uploadedMedia = [];
 $(document).ready(function () {
     if (window.navigator.standalone) {
         if (localStorage.getItem("login-state") == "2") {
@@ -86,12 +87,25 @@ $(document).ready(function () {
         });
     });
 
-    $("#mediabutton").click(function (e) {
-        $("input[type=file]").click();
+    $("#pdfbutton").click(function (e) {
+        $("input[type=file]").first().click();
     });
-    $("#mediaprogress").hide();
-    $("input[type=file]").on("change", function () {
+
+    $("#mediabutton").click(function (e) {
+        $("input[type=file]").last().click();
+    });
+
+    // PDF file picker
+    $("input[type=file]").first().on("change", function () {
+        var file = this.files[0];
+        $("#create p").text(file.name);
+    });
+
+    // Image / video file picker
+    $("input[type=file]").last().on("change", function () {
         var files = this.files;
+        if (files.length < 1)
+            return;
         $("#mediaprogress").show();
 
         var xhr = new XMLHttpRequest();
@@ -107,6 +121,20 @@ $(document).ready(function () {
         }
         xhr.onreadystatechange = function (e) {
             if (4 == this.readyState) {
+                try  {
+                    var response = JSON.parse(e.srcElement.response);
+                } catch (e) {
+                    console.error(e.srcElement.response);
+                    alert("The server sent an invalid response");
+                }
+                if (response.status == "failure") {
+                    console.error(response.reason);
+                    alert("There was an error uploading your image or video");
+                }
+                if (response.status == "success") {
+                    // response.ids is an array of form [id.jpg, id.png]
+                    uploadedMedia = uploadedMedia.concat(response.ids);
+                }
                 $("#mediaprogress").fadeOut(400, function () {
                     $("#mediaprogress > div").css("width", "0%");
                 });
@@ -138,7 +166,8 @@ $(document).ready(function () {
             if (video) {
                 var element = document.createElement("video");
                 element.src = window.URL.createObjectURL(file);
-                element.play();
+                element.controls = true;
+                element.load();
             }
             element.classList.add("thumbnail");
 
@@ -147,5 +176,52 @@ $(document).ready(function () {
             }*/
             document.getElementById("thumbnails").appendChild(element);
         }
+    });
+    $(".thumbnail").click(function () {
+        var deleteConfirm = confirm("Are you sure that you want to delete that image/video?");
+        if (deleteConfirm) {
+        }
+    });
+    $("#createbutton").click(function () {
+        var data = {
+            "name": $("#create input").get(0).value,
+            "title": $("#create input").get(1).value,
+            "mediaURL": $("#create input").get(3).value,
+            "uploadedMedia": JSON.stringify(uploadedMedia),
+            "abstract": $("#create textarea").val(),
+            "session": undefined
+        };
+        var session = $("#create select").val();
+        session = session.match(/^Session (\d)/)[1];
+        data.session = session;
+        if (data.name === "" || data.title === "" || data.abstract === "") {
+            alert("You must fill out the presentation's title, abstract and presenter");
+            return;
+        }
+        if (data.mediaURL === "") {
+            var message = "Are you sure you want to create this presentation without a video? (You can add this later too)";
+            if (!confirm(message)) {
+                return;
+            }
+        }
+        $.ajax({
+            type: "POST",
+            url: "/admin/presentations",
+            data: data,
+            success: function (res, status, xhr) {
+                if (res.status == "success") {
+                    //$("#create").removeClass("active");
+                    window.location.reload();
+                } else {
+                    console.error(res);
+                    alert("There was an error creating the presentation");
+                }
+            },
+            error: function (xhr, status, err) {
+                console.error(err);
+                alert("There was an error creating the presentation");
+            }
+        });
+        uploadedMedia = [];
     });
 });
