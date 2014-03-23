@@ -65,6 +65,7 @@ interface Presentation {
 	presenter: string;
 	title: string;
 	media: {mainVideo?: string; images?: string[]; videos?: string[]};
+	pdfID: string;
 	abstract: string;
 }
 	}
@@ -402,6 +403,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		title: string;
 		youtubeID: string;
 		uploadedMedia: string[];
+		uploadedPDF: string;
 		abstract: string;
 		session: number;
 		//email: string;
@@ -410,6 +412,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		"title": request.body.title || "",
 		"youtubeID": request.body.youtubeID || undefined,
 		"uploadedMedia": [],
+		"uploadedPDF": request.body.uploadedPDF || undefined,
 		"abstract": request.body.abstract || "",
 		"session": parseInt(request.body.session, 10)
 	};
@@ -442,6 +445,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 			images: [],
 			videos: []
 		},
+		pdfID: data.uploadedPDF,
 		abstract: data.abstract
 	}
 	var imageType: RegExp = /image.*/;
@@ -484,67 +488,130 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 });
 // Media upload for presentations
 app.post("/admin/presentations/media", AdminAuth, function(request: express3.Request, response: express3.Response): void {
-	var key: string;
-	var files: any[] = [];
-	var urls: string[] = [];
-	var ids: string[] = [];
-	for (key in request.files) {
-		var file: any = request.files[key];
-		files.push(file);
-	}
-	async.eachSeries(files, function(file: any, callback: Function) {
-		if (file.type.indexOf("image/") == -1 && file.type.indexOf("video/") == -1) {
-			fs.unlink(file.path, function (err: Error): void {
+	if (request.body.type == "pdf") {
+		// PDF upload
+		var pdf = request.files["pdf"];
+		if (pdf.type != "application/pdf") {
+			fs.unlink(pdf.path, function (err: Error): void {
 				if (err) {
 					console.error(err);
-					callback(err);
+					response.send({
+						"status": "error",
+						"reason": err
+					});
+					return;
 				}
-				console.log("Deleted item with MIME type: " + file.type);
-				urls.push(null);
-				ids.push(null);
-				callback();
+				console.log("Deleted item with MIME type: " + pdf.type);
+				response.send({
+					"status": "error",
+					"reason": "Uploaded document is not a PDF"
+				});
 			});
 		}
-		console.log("Valid file with MIME type: " + file.type);
-		var id: string = crypto.randomBytes(16).toString("hex");
-		// Move the temp file
-		var sourceFile = fs.createReadStream(file.path);
-		var newFileName: string = "/media/" + id + path.extname(file.path);
-		var destFile = fs.createWriteStream(__dirname + newFileName);
-		sourceFile.pipe(destFile);
-		sourceFile.on("end", function(): void {
-			// Delete the temp file
-			fs.unlink(file.path, function(err: Error): void {
-				if (err) {
-					console.error(err)
-					callback(err);
-				}
-				urls.push(newFileName);
-				ids.push(id + path.extname(file.path));
-				callback();
+		else {
+			console.log("Valid file with MIME type: " + pdf.type);
+			var id: string = crypto.randomBytes(16).toString("hex");
+			// Move the temp file
+			var sourceFile = fs.createReadStream(pdf.path);
+			var newFileName: string = "/media/" + id + path.extname(pdf.path);
+			var destFile = fs.createWriteStream(__dirname + newFileName);
+			sourceFile.pipe(destFile);
+			sourceFile.on("end", function(): void {
+				// Delete the temp file
+				fs.unlink(pdf.path, function(err: Error): void {
+					if (err) {
+						console.error(err)
+						response.send({
+							"status": "error",
+							"reason": err
+						});
+						return;
+					}
+					response.send({
+						"status": "success",
+						"id": id + path.extname(pdf.path)
+					});
+				});
 			});
-		});
-		sourceFile.on("error", function(err: Error): void {
-			// Delete the temp files
-			// Who cares if these return errors
-			fs.unlink(file.path);
-			fs.unlink(__dirname + newFileName);
-			callback(err);
-		});
-	}, function(err: Error) {
-		if (err) {
+			sourceFile.on("error", function(err: Error): void {
+				// Delete the temp files
+				// Who cares if these return errors
+				fs.unlink(pdf.path);
+				fs.unlink(__dirname + newFileName);
+				console.error(err);
+				response.send({
+					"status": "error",
+					"reason": err
+				});
+			});
+		}
+	}
+	else {
+		// Media upload
+		var key: string;
+		var files: any[] = [];
+		var urls: string[] = [];
+		var ids: string[] = [];
+		for (key in request.files) {
+			var file: any = request.files[key];
+			files.push(file);
+		}
+		async.eachSeries(files, function(file: any, callback: Function) {
+			if (file.type.indexOf("image/") == -1 && file.type.indexOf("video/") == -1) {
+				fs.unlink(file.path, function (err: Error): void {
+					if (err) {
+						console.error(err);
+						callback(err);
+						return;
+					}
+					console.log("Deleted item with MIME type: " + file.type);
+					urls.push(null);
+					ids.push(null);
+					callback();
+				});
+			}
+			console.log("Valid file with MIME type: " + file.type);
+			var id: string = crypto.randomBytes(16).toString("hex");
+			// Move the temp file
+			var sourceFile = fs.createReadStream(file.path);
+			var newFileName: string = "/media/" + id + path.extname(file.path);
+			var destFile = fs.createWriteStream(__dirname + newFileName);
+			sourceFile.pipe(destFile);
+			sourceFile.on("end", function(): void {
+				// Delete the temp file
+				fs.unlink(file.path, function(err: Error): void {
+					if (err) {
+						console.error(err)
+						callback(err);
+						return;
+					}
+					urls.push(newFileName);
+					ids.push(id + path.extname(file.path));
+					callback();
+				});
+			});
+			sourceFile.on("error", function(err: Error): void {
+				// Delete the temp files
+				// Who cares if these return errors
+				fs.unlink(file.path);
+				fs.unlink(__dirname + newFileName);
+				callback(err);
+			});
+		}, function(err: Error) {
+			if (err) {
+				response.send({
+					"status": "error",
+					"reason": err
+				});
+				return;
+			}
 			response.send({
-				"status": "error",
-				"reason": err
+				"status": "success",
+				"urls": urls,
+				"ids": ids
 			});
-			return;
-		}
-		response.send({
-			"status": "success",
-			"urls": urls,
-			"ids": ids
 		});
-	});
+	}
 });
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {

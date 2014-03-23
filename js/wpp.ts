@@ -16,6 +16,7 @@ interface Window {
 }
 
 var uploadedMedia: string[] = [];
+var uploadedPDF: string;
 $(document).ready(function(): void {
 	if (window.navigator.standalone) {
 		if (localStorage.getItem("login-state") == "2") {
@@ -114,8 +115,50 @@ $(document).ready(function(): void {
 	});
 	// PDF file picker
 	$("input[type=file]").first().on("change", function(): void {
+		if (this.files.length < 1)
+			return;
 		var file: File = this.files[0];
 		$("#create p").text(file.name);
+		$("#pdfprogress").show();
+
+		var xhr: XMLHttpRequest = new XMLHttpRequest();
+		if (xhr.upload) {
+			xhr.upload.onprogress = function(e: any): void {
+				var done: number = e.position || e.loaded;
+				var total: number = e.totalSize || e.total;
+				var percentDone: number = Math.floor(done / total * 1000) / 10
+				// Update progress bar
+				$("#pdfprogress > div").css("width", percentDone + "%");
+			};
+		}
+		xhr.onreadystatechange = function(e: any): void {
+			if (4 == this.readyState) {
+				try {
+					var response: any = JSON.parse(e.srcElement.response);
+				}
+				catch (e) {
+					console.error(e.srcElement.response);
+					alert("The server sent an invalid response");
+				}
+				if (response.status == "failure") {
+					console.error(response.reason);
+					alert("There was an error uploading your PDF: " + response.reason);
+				}
+				if (response.status == "success") {
+					// response.ids is an array of form [id.jpg, id.png]
+					uploadedPDF = response.id;
+				}
+				$("#pdfprogress").fadeOut(400, function(): void {
+					$("#pdfprogress > div").css("width", "0%");
+				});
+			}
+		};
+		xhr.open("POST", "/admin/presentations/media", true);
+
+		var mediaData: FormData = new FormData();
+		mediaData.append("type", "pdf");
+		mediaData.append("pdf", file);
+		xhr.send(mediaData);
 	});
 	// Image / video file picker
 	$("input[type=file]").last().on("change", function(): void {
@@ -159,6 +202,7 @@ $(document).ready(function(): void {
 		xhr.open("POST", "/admin/presentations/media", true);
 
 		var mediaData: FormData = new FormData();
+		mediaData.append("type", "media");
 		for (var i: number = 0; i < files.length; i++) {
 			mediaData.append(i.toString(), files[i]);
 		}
@@ -204,6 +248,7 @@ $(document).ready(function(): void {
 			title: string;
 			youtubeID: string;
 			uploadedMedia: string;
+			uploadedPDF: string;
 			abstract: string;
 			session: string;
 		} = {
@@ -211,6 +256,7 @@ $(document).ready(function(): void {
 			"title": $("#create input").get(1).value,
 			"youtubeID": $("#create input").get(3).value,
 			"uploadedMedia": JSON.stringify(uploadedMedia),
+			"uploadedPDF": uploadedPDF,
 			"abstract": $("#create textarea").val(),
 			"session": undefined
 		};

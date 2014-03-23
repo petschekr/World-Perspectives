@@ -1,4 +1,5 @@
 var uploadedMedia = [];
+var uploadedPDF;
 $(document).ready(function () {
     if (window.navigator.standalone) {
         if (localStorage.getItem("login-state") == "2") {
@@ -97,8 +98,50 @@ $(document).ready(function () {
 
     // PDF file picker
     $("input[type=file]").first().on("change", function () {
+        if (this.files.length < 1)
+            return;
         var file = this.files[0];
         $("#create p").text(file.name);
+        $("#pdfprogress").show();
+
+        var xhr = new XMLHttpRequest();
+        if (xhr.upload) {
+            xhr.upload.onprogress = function (e) {
+                var done = e.position || e.loaded;
+                var total = e.totalSize || e.total;
+                var percentDone = Math.floor(done / total * 1000) / 10;
+
+                // Update progress bar
+                $("#pdfprogress > div").css("width", percentDone + "%");
+            };
+        }
+        xhr.onreadystatechange = function (e) {
+            if (4 == this.readyState) {
+                try  {
+                    var response = JSON.parse(e.srcElement.response);
+                } catch (e) {
+                    console.error(e.srcElement.response);
+                    alert("The server sent an invalid response");
+                }
+                if (response.status == "failure") {
+                    console.error(response.reason);
+                    alert("There was an error uploading your PDF: " + response.reason);
+                }
+                if (response.status == "success") {
+                    // response.ids is an array of form [id.jpg, id.png]
+                    uploadedPDF = response.id;
+                }
+                $("#pdfprogress").fadeOut(400, function () {
+                    $("#pdfprogress > div").css("width", "0%");
+                });
+            }
+        };
+        xhr.open("POST", "/admin/presentations/media", true);
+
+        var mediaData = new FormData();
+        mediaData.append("type", "pdf");
+        mediaData.append("pdf", file);
+        xhr.send(mediaData);
     });
 
     // Image / video file picker
@@ -143,6 +186,7 @@ $(document).ready(function () {
         xhr.open("POST", "/admin/presentations/media", true);
 
         var mediaData = new FormData();
+        mediaData.append("type", "media");
         for (var i = 0; i < files.length; i++) {
             mediaData.append(i.toString(), files[i]);
         }
@@ -188,6 +232,7 @@ $(document).ready(function () {
             "title": $("#create input").get(1).value,
             "youtubeID": $("#create input").get(3).value,
             "uploadedMedia": JSON.stringify(uploadedMedia),
+            "uploadedPDF": uploadedPDF,
             "abstract": $("#create textarea").val(),
             "session": undefined
         };

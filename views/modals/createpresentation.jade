@@ -11,8 +11,10 @@
 		br
 		input(type="file", style="display: none;")
 		button#pdfbutton.btn.btn-primary.btn-block.btn-outlined Select PDF of paper
-		p.content-padded
-
+		p
+			i You can add a PDF later too
+		.progress#pdfprogress(style="display: none;")
+			.progress-bar
 		input(type="url", placeholder="URL to YouTube video")
 		br
 		input(type="file", multiple, style="display: none;")
