@@ -25,7 +25,7 @@ block content
 			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
 	.presentation-buttons
-		button.btn
+		a.btn(href="/media/#{presentation.pdfID}", data-ignore="push")
 			span.icon.icon-download
 			| &nbsp;PDF
 		//
