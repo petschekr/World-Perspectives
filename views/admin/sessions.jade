@@ -14,14 +14,19 @@ block content
 	if presentations.length > 0
 		ul.table-view.explore
 			for presentation in presentations
-				li.table-view-cell.media
-					a.push-right(href="/admin/presentations/#{presentation.sessionID}", data-transition="slide-in")
-						img.media-object.pull-left(src="http://placehold.it/42x42")
-						.media-body
-							strong= presentation.title
-							br
-							small= presentation.presenter
-							p= presentation.abstract
+				li.table-view-cell
+					//a.push-right(href="/admin/presentations/#{presentation.sessionID}", data-transition="slide-in")
+					strong= presentation.title
+					br
+					small= presentation.presenter
+					p
+						if presentation.abstract.length < 100
+							| #{presentation.abstract}
+						else
+							| #{presentation.abstract.substr(0, 100) + "..."}
+
+					a.btn.btn-primary(href="/admin/presentations/edit/#{presentation.sessionID}", data-transition="slide-in") Edit
+					a.btn.btn-positive(href="/admin/presentations/view/#{presentation.sessionID}", data-transition="slide-in") View
         
 	else
 		p.content-padded(style="text-align: center;"): i No presentations created yet

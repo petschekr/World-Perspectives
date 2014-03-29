@@ -27,9 +27,14 @@ img.logo {
 	border-top: none;
 	border-bottom: none;
 }
-.table-view.schedule {
+.table-view.schedule, .table-view.settings {
 	margin-top: 0 !important;
 	border-top: none;
+}
+.table-view.attendance span.badge.badge-positive {
+	-webkit-transform: translateY(-50%) translateX(-110%);
+	-ms-transform: translateY(-50%) translateX(-110%);
+	transform: translateY(-50%) translateX(-110%);
 }
 code {
 	padding: 2px 4px;
@@ -106,6 +111,18 @@ select {
 	margin: 10px;
 	line-height: 21px;
 	overflow: auto;
+}
+.table-view-cell > .btn:first-of-type {
+	-webkit-transform: translateY(-115%);
+	transform: translateY(-115%);
+}
+.table-view-cell > .btn:last-of-type {
+	-webkit-transform: translateY(15%);
+	transform: translateY(15%);
+}
+.table-view-cell > .btn {
+	width: 45px;
+	right: 10px;
 }
 /* Presentation detail page */
 .presentation-info {
