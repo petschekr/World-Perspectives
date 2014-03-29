@@ -25,9 +25,16 @@ block content
 			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
 	.presentation-buttons
-		a.btn(href="/media/#{presentation.pdfID}", data-ignore="push", target="_blank")
-			span.icon.icon-download
-			| &nbsp;PDF
+
+		if presentation.pdfID
+			a.btn(href="/media/#{presentation.pdfID}", data-ignore="push", target="_blank")
+				span.icon.icon-download
+				| &nbsp;PDF
+		else
+			button.btn(style="opacity: 0.3;")
+				span.icon.icon-download
+				| &nbsp;PDF
+
 		//
 			a.btn(href="mailto:?to=&subject=Check%20out%20this%20presentation&body=")
 				span.icon.icon-share
