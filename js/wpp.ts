@@ -303,4 +303,26 @@ $(document).ready(function(): void {
 		});
 		uploadedMedia = [];
 	});
+	$("#regeneratecode").click(function(): void {
+		var length: number = window.location.pathname.split("/").length;
+		var id: string = window.location.pathname.split("/")[length - 1];
+		$.ajax({
+			type: "GET",
+			url: "/admin/presentations/code",
+			data: {"id": id},
+			success: function(res, status, xhr) {
+				if (res.status == "success") {
+					$(".code").text(res.code);
+				}
+				else {
+					console.error(res);
+					alert("There was an error regenerating the code");
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error regenerating the code");
+			}
+		});
+	});
 });

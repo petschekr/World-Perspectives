@@ -340,7 +340,24 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
-    app.get("/admin/presentations/:id", AdminAuth, function (request, response) {
+    app.get("/admin/presentations/edit/:id", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var presentationID = request.params.id;
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/admin/presentations");
+                return;
+            }
+            response.render("admin/presentation", { title: "Edit Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+    app.get("/admin/presentations/view/:id", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
@@ -360,10 +377,38 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     break;
                 }
             }
-            response.render("presentation", { title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);
+            });
+        });
+    });
+    app.get("/admin/presentations/code", AdminAuth, function (request, response) {
+        var id = request.query.id;
+        Collections.Presentations.findOne({ "sessionID": id }, function (err, presentation) {
+            if (!presentation) {
+                response.send({
+                    "status": "error",
+                    "reason": "Presentation ID invalid or missing"
+                });
+                return;
+            }
+            var code = crypto.randomBytes(3);
+            var attendanceCode = parseInt(code.toString("hex"), 16).toString().substr(0, 6);
+            Collections.Presentations.update({ "sessionID": id }, { $set: { attendanceCode: attendanceCode } }, { w: 1 }, function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "error",
+                        "reason": "The database encountered an error"
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success",
+                    "code": attendanceCode
+                });
             });
         });
     });

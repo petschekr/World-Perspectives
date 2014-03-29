@@ -370,7 +370,24 @@ app.get("/admin/presentations", AdminAuth, function(request: express3.Request, r
 		});
 	});
 });
-app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+app.get("/admin/presentations/edit/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var presentationID = request.params.id;
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/admin/presentations");
+			return;
+		}
+		response.render("admin/presentation", {title: "Edit Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
+app.get("/admin/presentations/view/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
@@ -390,10 +407,38 @@ app.get("/admin/presentations/:id", AdminAuth, function(request: express3.Reques
 				break;
 			}
 		}
-		response.render("presentation", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, fromAdmin: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
+		});
+	});
+});
+app.get("/admin/presentations/code", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var id: string = request.query.id;
+	Collections.Presentations.findOne({"sessionID": id}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.send({
+				"status": "error",
+				"reason": "Presentation ID invalid or missing"
+			});
+			return;
+		}
+		var code: NodeBuffer = crypto.randomBytes(3);
+		var attendanceCode: string = parseInt(code.toString("hex"), 16).toString().substr(0,6);
+		Collections.Presentations.update({"sessionID": id}, {$set: {attendanceCode: attendanceCode}}, {w:1}, function(err) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "error",
+					"reason": "The database encountered an error"
+				});
+				return;
+			}
+			response.send({
+				"status": "success",
+				"code": attendanceCode
+			});
 		});
 	});
 });
