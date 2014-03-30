@@ -166,6 +166,7 @@ $(document).ready(function(): void {
 		if (files.length < 1)
 			return;
 		$("#mediaprogress").show();
+		$("#mediabutton").css("opacity", "0.3");
 
 		var xhr: XMLHttpRequest = new XMLHttpRequest();
 		if (xhr.upload) {
@@ -179,6 +180,7 @@ $(document).ready(function(): void {
 		}
 		xhr.onreadystatechange = function(e: any): void {
 			if (4 == this.readyState) {
+				$("#mediabutton").css("opacity", "1");
 				try {
 					var response: any = JSON.parse(e.srcElement.response);
 				}
