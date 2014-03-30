@@ -388,6 +388,44 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+
+    // Delete the presentation
+    app.delete("/admin/presentations/edit/:id", AdminAuth, function (request, response) {
+        var id = request.params.id;
+        Collections.Presentations.findOne({ "sessionID": id }, function (err, presentation) {
+            // Delete that presentation's media
+            var media = [];
+            if (presentation.pdfID)
+                media.push(presentation.pdfID);
+            media = media.concat(presentation.media.images);
+            media = media.concat(presentation.media.videos);
+
+            for (var i = 0; i < media.length; i++) {
+                media[i] = __dirname + "/media/" + media[i];
+            }
+            async.parallel([
+                function (callback) {
+                    async.each(media, fs.unlink, callback);
+                },
+                function (callback) {
+                    // Remove the presentation from the DB
+                    Collections.Presentations.remove({ "sessionID": id }, { w: 1 }, callback);
+                }
+            ], function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "reason": "The database encountered an error"
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success"
+                });
+            });
+        });
+    });
     app.get("/admin/presentations/view/:id", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
@@ -665,7 +703,18 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     // Delete a media object
     app.delete("/admin/presentations/media", AdminAuth, function (request, response) {
         var id = request.body.id;
-        Collections.Presentations.update({ "media.images": id }, { $pull: { "media.images": id } }, { w: 1 }, function (err) {
+        async.parallel([
+            function (callback) {
+                Collections.Presentations.update({ "media.images": id }, { $pull: { "media.images": id } }, { w: 1 }, function (err) {
+                    callback(err);
+                });
+            },
+            function (callback) {
+                fs.unlink(__dirname + "/media/" + id, function (err) {
+                    callback(err);
+                });
+            }
+        ], function (err) {
             if (err) {
                 console.error(err);
                 response.send({

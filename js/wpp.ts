@@ -411,4 +411,28 @@ $(document).ready(function(): void {
 			}
 		});
 	});
+	$(document).on("click", "#deletepresentation", function(): void {
+		var message: string = "Are you sure that you want to delete this presentation? This cannot be undone.";
+		if (!confirm(message))
+			return;
+		$.ajax({
+			type: "DELETE",
+			url: window.location.toString(),
+			data: {},
+			success: function(res, status, xhr) {
+				if (res.status == "success") {
+					alert("Presentation deleted successfully");
+					window.location.assign("/admin/presentations");
+				}
+				else {
+					console.error(res);
+					alert("There was an error deleting the presentation");
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error deleting the presentation");
+			}
+		});
+	});
 });

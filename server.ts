@@ -424,6 +424,43 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		});
 	});
 });
+// Delete the presentation
+app.delete("/admin/presentations/edit/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var id: string = request.params.id;
+	Collections.Presentations.findOne({"sessionID": id}, function(err: any, presentation: Presentation): void {
+		// Delete that presentation's media
+		var media: string[] = [];
+		if (presentation.pdfID)
+			media.push(presentation.pdfID);
+		media = media.concat(presentation.media.images);
+		media = media.concat(presentation.media.videos);
+		// Turn the array of IDs into an array of paths
+		for (var i: number = 0; i < media.length; i++) {
+			media[i] = __dirname + "/media/" + media[i];
+		}
+		async.parallel([
+			function(callback: Function) {
+				async.each(media, fs.unlink, callback);
+			},
+			function(callback: any) {
+				// Remove the presentation from the DB
+				Collections.Presentations.remove({"sessionID": id}, {w:1}, callback);
+			}
+		], function(err: Error) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"reason": "The database encountered an error"
+				});
+				return;
+			}
+			response.send({
+				"status": "success"
+			});
+		});
+	});
+});
 app.get("/admin/presentations/view/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
