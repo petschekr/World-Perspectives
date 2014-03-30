@@ -1,0 +1,44 @@
+extends layout
+
+block tabs
+	+tab("Explore", "/explore", "icon-search", false)
+	+tab("Register", "/register", "icon-check", true)
+	+tab("My Schedule", "/schedule", "icon-list", false)
+	+tab("Feedback", "/feedback", "icon-compose", false)
+
+block content
+	if loggedIn
+		if !sessionNumber
+			ul.table-view
+				li.table-view-cell
+					a.navigate-right(href="/register/1", data-transition="slide-in")
+						span.badge 8:50 AM - 9:40 PM
+						| Session 1
+				li.table-view-cell
+					a.navigate-right(href="/register/2", data-transition="slide-in")
+						span.badge 9:50 AM - 10:40 PM
+						| Session 2
+				li.table-view-cell
+					a.navigate-right(href="/register/3", data-transition="slide-in")
+						span.badge 11:40 AM - 12:30 PM
+						| Session 3
+				li.table-view-cell
+					a.navigate-right(href="/register/4", data-transition="slide-in")
+						span.badge 12:40 PM - 1:30 PM
+						| Session 4
+		else
+			ul.table-view
+				li.table-view-cell.media
+					img.media-object.pull-left(src='http://placehold.it/42x42')
+					.media-body
+						| Ryan Petschek
+						p
+							| Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+					.btns
+						button.btn.btn-primary 1st Choice
+						button.btn.btn-primary 2nd Choice
+						button.btn.btn-primary 3rd Choice
+
+			a.btn.btn-block.btn-outlined.btn-primary(href="/register", data-transition="slide-out") Finish
+	else
+		p.content-padded You must log in before registering

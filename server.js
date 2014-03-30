@@ -293,6 +293,51 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         }, 4);
     });
 
+    // Register for sessions
+    app.get("/register", function (request, response) {
+        request.session["email"] = "petschekr@gfacademy.org";
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        response.render("register", {
+            title: "Register",
+            mobileOS: platform,
+            loggedIn: loggedIn,
+            email: email,
+            admin: admin
+        }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+    app.get("/register/:sessionNumber", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        var sessionNumber = parseInt(request.params.sessionNumber, 10);
+        if (isNaN(sessionNumber)) {
+            response.redirect("/register");
+            return;
+        }
+        response.render("register", {
+            title: "Session " + sessionNumber.toString(),
+            mobileOS: platform,
+            loggedIn: loggedIn,
+            email: email,
+            admin: admin,
+            sessionNumber: sessionNumber
+        }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+
     // Admin pages
     function AdminAuth(request, response, next) {
         var loggedIn = !!request.session["email"];

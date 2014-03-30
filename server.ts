@@ -344,6 +344,51 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 	}, 4);
 });
 
+// Register for sessions
+app.get("/register", function(request: express3.Request, response: express3.Response): void {
+	request.session["email"] = "petschekr@gfacademy.org";
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	
+	response.render("register", {
+		title: "Register",
+		mobileOS: platform,
+		loggedIn: loggedIn,
+		email: email,
+		admin: admin,
+	}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});
+app.get("/register/:sessionNumber", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	
+	var sessionNumber: number = parseInt(request.params.sessionNumber, 10);
+	if (isNaN(sessionNumber)) {
+		response.redirect("/register");
+		return;
+	}
+	response.render("register", {
+		title: "Session " + sessionNumber.toString(),
+		mobileOS: platform,
+		loggedIn: loggedIn,
+		email: email,
+		admin: admin,
+		sessionNumber: sessionNumber
+	}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});
+
 // Admin pages
 function AdminAuth(request: express3.Request, response: express3.Response, next: any):void {
 	var loggedIn: boolean = !!request.session["email"];

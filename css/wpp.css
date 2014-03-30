@@ -202,6 +202,24 @@ select {
 	width: 30%;
 }
 
+li.media {
+	/*width: 115%;*/
+}
+.media .btn {
+	position: initial;
+	-webkit-transform: none !important;
+	transform: none !important;
+	width: 28vw;
+}
+.btns {
+	text-align: center;
+	margin-top: 10px;
+	width: 90vw;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
