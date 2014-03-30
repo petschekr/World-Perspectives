@@ -196,3 +196,27 @@ select {
 	margin-left: auto;
 	margin-right: auto;
 }
+
+
+
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+	.youtube {
+		height: 380px;
+	}
+	.thumbnail {
+		height: 200px;
+	}
+}
+/* Medium devices (desktops, 992px and up) */
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: 1920px) {
+	.youtube {
+		height: 600px;
+	}
+	.thumbnail {
+		height: 300px;
+	}
+}
