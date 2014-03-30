@@ -3,52 +3,49 @@ var PORT = 8080;
 
 var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
 
-var Schedule = [
-    {
-        title: "Advisory",
-        start: new Date("Apr 23, 2014 8:00 EDT"),
-        end: new Date("Apr 23, 2014 8:15 EDT")
-    },
-    {
-        title: "Introduction",
-        start: new Date("Apr 23, 2014 8:20 EDT"),
-        end: new Date("Apr 23, 2014 8:45 EDT")
-    },
-    {
-        title: "Global Health in Local Context",
-        start: new Date("Apr 23, 2014 8:50 EDT"),
-        end: new Date("Apr 23, 2014 9:40 EDT"),
-        sessionNumber: 1
-    },
-    {
-        title: "Globalizaton and its Discontents",
-        start: new Date("Apr 23, 2014 9:50 EDT"),
-        end: new Date("Apr 23, 2014 10:40 EDT"),
-        sessionNumber: 2
-    },
-    {
-        title: "Lunch",
-        start: new Date("Apr 23, 2014 10:45 EDT"),
-        end: new Date("Apr 23, 2014 11:30 EDT")
-    },
-    {
-        title: "Science, Technology, and Change",
-        start: new Date("Apr 23, 2014 11:40 EDT"),
-        end: new Date("Apr 23, 2014 12:30 EDT"),
-        sessionNumber: 3
-    },
-    {
-        title: "The Power of Incentives in Decision-Making",
-        start: new Date("Apr 23, 2014 12:40 EDT"),
-        end: new Date("Apr 23, 2014 13:30 EDT"),
-        sessionNumber: 4
-    },
-    {
-        title: "Advisory",
-        start: new Date("Apr 23, 2014 13:40 EDT"),
-        end: new Date("Apr 23, 2014 14:00 EDT")
+var Student = (function () {
+    function Student(Name, Email) {
+        this.Sessions = [];
+        this.SessionChoices = [];
+        this.Attendance = [];
+        this.RegisteredForSessions = false;
+        this.Admin = false;
+        this.Presenter = false;
+        this.Name = Name;
+        this.Email = Email;
+        this.Attendance.push({ sessionNumber: 1, present: false });
+        this.Attendance.push({ sessionNumber: 2, present: false });
+        this.Attendance.push({ sessionNumber: 3, present: false });
+        this.Attendance.push({ sessionNumber: 4, present: false });
     }
-];
+    Student.prototype.checkInToSession = function (sessionNumber, sessionID, attendanceCode) {
+        return false;
+    };
+    Student.prototype.exportUser = function () {
+        return {
+            Name: this.Name,
+            Sessions: this.Sessions,
+            SessionChoices: this.SessionChoices,
+            Attendance: this.Attendance,
+            RegisteredForSessions: this.RegisteredForSessions,
+            Admin: this.Admin,
+            Presenter: this.Presenter
+        };
+    };
+    Student.prototype.importUser = function (userData) {
+        this.Name = userData.Name;
+        this.Sessions = userData.Sessions;
+        this.SessionChoices = userData.SessionChoices;
+        this.Attendance = userData.Attendance;
+        this.RegisteredForSessions = userData.RegisteredForSessions;
+        this.Admin = userData.Admin;
+        this.Presenter = userData.Presenter;
+    };
+    Student.prototype.toString = function () {
+        return this.Name;
+    };
+    return Student;
+})();
 
 var http = require("http");
 var crypto = require("crypto");
@@ -65,6 +62,18 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations")
     };
+
+    // Retrieve the schedule
+    var Schedule = [];
+    function LoadSchedule() {
+        Collections.Schedule.find().toArray(function (err, scheduleItems) {
+            if (err)
+                throw err;
+            Schedule = scheduleItems;
+            console.log("Schedule loaded from DB");
+        });
+    }
+    LoadSchedule();
 
     var nodemailer = require("nodemailer");
     var async = require("async");
@@ -259,10 +268,12 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                             }
                         });
                     } else {
+                        var user = new Student(username, email);
                         Collections.Users.insert({
                             "username": username,
                             "email": email,
-                            "code": code
+                            "code": code,
+                            "userInfo": user.exportUser()
                         }, { w: 1 }, function (err) {
                             if (err) {
                                 response.json({
@@ -307,10 +318,50 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        response.render("admin/attendance", { title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+
+        var userStream = Collections.Users.find({ "Admin": { $ne: true } }).stream();
+        var attendance = {
+            "1": {
+                "present": 0,
+                "absent": 0
+            },
+            "2": {
+                "present": 0,
+                "absent": 0
+            },
+            "3": {
+                "present": 0,
+                "absent": 0
+            },
+            "4": {
+                "present": 0,
+                "absent": 0
+            }
+        };
+        userStream.on("data", function (user) {
+            if (user.userInfo.Attendance[0].present)
+                attendance[1].present++;
+            else
+                attendance[1].absent++;
+            if (user.userInfo.Attendance[1].present)
+                attendance[2].present++;
+            else
+                attendance[2].absent++;
+            if (user.userInfo.Attendance[2].present)
+                attendance[3].present++;
+            else
+                attendance[3].absent++;
+            if (user.userInfo.Attendance[3].present)
+                attendance[4].present++;
+            else
+                attendance[4].absent++;
+        });
+        userStream.on("end", function () {
+            response.render("admin/attendance", { title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email, attendance: attendance }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
     app.get("/admin/attendance/:sessionNumber", AdminAuth, function (request, response) {
@@ -322,10 +373,23 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             response.redirect("/admin/attendance");
             return;
         }
-        response.render("admin/attendance", { title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        var userStream = Collections.Users.find({ "Admin": { $ne: true } }).stream();
+        var attendance = {
+            present: [],
+            absent: []
+        };
+        userStream.on("data", function (user) {
+            if (user.userInfo.Attendance[sessionNumber - 1].present)
+                attendance.present.push(user.username);
+            else
+                attendance.absent.push(user.username);
+        });
+        userStream.on("end", function () {
+            response.render("admin/attendance", { title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendance }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
     app.get("/admin/presentations", AdminAuth, function (request, response) {

@@ -12,51 +12,19 @@ interface ScheduleItem {
 	start: Date;
 	end: Date;
 	sessionNumber?: number;
+	sessionID?: string;
 }
-var Schedule: ScheduleItem[] = [
-	{
-		title: "Advisory",
-		start: new Date("Apr 23, 2014 8:00 EDT"),
-		end: new Date("Apr 23, 2014 8:15 EDT")
-	},
-	{
-		title: "Introduction",
-		start: new Date("Apr 23, 2014 8:20 EDT"),
-		end: new Date("Apr 23, 2014 8:45 EDT")
-	},
-	{
-		title: "Global Health in Local Context",
-		start: new Date("Apr 23, 2014 8:50 EDT"),
-		end: new Date("Apr 23, 2014 9:40 EDT"),
-		sessionNumber: 1
-	},
-	{
-		title: "Globalizaton and its Discontents",
-		start: new Date("Apr 23, 2014 9:50 EDT"),
-		end: new Date("Apr 23, 2014 10:40 EDT"),
-		sessionNumber: 2
-	},
-	{
-		title: "Lunch",
-		start: new Date("Apr 23, 2014 10:45 EDT"),
-		end: new Date("Apr 23, 2014 11:30 EDT")
-	},
-	{
-		title: "Science, Technology, and Change",
-		start: new Date("Apr 23, 2014 11:40 EDT"),
-		end: new Date("Apr 23, 2014 12:30 EDT"),
-		sessionNumber: 3
-	},
-	{
-		title: "The Power of Incentives in Decision-Making",
-		start: new Date("Apr 23, 2014 12:40 EDT"),
-		end: new Date("Apr 23, 2014 13:30 EDT"),
-		sessionNumber: 4
-	},
-	{
-		title: "Advisory",
-		start: new Date("Apr 23, 2014 13:40 EDT"),
-		end: new Date("Apr 23, 2014 14:00 EDT")
+interface Attendance {
+	sessionNumber: number;
+	sessionID?: string;
+	present: boolean;
+}
+interface SessionChoice {
+	sessionNumber: number;
+	firstChoice: Presentation;
+	secondChoice: Presentation;
+	thirdChoice: Presentation;
+}
 interface Presentation {
 	sessionNumber: number;
 	sessionID: string;
@@ -68,8 +36,59 @@ interface Presentation {
 	pdfID: string;
 	abstract: string;
 }
+class Student {
+	public Name: string;
+	public Email: string;
+	public Sessions: ScheduleItem[] = [];
+	public SessionChoices: SessionChoice[] = [];
+	public Attendance: Attendance[] = [];
+	public RegisteredForSessions: boolean = false;
+	public Admin: boolean = false;
+	public Presenter: boolean = false;
+	constructor(Name: string, Email: string) {
+		this.Name = Name;
+		this.Email = Email;
+		this.Attendance.push({sessionNumber: 1, present: false});
+		this.Attendance.push({sessionNumber: 2, present: false});
+		this.Attendance.push({sessionNumber: 3, present: false});
+		this.Attendance.push({sessionNumber: 4, present: false});
 	}
-];
+
+	checkInToSession(sessionNumber: number, sessionID: string, attendanceCode: number): boolean {
+		return false;
+	}
+	exportUser(): any {
+		return {
+			Name: this.Name,
+			Sessions: this.Sessions,
+			SessionChoices: this.SessionChoices,
+			Attendance: this.Attendance,
+			RegisteredForSessions: this.RegisteredForSessions,
+			Admin: this.Admin,
+			Presenter: this.Presenter
+		};
+	}
+	importUser(userData: {
+		Name: string;
+		Sessions: ScheduleItem[];
+		SessionChoices: SessionChoice[];
+		Attendance: Attendance[];
+		RegisteredForSessions: boolean;
+		Admin: boolean;
+		Presenter: boolean;
+	}): void {
+		this.Name = userData.Name;
+		this.Sessions = userData.Sessions;
+		this.SessionChoices = userData.SessionChoices;
+		this.Attendance = userData.Attendance;
+		this.RegisteredForSessions = userData.RegisteredForSessions;
+		this.Admin = userData.Admin;
+		this.Presenter = userData.Presenter;
+	}
+	toString(): string {
+		return this.Name;
+	}
+}
 
 var http = require("http");
 var crypto = require("crypto");
@@ -90,6 +109,17 @@ var Collections: {
 	Schedule: db.collection("schedule"),
 	Presentations: db.collection("presentations")
 };
+// Retrieve the schedule
+var Schedule: ScheduleItem[] = [];
+function LoadSchedule(): void {
+	Collections.Schedule.find().toArray(function(err: Error, scheduleItems: ScheduleItem[]) {
+		if (err)
+			throw err;
+		Schedule = scheduleItems;
+		console.log("Schedule loaded from DB");
+	});
+}
+LoadSchedule();
 
 var nodemailer = require("nodemailer");
 var async = require("async");
@@ -289,10 +319,12 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 					});
 				}
 				else {
+					var user: Student = new Student(username, email);
 					Collections.Users.insert({
 						"username": username,
 						"email": email,
-						"code": code
+						"code": code,
+						"userInfo": user.exportUser()
 					}, {w:1}, function(err: any): void {
 						if (err) {
 							response.json({
@@ -337,10 +369,50 @@ app.get("/admin/attendance", AdminAuth, function(request: express3.Request, resp
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	response.render("admin/attendance", {title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+
+	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
+	var attendance = {
+		"1": {
+			"present": 0,
+			"absent": 0
+		},
+		"2": {
+			"present": 0,
+			"absent": 0
+		},
+		"3": {
+			"present": 0,
+			"absent": 0
+		},
+		"4": {
+			"present": 0,
+			"absent": 0
+		}
+	}
+	userStream.on("data", function(user) {
+		if (user.userInfo.Attendance[0].present)
+			attendance[1].present++;
+		else
+			attendance[1].absent++;
+		if (user.userInfo.Attendance[1].present)
+			attendance[2].present++;
+		else
+			attendance[2].absent++;
+		if (user.userInfo.Attendance[2].present)
+			attendance[3].present++;
+		else
+			attendance[3].absent++;
+		if (user.userInfo.Attendance[3].present)
+			attendance[4].present++;
+		else
+			attendance[4].absent++;
+	});
+	userStream.on("end", function(): void {
+		response.render("admin/attendance", {title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email, attendance: attendance}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 app.get("/admin/attendance/:sessionNumber", AdminAuth, function(request: express3.Request, response: express3.Response): void {
@@ -352,10 +424,26 @@ app.get("/admin/attendance/:sessionNumber", AdminAuth, function(request: express
 		response.redirect("/admin/attendance");
 		return;
 	}
-	response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
+	var attendance: {
+		present: string[];
+		absent: string[];
+	} = {
+		present: [],
+		absent: []
+	};
+	userStream.on("data", function(user) {
+		if (user.userInfo.Attendance[sessionNumber - 1].present)
+			attendance.present.push(user.username);
+		else
+			attendance.absent.push(user.username);
+	});
+	userStream.on("end", function(): void {
+		response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendance}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 app.get("/admin/presentations", AdminAuth, function(request: express3.Request, response: express3.Response): void {
