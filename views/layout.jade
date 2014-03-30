@@ -64,8 +64,8 @@ html
 				$(document).ready(function() {
 					function forceLogin() {
 						console.log(window.location.pathname);
-						//if (window.location.pathname == "/schedule")
-							//$("#login").addClass("active");
+						if (window.location.pathname == "/register")
+							$("#login").addClass("active");
 					}
 					forceLogin();
 					window.addEventListener("push", forceLogin);
