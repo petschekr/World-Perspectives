@@ -224,7 +224,7 @@ $(document).ready(function () {
             document.getElementById("thumbnails").appendChild(element);
         }
     });
-    $(document).on("click", ".thumbnail", function () {
+    $(document).on("click", ".thumbnail:not(#presentationthumbnails .thumbnail)", function () {
         var deleteConfirm = confirm("Are you sure that you want to delete that image/video?");
         if (!deleteConfirm)
             return;
@@ -395,5 +395,9 @@ $(document).ready(function () {
                 alert("There was an error deleting the presentation");
             }
         });
+    });
+    $(document).on("touchend", "#presentationthumbnails .thumbnail", function () {
+        $("#imagemodal .content div").css("backgroundImage", $(this).css("backgroundImage"));
+        $("#imagemodal").addClass("active");
     });
 });

@@ -197,7 +197,10 @@ select {
 	margin-right: auto;
 }
 
-
+#presentationthumbnails .thumbnail {
+	height: 100px;
+	width: 30%;
+}
 
 
 /* Small devices (tablets, 768px and up) */
@@ -207,6 +210,9 @@ select {
 	}
 	.thumbnail {
 		height: 200px;
+	}
+	#presentationthumbnails .thumbnail {
+		width: 15%;
 	}
 }
 /* Medium devices (desktops, 992px and up) */
