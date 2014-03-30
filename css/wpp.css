@@ -182,3 +182,17 @@ select {
 	-webkit-box-shadow: none;
 	box-shadow: none;
 }
+#updatebutton {
+	margin-top: 16px;
+}
+#pdfeditprogress {
+	margin-bottom: 0px;
+}
+#mediaeditprogress {
+	margin-top: 10px;
+}
+#mediaeditbutton {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}

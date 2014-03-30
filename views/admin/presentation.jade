@@ -13,6 +13,21 @@ block content
 		input(type="text", placeholder="Name", value=presentation.presenter)
 		input(type="text", placeholder="Title", value=presentation.title)
 	br
+	div(style="text-align: center;")
+		if presentation.pdfID
+			a.btn(href="/media/#{presentation.pdfID}", data-ignore="push", target="_blank")
+				span.icon.icon-download
+				| &nbsp;PDF
+		else
+			button.btn(style="opacity: 0.3;")
+				span.icon.icon-download
+				| &nbsp;PDF
+		button#pdfeditbutton.btn.btn-primary
+			span.icon.icon-share
+				| &nbsp;Upload PDF
+	.progress#pdfeditprogress(style="display: none;")
+		.progress-bar
+	br
 	- var youtubeValue = (presentation.media.mainVideo) ? "https://www.youtube.com/watch?v=" + presentation.media.mainVideo : "";
 	input(type="url", placeholder="URL to YouTube video", value=youtubeValue)
 	br
@@ -27,7 +42,6 @@ block content
 		option(selected=session2Selected) Session 2 (9:50 AM - 10:40 PM)
 		option(selected=session3Selected) Session 3 (11:40 AM - 12:30 PM)
 		option(selected=session4Selected) Session 4 (12:40 PM - 1:30 PM)
-	button#updatebutton.btn.btn-positive.btn-block Update
 	br
 	h5.content-padded Media
 	#thumbnails
@@ -38,6 +52,12 @@ block content
 			i No media
 		else
 			i Tap to delete media
+	button#mediaeditbutton.btn.btn-primary
+		span.icon.icon-share
+			| &nbsp;Upload Media
+	.progress#mediaeditprogress(style="display: none;")
+		.progress-bar
+	button#updatebutton.btn.btn-positive.btn-block Update
 
 	h5.content-padded Attendance Code
 	.code= presentation.attendanceCode
@@ -45,5 +65,8 @@ block content
 	br
 	button#deletepresentation.btn.btn-block.btn-negative Delete this Presentation
 
+
+	input(type="file", style="display: none;")
+	input(type="file", multiple, style="display: none;")
 block footer
 	br

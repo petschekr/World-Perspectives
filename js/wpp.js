@@ -10,7 +10,7 @@ $(document).ready(function () {
         }
     }
     var processing = false;
-    $("#login-1 button").click(function () {
+    $(document).on("click", "#login-1 button", function () {
         if (processing)
             return;
         else
@@ -46,7 +46,7 @@ $(document).ready(function () {
             }
         });
     });
-    $("#login-2 button").click(function () {
+    $(document).on("click", "#login-2 button", function () {
         if (processing)
             return;
         else
@@ -77,7 +77,7 @@ $(document).ready(function () {
             }
         });
     });
-    $("#signout").click(function () {
+    $(document).on("click", "#signout", function () {
         $.ajax({
             type: "GET",
             url: "/logout",
@@ -88,11 +88,11 @@ $(document).ready(function () {
         });
     });
 
-    $("#pdfbutton").click(function (e) {
+    $(document).on("click", "#pdfbutton, #pdfeditbutton", function (e) {
         $("input[type=file]").first().click();
     });
 
-    $("#mediabutton").click(function (e) {
+    $(document).on("click", "#mediabutton, #mediaeditbutton", function (e) {
         $("input[type=file]").last().click();
     });
 
@@ -103,6 +103,7 @@ $(document).ready(function () {
         var file = this.files[0];
         $("#create p").text(file.name);
         $("#pdfprogress").show();
+        $("#pdfeditprogress").show();
 
         var xhr = new XMLHttpRequest();
         if (xhr.upload) {
@@ -113,6 +114,7 @@ $(document).ready(function () {
 
                 // Update progress bar
                 $("#pdfprogress > div").css("width", percentDone + "%");
+                $("#pdfeditprogress > div").css("width", percentDone + "%");
             };
         }
         xhr.onreadystatechange = function (e) {
@@ -128,11 +130,13 @@ $(document).ready(function () {
                     alert("There was an error uploading your PDF: " + response.reason);
                 }
                 if (response.status == "success") {
-                    // response.ids is an array of form [id.jpg, id.png]
                     uploadedPDF = response.id;
                 }
                 $("#pdfprogress").fadeOut(400, function () {
                     $("#pdfprogress > div").css("width", "0%");
+                });
+                $("#pdfeditprogress").fadeOut(400, function () {
+                    $("#pdfeditprogress > div").css("width", "0%");
                 });
             }
         };
@@ -151,6 +155,8 @@ $(document).ready(function () {
             return;
         $("#mediaprogress").show();
         $("#mediabutton").css("opacity", "0.3");
+        $("#mediaeditprogress").show();
+        $("#mediaeditbutton").css("opacity", "0.3");
 
         var xhr = new XMLHttpRequest();
         if (xhr.upload) {
@@ -161,11 +167,13 @@ $(document).ready(function () {
 
                 // Update progress bar
                 $("#mediaprogress > div").css("width", percentDone + "%");
+                $("#mediaeditprogress > div").css("width", percentDone + "%");
             };
         }
         xhr.onreadystatechange = function (e) {
             if (4 == this.readyState) {
                 $("#mediabutton").css("opacity", "1");
+                $("#mediaeditbutton").css("opacity", "1");
                 try  {
                     var response = JSON.parse(e.srcElement.response);
                 } catch (e) {
@@ -183,6 +191,9 @@ $(document).ready(function () {
                 $("#mediaprogress").fadeOut(400, function () {
                     $("#mediaprogress > div").css("width", "0%");
                 });
+                $("#mediaeditprogress").fadeOut(400, function () {
+                    $("#mediaeditprogress > div").css("width", "0%");
+                });
             }
         };
         xhr.open("POST", "/admin/presentations/media", true);
@@ -198,23 +209,13 @@ $(document).ready(function () {
             var file = files[i];
 
             var imageType = /image.*/;
-            var videoType = /video.*/;
 
             var image = !!file.type.match(imageType);
-            var video = !!file.type.match(videoType);
-            if (!image && !video)
+            if (!image)
                 continue;
 
-            if (image) {
-                var element = document.createElement("div");
-                element.style.backgroundImage = "url(" + window.URL.createObjectURL(file) + ")";
-            }
-            if (video) {
-                var element = document.createElement("video");
-                element.src = window.URL.createObjectURL(file);
-                element.controls = true;
-                element.load();
-            }
+            var element = document.createElement("div");
+            element.style.backgroundImage = "url(" + window.URL.createObjectURL(file) + ")";
             element.classList.add("thumbnail");
 
             /*element.onload = function(e): void {
@@ -250,7 +251,7 @@ $(document).ready(function () {
             }
         });
     });
-    $("#createbutton").click(function () {
+    $(document).on("click", "#createbutton", function () {
         var data = {
             "name": $("#create input").get(0).value,
             "title": $("#create input").get(1).value,
@@ -301,7 +302,7 @@ $(document).ready(function () {
         });
         uploadedMedia = [];
     });
-    $("#regeneratecode").click(function () {
+    $(document).on("click", "#regeneratecode", function () {
         var length = window.location.pathname.split("/").length;
         var id = window.location.pathname.split("/")[length - 1];
         $.ajax({
@@ -322,13 +323,13 @@ $(document).ready(function () {
             }
         });
     });
-    $("#updatebutton").click(function () {
+    $(document).on("click", "#updatebutton", function () {
         var data = {
             "name": $("input").get(0).value,
             "title": $("input").get(1).value,
             "youtubeID": $("input").get(2).value,
-            //"uploadedMedia": JSON.stringify(uploadedMedia),
-            //"uploadedPDF": uploadedPDF,
+            "uploadedMedia": JSON.stringify(uploadedMedia),
+            "uploadedPDF": uploadedPDF,
             "abstract": $("textarea").val(),
             "session": undefined
         };

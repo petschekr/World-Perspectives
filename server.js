@@ -367,6 +367,19 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             "abstract": request.body.abstract || "",
             "sessionNumber": parseInt(request.body.session, 10)
         };
+        if (request.body.uploadedPDF)
+            data.pdfID = request.body.uploadedPDF;
+
+        try  {
+            if (request.body.uploadedMedia)
+                data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+        } catch (e) {
+            response.send({
+                "status": "failure",
+                "reason": "Invalid JSON"
+            });
+            return;
+        }
         if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
@@ -374,7 +387,24 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
             return;
         }
-        Collections.Presentations.update({ "sessionID": presentationID }, { $set: data }, { w: 1 }, function (err) {
+        async.parallel([
+            function (callback) {
+                Collections.Presentations.update({ "sessionID": presentationID }, { $set: data }, { w: 1 }, callback);
+            },
+            function (callback) {
+                var imageType = /image.*/;
+                var images = [];
+                for (var i = 0; i < data["media.mainVideo"].length; i++) {
+                    var file = data["media.mainVideo"][i];
+                    var mimeType = mime.lookup(file);
+                    var image = !!mimeType.match(imageType);
+                    if (image) {
+                        images.push(file);
+                    }
+                }
+                Collections.Presentations.update({ "sessionID": presentationID }, { $push: { "media.images": { $each: images } } }, { w: 1 }, callback);
+            }
+        ], function (err) {
             if (err) {
                 console.error(err);
                 response.send({

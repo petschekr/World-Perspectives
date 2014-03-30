@@ -395,6 +395,7 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		"title": string;
 		"media.mainVideo": string;
 		"abstract": string;
+		pdfID?: string;
 		"sessionNumber": number;
 	} = {
 		"presenter": request.body.name || "",
@@ -403,6 +404,20 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		"abstract": request.body.abstract || "",
 		"sessionNumber": parseInt(request.body.session, 10)
 	};
+	if (request.body.uploadedPDF)
+		data.pdfID = request.body.uploadedPDF;
+
+	try {
+		if (request.body.uploadedMedia)
+			data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+	}
+	catch (e) {
+		response.send({
+			"status": "failure",
+			"reason": "Invalid JSON"
+		});
+		return;
+	}
 	if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
 		response.send({
 			"status": "failure",
@@ -410,7 +425,24 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		});
 		return;
 	}
-	Collections.Presentations.update({"sessionID": presentationID}, {$set: data}, {w:1}, function(err) {
+	async.parallel([
+		function(callback) {
+			Collections.Presentations.update({"sessionID": presentationID}, {$set: data}, {w:1}, callback);
+		},
+		function(callback) {
+			var imageType: RegExp = /image.*/;
+			var images: string[] = [];
+			for (var i: number = 0; i < data["media.mainVideo"].length; i++) {
+				var file: string = data["media.mainVideo"][i];
+				var mimeType: string = mime.lookup(file);
+				var image: boolean = !!mimeType.match(imageType);
+				if (image) {
+					images.push(file);
+				}
+			}
+			Collections.Presentations.update({"sessionID": presentationID}, {$push: {"media.images": {$each: images}}}, {w:1}, callback);
+		}
+	], function(err: Error): void {
 		if (err) {
 			console.error(err);
 			response.send({
