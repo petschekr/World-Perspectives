@@ -95,6 +95,7 @@ var nodemailer = require("nodemailer");
 var async = require("async");
 var express = require("express");
 var mime = require("mime");
+var gm = require("gm");
 var app: express3.Application = express();
 
 app.use(express.compress());
@@ -668,7 +669,16 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 					}
 					urls.push(newFileName);
 					ids.push(id + path.extname(file.path));
-					callback();
+
+					// Auto rotate and orient the image
+					gm(__dirname + newFileName).autoOrient().write(__dirname + newFileName, function(err): void {
+						if (err) {
+							console.error(err);
+							callback(err);
+							return;
+						}
+						callback();
+					});
 				});
 			});
 			sourceFile.on("error", function(err: Error): void {

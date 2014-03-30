@@ -29,6 +29,12 @@ block content
 		option(selected=session4Selected) Session 4 (12:40 PM - 1:30 PM)
 	button#updatebutton.btn.btn-positive.btn-block Update
 	br
+	h5.content-padded Media
+	#thumbnails
+		for image in presentation.media.images
+			.thumbnail(style="background-image: url(/media/#{image});")
+			//img(src="/media/#{image}", height="100", width="100")
+	br
 	h5.content-padded Attendance Code
 	.code= presentation.attendanceCode
 	button#regeneratecode.btn.btn-block.btn-positive Regenerate

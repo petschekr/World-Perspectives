@@ -70,6 +70,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var async = require("async");
     var express = require("express");
     var mime = require("mime");
+    var gm = require("gm");
     var app = express();
 
     app.use(express.compress());
@@ -625,7 +626,16 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                         }
                         urls.push(newFileName);
                         ids.push(id + path.extname(file.path));
-                        callback();
+
+                        // Auto rotate and orient the image
+                        gm(__dirname + newFileName).autoOrient().write(__dirname + newFileName, function (err) {
+                            if (err) {
+                                console.error(err);
+                                callback(err);
+                                return;
+                            }
+                            callback();
+                        });
                     });
                 });
                 sourceFile.on("error", function (err) {
