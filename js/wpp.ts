@@ -240,9 +240,33 @@ $(document).ready(function(): void {
 			document.getElementById("thumbnails").appendChild(element);
 		}
 	});
-	$(".thumbnail").click(function(): void {
+	$(document).on("click", ".thumbnail", function(): void {
 		var deleteConfirm: boolean = confirm("Are you sure that you want to delete that image/video?");
-		if (deleteConfirm) {}
+		if (!deleteConfirm)
+			return;
+		var mediaElement = $(this);
+		var mediaID: string = mediaElement.css("backgroundImage");
+		mediaID = mediaID.match(/\/media\/([a-f\d]*\.*.+?)\)/)[1];
+		$.ajax({
+			type: "DELETE",
+			url: "/admin/presentations/media",
+			data: {id: mediaID},
+			success: function(res, status, xhr) {
+				if (res.status == "success") {
+					mediaElement.fadeOut(400, function(): void {
+						mediaElement.remove();
+					});
+				}
+				else {
+					console.error(res);
+					alert("There was an error deleting the image or video");
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error deleting the image or video");
+			}
+		});
 	});
 	$("#createbutton").click(function(): void {
 		var data: {

@@ -33,8 +33,12 @@ block content
 	#thumbnails
 		for image in presentation.media.images
 			.thumbnail(style="background-image: url(/media/#{image});")
-			//img(src="/media/#{image}", height="100", width="100")
-	br
+	p.content-padded(style="text-align: center;")
+		if presentation.media.images.length == 0
+			i No media
+		else
+			i Tap to delete media
+
 	h5.content-padded Attendance Code
 	.code= presentation.attendanceCode
 	button#regeneratecode.btn.btn-block.btn-positive Regenerate

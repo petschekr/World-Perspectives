@@ -648,7 +648,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             }, function (err) {
                 if (err) {
                     response.send({
-                        "status": "error",
+                        "status": "failure",
                         "reason": err
                     });
                     return;
@@ -660,6 +660,24 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 });
             });
         }
+    });
+
+    // Delete a media object
+    app.delete("/admin/presentations/media", AdminAuth, function (request, response) {
+        var id = request.body.id;
+        Collections.Presentations.update({ "media.images": id }, { $pull: { "media.images": id } }, { w: 1 }, function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "reason": "The database encountered an error"
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
+            });
+        });
     });
 
     app.get("/admin/feedback", AdminAuth, function (request, response) {

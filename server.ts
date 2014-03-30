@@ -691,7 +691,7 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 		}, function(err: Error) {
 			if (err) {
 				response.send({
-					"status": "error",
+					"status": "failure",
 					"reason": err
 				});
 				return;
@@ -703,6 +703,34 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 			});
 		});
 	}
+});
+// Delete a media object
+app.delete("/admin/presentations/media", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var id: string = request.body.id;
+	async.parallel([
+		function(callback: Function) {
+			Collections.Presentations.update({"media.images": id}, {$pull: {"media.images": id}}, {w: 1}, function(err: Error) {
+				callback(err);
+			});
+		},
+		function(callback: Function) {
+			fs.unlink(__dirname + "/media/" + id, function (err: Error): void {
+				callback(err);
+			});
+		}
+	], function(err) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"reason": "The database encountered an error"
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
+		});
+	});
 });
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {
