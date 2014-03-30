@@ -4,11 +4,13 @@
 		h1.title Settings
 
 	.content
-		if admin
-			br
+		ul.table-view.settings
+			li.table-view-cell Display duration of each schedule block
+				.toggle
+					.toggle-handle
+		if admin || true
 			a.btn.btn-primary.btn-block(href="/admin") Admin Panel
-		if loggedIn
 			br
+		if loggedIn || true
 			button#signout.btn.btn-negative.btn-block Sign Out
-
-/// CLOSE THE MODAL BEFORE TRANSITIONING
+			br
