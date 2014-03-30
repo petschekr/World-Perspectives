@@ -387,6 +387,42 @@ app.get("/admin/presentations/edit/:id", AdminAuth, function(request: express3.R
 		});
 	});
 });
+app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var presentationID = request.params.id;
+	var data: {
+		"presenter": string;
+		"title": string;
+		"media.mainVideo": string;
+		"abstract": string;
+		"sessionNumber": number;
+	} = {
+		"presenter": request.body.name || "",
+		"title": request.body.title || "",
+		"media.mainVideo": request.body.youtubeID || undefined,
+		"abstract": request.body.abstract || "",
+		"sessionNumber": parseInt(request.body.session, 10)
+	};
+	if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+		response.send({
+			"status": "failure",
+			"reason": "Invalid information"
+		});
+		return;
+	}
+	Collections.Presentations.update({"sessionID": presentationID}, {$set: data}, {w:1}, function(err) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"reason": "The database encountered an error"
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
+		});
+	});
+});
 app.get("/admin/presentations/view/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

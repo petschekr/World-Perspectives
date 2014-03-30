@@ -325,4 +325,64 @@ $(document).ready(function(): void {
 			}
 		});
 	});
+	$("#updatebutton").click(function(): void {
+		var data: {
+			name: string;
+			title: string;
+			youtubeID: string;
+			//uploadedMedia: string;
+			//uploadedPDF: string;
+			abstract: string;
+			session: string;
+		} = {
+			"name": $("input").get(0).value,
+			"title": $("input").get(1).value,
+			"youtubeID": $("input").get(2).value,
+			//"uploadedMedia": JSON.stringify(uploadedMedia),
+			//"uploadedPDF": uploadedPDF,
+			"abstract": $("textarea").val(),
+			"session": undefined
+		};
+		var session: string = $("#create select").val();
+		session = session.match(/^Session (\d)/)[1];
+		data.session = session;
+		if (data.name === "" || data.title === "" || data.abstract === "") {
+			alert("You must fill out the presentation's title, abstract and presenter");
+			return;
+		}
+		if (data.youtubeID === "") {
+			var message: string = "Are you sure you want to create this presentation without a video? (You can add this later too)";
+			if (!confirm(message)) {
+				return;
+			}
+		}
+		else {
+			var youtubeURL: RegExp = /https?:\/\/.*?\.youtube.*\/watch\?v=(.*)/i;
+			var youtubeID: any = data.youtubeID.match(youtubeURL);
+			if (!youtubeID || typeof(youtubeID[1]) != "string" || youtubeID[1].length < 1) {
+				alert("Invalid YouTube URL");
+				return;
+			}
+			data.youtubeID = youtubeID[1];
+		}
+		$.ajax({
+			type: "POST",
+			url: window.location.toString(),
+			data: data,
+			success: function(res, status, xhr) {
+				if (res.status == "success") {
+					alert("Presentation updated successfully");
+					window.location.reload();
+				}
+				else {
+					console.error(res);
+					alert("There was an error updating the presentation");
+				}
+			},
+			error: function(xhr, status, err) {
+				console.error(err);
+				alert("There was an error updating the presentation");
+			}
+		});
+	});
 });

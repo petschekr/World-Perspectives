@@ -357,6 +357,36 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+    app.post("/admin/presentations/edit/:id", AdminAuth, function (request, response) {
+        var presentationID = request.params.id;
+        var data = {
+            "presenter": request.body.name || "",
+            "title": request.body.title || "",
+            "media.mainVideo": request.body.youtubeID || undefined,
+            "abstract": request.body.abstract || "",
+            "sessionNumber": parseInt(request.body.session, 10)
+        };
+        if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+            response.send({
+                "status": "failure",
+                "reason": "Invalid information"
+            });
+            return;
+        }
+        Collections.Presentations.update({ "sessionID": presentationID }, { $set: data }, { w: 1 }, function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "reason": "The database encountered an error"
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
+            });
+        });
+    });
     app.get("/admin/presentations/view/:id", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
