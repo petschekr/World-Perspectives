@@ -1,38 +1,29 @@
 extends layout
 
 block content
-  ul.table-view.explore
-      li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Jules Becker
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Ryan Petschek
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | John Doe
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Mr. Llanque
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+	if presentations.length > 0
+		ul.table-view.explore
+			for presentation in presentations
+				li.table-view-cell.media
+					a.navigate-right(href="/explore/#{presentation.sessionID}")
+						img.media-object.pull-left(src="/media/students/#{pictures[presentation.presenter]}", width="42", height="42", alt=presentation.presenter)
+						.media-body
+							strong= presentation.title
+							br
+							small= presentation.presenter
+							p
+								if presentation.abstract.length < 100
+									| #{presentation.abstract}
+								else
+									| #{presentation.abstract.substr(0, 100) + "..."}
+	else
+		p.content-padded(style="text-align: center;"): i No presentations created yet
 
+
+block footer
+	br
 block tabs
-    +tab("Explore", "", "icon-search", true)
-    +tab("Register", "/register", "icon-check", false)
-    +tab("My Schedule", "/schedule", "icon-list", false)
-    +tab("Feedback", "/feedback", "icon-compose", false)
+	+tab("Explore", "", "icon-search", true)
+	+tab("Register", "/register", "icon-check", false)
+	+tab("My Schedule", "/schedule", "icon-list", false)
+	+tab("Feedback", "/feedback", "icon-compose", false)

@@ -60,7 +60,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var Collections = {
         Users: db.collection("users"),
         Schedule: db.collection("schedule"),
-        Presentations: db.collection("presentations")
+        Presentations: db.collection("presentations"),
+        Pictures: db.collection("pictures")
     };
 
     // Retrieve the schedule
@@ -155,10 +156,48 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
         var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
-        response.render("explore", { title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
+            var presenterNames = [];
+            for (var i = 0; i < presentations.length; i++) {
+                presenterNames.push(presentations[i].presenter);
+            }
+            var pictures = {};
+
+            // Max concurrent requests is 10
+            async.eachLimit(presenterNames, 10, function (presenter, callback) {
+                Collections.Pictures.findOne({ "name": presenter }, function (err, presenterMedia) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!presenterMedia) {
+                        callback();
+                        return;
+                    }
+                    pictures[presenter] = presenterMedia.picture;
+                    callback();
+                });
+            }, function (err) {
+                console.log(pictures);
+                if (err) {
+                    response.set("Content-Type", "text/plain");
+                    response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+                    return;
+                }
+                response.render("explore", {
+                    title: "Explore",
+                    mobileOS: platform,
+                    loggedIn: loggedIn,
+                    email: email,
+                    admin: admin,
+                    presentations: presentations,
+                    pictures: pictures
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
         });
     });
     app.get("/schedule", function (request, response) {

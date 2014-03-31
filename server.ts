@@ -104,10 +104,12 @@ var Collections: {
 	Users: mongodb.Collection;
 	Schedule: mongodb.Collection;
 	Presentations: mongodb.Collection;
+	Pictures: mongodb.Collection;
 } = {
 	Users: db.collection("users"),
 	Schedule: db.collection("schedule"),
-	Presentations: db.collection("presentations")
+	Presentations: db.collection("presentations"),
+	Pictures: db.collection("pictures")
 };
 // Retrieve the schedule
 var Schedule: ScheduleItem[] = [];
@@ -200,10 +202,48 @@ app.get("/explore", function(request: express3.Request, response: express3.Respo
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
-	response.render("explore", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
+
+		var presenterNames: string[] = [];
+		for (var i: number = 0; i < presentations.length; i++) {
+			presenterNames.push(presentations[i].presenter);
+		}
+		var pictures = {};
+		// Max concurrent requests is 10
+		async.eachLimit(presenterNames, 10, function(presenter: string, callback: any) {
+			Collections.Pictures.findOne({"name": presenter}, function(err: Error, presenterMedia: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!presenterMedia) {
+					callback();
+					return;
+				}
+				pictures[presenter] = presenterMedia.picture;
+				callback();
+			});
+		}, function(err: Error) {
+			console.log(pictures);
+			if (err) {
+				response.set("Content-Type", "text/plain");
+				response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+				return;
+			}
+			response.render("explore", {
+				title: "Explore",
+				mobileOS: platform,
+				loggedIn: loggedIn,
+				email: email,
+				admin: admin,
+				presentations: presentations,
+				pictures: pictures
+			}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
 	});
 });
 app.get("/schedule", function(request: express3.Request, response: express3.Response): void {
