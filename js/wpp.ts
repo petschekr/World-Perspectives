@@ -116,7 +116,7 @@ $(document).ready(function(): void {
 		$("input[type=file]").last().click();
 	});
 	// PDF file picker
-	$("input[type=file]").first().on("change", function(): void {
+	$(document).on("change", "input[type=file]:first-of-type", function(): void {
 		if (this.files.length < 1)
 			return;
 		var file: File = this.files[0];
@@ -167,7 +167,7 @@ $(document).ready(function(): void {
 		xhr.send(mediaData);
 	});
 	// Image / video file picker
-	$("input[type=file]").last().on("change", function(): void {
+	$(document).on("change", "input[type=file]:last-of-type", function(): void {
 		var files: FileList = this.files;
 		if (files.length < 1)
 			return;
