@@ -365,7 +365,7 @@ app.get("/feedback", function(request: express3.Request, response: express3.Resp
 
 // Register for sessions
 app.get("/register", function(request: express3.Request, response: express3.Response): void {
-	request.session["email"] = "petschekr@gfacademy.org";
+	//request.session["email"] = "petschekr@gfacademy.org";
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];

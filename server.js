@@ -315,7 +315,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
 
     // Register for sessions
     app.get("/register", function (request, response) {
-        request.session["email"] = "petschekr@gfacademy.org";
+        //request.session["email"] = "petschekr@gfacademy.org";
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
