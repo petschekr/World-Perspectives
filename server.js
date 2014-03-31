@@ -474,7 +474,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
 
-        Collections.Presentations.find().toArray(function (err, presentations) {
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
             response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
                 if (err)
                     console.error(err);
