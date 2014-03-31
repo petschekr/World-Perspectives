@@ -28,17 +28,23 @@ block content
 						| Session 4
 		else
 			ul.table-view
-				li.table-view-cell.media
-					img.media-object.pull-left(src='http://placehold.it/42x42')
-					.media-body
-						| Ryan Petschek
-						p
-							| Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-					.btns
-						button.btn.btn-primary 1st Choice
-						button.btn.btn-primary 2nd Choice
-						button.btn.btn-primary 3rd Choice
+				for presentation in presentations
+					li.table-view-cell.media
+						img.media-object.pull-left(src='http://placehold.it/42x42')
+						.media-body
+							strong= presentation.title
+							br
+							small= presentation.presenter
+							p
+								if presentation.abstract.length < 100
+									| #{presentation.abstract}
+								else
+									| #{presentation.abstract.substr(0, 100) + "..."}
+						.btns
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="1") 1st Choice
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="2") 2nd Choice
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="3") 3rd Choice
 
-			a.btn.btn-block.btn-outlined.btn-primary(href="/register", data-transition="slide-out") Finish
+			a#finishbutton.btn.btn-block.btn-outlined.btn-primary(href="/register", data-transition="slide-out") Finish
 	else
 		p.content-padded You must log in before registering

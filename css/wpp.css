@@ -210,6 +210,8 @@ li.media {
 	-webkit-transform: none !important;
 	transform: none !important;
 	width: 28vw;
+	-webkit-transition: opacity 0.4s;
+	transition: opacity 0.4s;
 }
 .btns {
 	text-align: center;

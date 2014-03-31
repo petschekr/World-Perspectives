@@ -1,5 +1,7 @@
 var uploadedMedia = [];
 var uploadedPDF;
+
+var preferences = {};
 $(document).ready(function () {
     if (window.navigator.standalone) {
         if (localStorage.getItem("login-state") == "2") {
@@ -399,5 +401,30 @@ $(document).ready(function () {
     $(document).on("touchend", "#presentationthumbnails .thumbnail", function () {
         $("#imagemodal .content div").css("backgroundImage", $(this).css("backgroundImage"));
         $("#imagemodal").addClass("active");
+    });
+
+    $(document).on("touchend", ".btns button", function () {
+        var preference = parseInt($(this).data("order"), 10);
+        var id = $(this).data("id");
+
+        // Deselect other buttons
+        $(this).siblings().css("opacity", "1");
+        $(this).css("opacity", "0.3");
+
+        for (var buttonID in preferences) {
+            if (preferences[buttonID] === preference) {
+                $("*[data-id=" + buttonID + "][data-order=" + preference + "]").css("opacity", "1");
+                delete preferences[buttonID];
+            }
+        }
+
+        preferences[id] = preference;
+    });
+    $(document).on("click", "#finishbutton", function () {
+        var numberSelected = Object.keys(preferences).length;
+        if (numberSelected !== 3) {
+            alert("You must select three choices");
+            return false;
+        }
     });
 });

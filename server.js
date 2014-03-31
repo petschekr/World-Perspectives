@@ -324,17 +324,20 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             response.redirect("/register");
             return;
         }
-        response.render("register", {
-            title: "Session " + sessionNumber.toString(),
-            mobileOS: platform,
-            loggedIn: loggedIn,
-            email: email,
-            admin: admin,
-            sessionNumber: sessionNumber
-        }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        Collections.Presentations.find({ "sessionNumber": sessionNumber }).toArray(function (err, presentations) {
+            response.render("register", {
+                title: "Session " + sessionNumber.toString(),
+                mobileOS: platform,
+                loggedIn: loggedIn,
+                email: email,
+                admin: admin,
+                sessionNumber: sessionNumber,
+                presentations: presentations
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
 

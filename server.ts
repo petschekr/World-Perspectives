@@ -375,17 +375,20 @@ app.get("/register/:sessionNumber", function(request: express3.Request, response
 		response.redirect("/register");
 		return;
 	}
-	response.render("register", {
-		title: "Session " + sessionNumber.toString(),
-		mobileOS: platform,
-		loggedIn: loggedIn,
-		email: email,
-		admin: admin,
-		sessionNumber: sessionNumber
-	}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	Collections.Presentations.find({"sessionNumber": sessionNumber}).toArray(function(err, presentations: Presentation[]) {
+		response.render("register", {
+			title: "Session " + sessionNumber.toString(),
+			mobileOS: platform,
+			loggedIn: loggedIn,
+			email: email,
+			admin: admin,
+			sessionNumber: sessionNumber,
+			presentations: presentations
+		}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 
