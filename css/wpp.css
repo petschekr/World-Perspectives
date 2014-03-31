@@ -202,6 +202,17 @@ select {
 	width: 30%;
 }
 
+.profile-img {
+	background-size: cover;
+	background-position: 50% 50%;
+	width: 64px;
+	height: 64px;
+	margin-right: 10px;
+}
+.table-view-cell > a:not(.btn) {
+	position: initial;
+	margin-right: -85px;
+}
 
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {

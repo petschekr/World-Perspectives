@@ -6,7 +6,7 @@ block content
 			for presentation in presentations
 				li.table-view-cell.media
 					a.navigate-right(href="/explore/#{presentation.sessionID}")
-						img.media-object.pull-left(src="/media/students/#{pictures[presentation.presenter]}", width="42", height="42", alt=presentation.presenter)
+						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
 						.media-body
 							strong= presentation.title
 							br
