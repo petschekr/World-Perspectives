@@ -343,6 +343,25 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 		});
 	}, 4);
 });
+// Feedback form
+app.get("/feedback", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+	response.render("feedback", {
+		title: "Feedback",
+		mobileOS: platform,
+		loggedIn: loggedIn,
+		email: email,
+		admin: admin,
+	}, function(err: any, html: string): void {
+		if (err)
+			console.error(err);
+		response.send(html);
+	});
+});	
 
 // Admin pages
 function AdminAuth(request: express3.Request, response: express3.Response, next: any):void {

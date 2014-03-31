@@ -293,6 +293,26 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         }, 4);
     });
 
+    // Feedback form
+    app.get("/feedback", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        response.render("feedback", {
+            title: "Feedback",
+            mobileOS: platform,
+            loggedIn: loggedIn,
+            email: email,
+            admin: admin
+        }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+
     // Admin pages
     function AdminAuth(request, response, next) {
         var loggedIn = !!request.session["email"];
