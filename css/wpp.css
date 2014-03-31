@@ -200,6 +200,7 @@ select {
 #presentationthumbnails .thumbnail {
 	height: 100px;
 	width: 30%;
+	border: 1px solid #d1d1d1;
 }
 
 .profile-img {
