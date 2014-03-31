@@ -104,10 +104,12 @@ var Collections: {
 	Users: mongodb.Collection;
 	Schedule: mongodb.Collection;
 	Presentations: mongodb.Collection;
+	Pictures: mongodb.Collection;
 } = {
 	Users: db.collection("users"),
 	Schedule: db.collection("schedule"),
-	Presentations: db.collection("presentations")
+	Presentations: db.collection("presentations"),
+	Pictures: db.collection("pictures")
 };
 // Retrieve the schedule
 var Schedule: ScheduleItem[] = [];
@@ -209,12 +211,78 @@ app.get("/explore", function(request: express3.Request, response: express3.Respo
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
-	response.render("explore", {title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
+
+		var presenterNames: string[] = [];
+		for (var i: number = 0; i < presentations.length; i++) {
+			presenterNames.push(presentations[i].presenter);
+		}
+		var pictures = {};
+		// Max concurrent requests is 10
+		async.eachLimit(presenterNames, 10, function(presenter: string, callback: any) {
+			Collections.Pictures.findOne({"name": presenter}, function(err: Error, presenterMedia: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!presenterMedia) {
+					callback();
+					return;
+				}
+				pictures[presenter] = presenterMedia.picture;
+				callback();
+			});
+		}, function(err: Error) {
+			if (err) {
+				response.set("Content-Type", "text/plain");
+				response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+				return;
+			}
+			response.render("explore", {
+				title: "Explore",
+				mobileOS: platform,
+				loggedIn: loggedIn,
+				email: email,
+				admin: admin,
+				presentations: presentations,
+				pictures: pictures
+			}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
 	});
 });
+app.get("/explore/:id", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/explore");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
+
 app.get("/schedule", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
@@ -557,23 +625,26 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 	var data: {
 		"presenter": string;
 		"title": string;
-		"media.mainVideo": string;
+		"media.mainVideo"?: string;
+		//"media.images"?: string[];
 		"abstract": string;
-		pdfID?: string;
+		"pdfID"?: string;
 		"sessionNumber": number;
 	} = {
 		"presenter": request.body.name || "",
 		"title": request.body.title || "",
-		"media.mainVideo": request.body.youtubeID || undefined,
 		"abstract": request.body.abstract || "",
 		"sessionNumber": parseInt(request.body.session, 10)
 	};
 	if (request.body.uploadedPDF)
 		data.pdfID = request.body.uploadedPDF;
+	if (request.body.youtubeID)
+		data["media.mainVideo"] = request.body.youtubeID;
 
+	var mediaIDs: string[] = [];
 	try {
 		if (request.body.uploadedMedia)
-			data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+			mediaIDs = JSON.parse(request.body.uploadedMedia);
 	}
 	catch (e) {
 		response.send({
@@ -596,8 +667,8 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		function(callback) {
 			var imageType: RegExp = /image.*/;
 			var images: string[] = [];
-			for (var i: number = 0; i < data["media.mainVideo"].length; i++) {
-				var file: string = data["media.mainVideo"][i];
+			for (var i: number = 0; i < mediaIDs.length; i++) {
+				var file: string = mediaIDs[i];
 				var mimeType: string = mime.lookup(file);
 				var image: boolean = !!mimeType.match(imageType);
 				if (image) {
