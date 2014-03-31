@@ -17,6 +17,8 @@ interface Window {
 
 var uploadedMedia: string[] = [];
 var uploadedPDF: string;
+
+var preferences = {};
 $(document).ready(function(): void {
 	if (window.navigator.standalone) {
 		if (localStorage.getItem("login-state") == "2") {
@@ -439,5 +441,31 @@ $(document).ready(function(): void {
 	$(document).on("touchend", "#presentationthumbnails .thumbnail", function(): void {
 		$("#imagemodal .content div").css("backgroundImage", $(this).css("backgroundImage"));
 		$("#imagemodal").addClass("active");
+	});
+
+	$(document).on("touchend", ".btns button", function(): void {
+		var preference: number = parseInt($(this).data("order"), 10);
+		var id: string = $(this).data("id");
+		
+		// Deselect other buttons
+		$(this).siblings().css("opacity", "1");
+		$(this).css("opacity", "0.3");
+
+		// Deselect other button of same choice
+		for (var buttonID in preferences) {
+			if (preferences[buttonID] === preference) {
+				$("*[data-id=" + buttonID + "][data-order=" + preference + "]").css("opacity", "1");
+				delete preferences[buttonID];
+			}
+		}
+
+		preferences[id] = preference;
+	});
+	$(document).on("click", "#finishbutton", function(): any {
+		var numberSelected: number = Object.keys(preferences).length;
+		if (numberSelected !== 3) {
+			alert("You must select three choices");
+			return false;
+		}
 	});
 });
