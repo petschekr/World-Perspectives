@@ -417,7 +417,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
 
-        Collections.Presentations.find().toArray(function (err, presentations) {
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
             response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
                 if (err)
                     console.error(err);

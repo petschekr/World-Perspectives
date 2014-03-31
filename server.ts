@@ -470,7 +470,7 @@ app.get("/admin/presentations", AdminAuth, function(request: express3.Request, r
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 
-	Collections.Presentations.find().toArray(function(err: any, presentations: Presentation[]): void {
+	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
 		response.render("admin/sessions", {title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
