@@ -11,11 +11,9 @@ block content
 							strong= presentation.title
 							br
 							small= presentation.presenter
-							p
-								if presentation.abstract.length < 100
-									| #{presentation.abstract}
-								else
-									| #{presentation.abstract.substr(0, 100) + "..."}
+							p.small-abstract #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
+							p.medium-abstract #{(presentation.abstract.split(" ").length >= 40)? presentation.abstract.split(" ").splice(0, 40).join(" ") + "..." : presentation.abstract}
+							p.large-abstract #{(presentation.abstract.split(" ").length >= 80)? presentation.abstract.split(" ").splice(0, 80).join(" ") + "..." : presentation.abstract}
 	else
 		p.content-padded(style="text-align: center;"): i No presentations created yet
 

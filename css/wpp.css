@@ -214,6 +214,12 @@ select {
 	margin-right: -85px;
 }
 
+p.medium-abstract {
+	display: none;
+}
+p.large-abstract {
+	display: none;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 	.youtube {
@@ -225,8 +231,24 @@ select {
 	#presentationthumbnails .thumbnail {
 		width: 15%;
 	}
+	p.small-abstract {
+		display: none;
+	}
+	p.medium-abstract {
+		display: block;
+	}
 }
-/* Medium devices (desktops, 992px and up) */
+@media (min-width: 1200px) {
+	p.small-abstract {
+		display: none;
+	}
+	p.medium-abstract {
+		display: none;
+	}
+	p.large-abstract {
+		display: block;
+	}
+}
 
 /* Large devices (large desktops, 1200px and up) */
 @media (min-width: 1920px) {
