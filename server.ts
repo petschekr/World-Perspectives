@@ -224,7 +224,6 @@ app.get("/explore", function(request: express3.Request, response: express3.Respo
 				callback();
 			});
 		}, function(err: Error) {
-			console.log(pictures);
 			if (err) {
 				response.set("Content-Type", "text/plain");
 				response.send(500, "A database error occured\n\n" + JSON.stringify(err));
@@ -246,6 +245,35 @@ app.get("/explore", function(request: express3.Request, response: express3.Respo
 		});
 	});
 });
+app.get("/explore/:id", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/explore");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
+
 app.get("/schedule", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

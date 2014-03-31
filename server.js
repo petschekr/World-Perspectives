@@ -178,7 +178,6 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     callback();
                 });
             }, function (err) {
-                console.log(pictures);
                 if (err) {
                     response.set("Content-Type", "text/plain");
                     response.send(500, "A database error occured\n\n" + JSON.stringify(err));
@@ -200,6 +199,35 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+    app.get("/explore/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/explore");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+
     app.get("/schedule", function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
