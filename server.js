@@ -514,16 +514,18 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var data = {
             "presenter": request.body.name || "",
             "title": request.body.title || "",
-            "media.mainVideo": request.body.youtubeID || undefined,
             "abstract": request.body.abstract || "",
             "sessionNumber": parseInt(request.body.session, 10)
         };
         if (request.body.uploadedPDF)
             data.pdfID = request.body.uploadedPDF;
+        if (request.body.youtubeID)
+            data["media.mainVideo"] = request.body.youtubeID;
 
+        var mediaIDs = [];
         try  {
             if (request.body.uploadedMedia)
-                data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+                mediaIDs = JSON.parse(request.body.uploadedMedia);
         } catch (e) {
             response.send({
                 "status": "failure",
@@ -545,8 +547,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             function (callback) {
                 var imageType = /image.*/;
                 var images = [];
-                for (var i = 0; i < data["media.mainVideo"].length; i++) {
-                    var file = data["media.mainVideo"][i];
+                for (var i = 0; i < mediaIDs.length; i++) {
+                    var file = mediaIDs[i];
                     var mimeType = mime.lookup(file);
                     var image = !!mimeType.match(imageType);
                     if (image) {

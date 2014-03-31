@@ -568,23 +568,26 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 	var data: {
 		"presenter": string;
 		"title": string;
-		"media.mainVideo": string;
+		"media.mainVideo"?: string;
+		//"media.images"?: string[];
 		"abstract": string;
-		pdfID?: string;
+		"pdfID"?: string;
 		"sessionNumber": number;
 	} = {
 		"presenter": request.body.name || "",
 		"title": request.body.title || "",
-		"media.mainVideo": request.body.youtubeID || undefined,
 		"abstract": request.body.abstract || "",
 		"sessionNumber": parseInt(request.body.session, 10)
 	};
 	if (request.body.uploadedPDF)
 		data.pdfID = request.body.uploadedPDF;
+	if (request.body.youtubeID)
+		data["media.mainVideo"] = request.body.youtubeID;
 
+	var mediaIDs: string[] = [];
 	try {
 		if (request.body.uploadedMedia)
-			data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+			mediaIDs = JSON.parse(request.body.uploadedMedia);
 	}
 	catch (e) {
 		response.send({
@@ -607,8 +610,8 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		function(callback) {
 			var imageType: RegExp = /image.*/;
 			var images: string[] = [];
-			for (var i: number = 0; i < data["media.mainVideo"].length; i++) {
-				var file: string = data["media.mainVideo"][i];
+			for (var i: number = 0; i < mediaIDs.length; i++) {
+				var file: string = mediaIDs[i];
 				var mimeType: string = mime.lookup(file);
 				var image: boolean = !!mimeType.match(imageType);
 				if (image) {
