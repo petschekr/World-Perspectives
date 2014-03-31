@@ -184,6 +184,15 @@ function getTime(date: Date): string {
 	return dateString;
 }
 
+app.use(function (request, response, next) {
+	response.setHeader("Strict-Transport-Security", "max-age=8640000; includeSubDomains");
+	if (request.headers["x-forwarded-proto"] !== "https") {
+		response.redirect(301, "https://" + request.headers.host + "/");
+		return;
+	}
+	next();
+});
+
 app.get("/", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

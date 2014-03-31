@@ -139,6 +139,15 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         return dateString;
     }
 
+    app.use(function (request, response, next) {
+        response.setHeader("Strict-Transport-Security", "max-age=8640000; includeSubDomains");
+        if (request.headers["x-forwarded-proto"] !== "https") {
+            response.redirect(301, "https://" + request.headers.host + "/");
+            return;
+        }
+        next();
+    });
+
     app.get("/", function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
