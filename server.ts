@@ -96,7 +96,7 @@ var fs = require("fs");
 var path = require("path");
 
 var MongoClient = require("mongodb").MongoClient;
-MongoClient.connect("mongodb://localhost:27017/wpp", function(err: any, db: mongodb.Db) {
+MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.mongohq.com:10062/nodejitsudb6476468427", function(err: any, db: mongodb.Db) {
 if (err)
 	throw err
 
