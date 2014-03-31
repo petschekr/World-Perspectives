@@ -6,7 +6,7 @@ import mongodb = require("mongodb");
 var StartUpTime: number = Date.now();
 var PORT: number = 8080;
 
-var adminEmails: string[] = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
+var adminEmails: string[] = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vzonta@gfacademy.org"];
 interface ScheduleItem {
 	title: string;
 	start: Date;

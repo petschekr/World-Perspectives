@@ -1,7 +1,7 @@
 ﻿var StartUpTime = Date.now();
 var PORT = 8080;
 
-var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vllanque@gfacademy.org"];
+var adminEmails = ["petschekr@gfacademy.org", "beckerju@gfacademy.org", "jmirza@gfacademy.org", "vzonta@gfacademy.org"];
 
 var Student = (function () {
     function Student(Name, Email) {
