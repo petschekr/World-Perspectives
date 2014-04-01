@@ -1,38 +1,27 @@
 extends layout
 
 block content
-  ul.table-view.explore
-      li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Jules Becker
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Ryan Petschek
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | John Doe
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
-        li.table-view-cell.media
-          a.push-right
-            img.media-object.pull-left(src='http://placehold.it/42x42')
-            .media-body
-              | Mr. Llanque
-              p
-                | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore. Lorem ipsum dolor sit amet.
+	if presentations.length > 0
+		ul.table-view.explore
+			for presentation in presentations
+				li.table-view-cell.media
+					a.navigate-right(href="/explore/#{presentation.sessionID}", data-transition="slide-in")
+						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
+						.media-body
+							strong= presentation.title
+							br
+							small= presentation.presenter
+							p.small-abstract #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
+							p.medium-abstract #{(presentation.abstract.split(" ").length >= 40)? presentation.abstract.split(" ").splice(0, 40).join(" ") + "..." : presentation.abstract}
+							p.large-abstract #{(presentation.abstract.split(" ").length >= 80)? presentation.abstract.split(" ").splice(0, 80).join(" ") + "..." : presentation.abstract}
+	else
+		p.content-padded(style="text-align: center;"): i No presentations created yet
 
+
+block footer
+	br
 block tabs
-    +tab("Explore", "", "icon-search", true)
-    +tab("Register", "/register", "icon-check", false)
-    +tab("My Schedule", "/schedule", "icon-list", false)
-    +tab("Feedback", "/feedback", "icon-compose", false)
+	+tab("Explore", "", "icon-search", true)
+	+tab("Register", "/register", "icon-check", false)
+	+tab("My Schedule", "/schedule", "icon-list", false)
+	+tab("Feedback", "/feedback", "icon-compose", false)

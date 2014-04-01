@@ -8,9 +8,9 @@
 			li.table-view-cell Display duration of each schedule block
 				.toggle
 					.toggle-handle
-		if admin || true
+		if admin
 			a.btn.btn-primary.btn-block(href="/admin") Admin Panel
 			br
-		if loggedIn || true
+		if loggedIn
 			button#signout.btn.btn-negative.btn-block Sign Out
 			br

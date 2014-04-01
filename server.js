@@ -60,7 +60,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var Collections = {
         Users: db.collection("users"),
         Schedule: db.collection("schedule"),
-        Presentations: db.collection("presentations")
+        Presentations: db.collection("presentations"),
+        Pictures: db.collection("pictures")
     };
 
     // Retrieve the schedule
@@ -155,12 +156,78 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
         var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
-        response.render("explore", { title: "Explore", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
+            var presenterNames = [];
+            for (var i = 0; i < presentations.length; i++) {
+                presenterNames.push(presentations[i].presenter);
+            }
+            var pictures = {};
+
+            // Max concurrent requests is 10
+            async.eachLimit(presenterNames, 10, function (presenter, callback) {
+                Collections.Pictures.findOne({ "name": presenter }, function (err, presenterMedia) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!presenterMedia) {
+                        callback();
+                        return;
+                    }
+                    pictures[presenter] = presenterMedia.picture;
+                    callback();
+                });
+            }, function (err) {
+                if (err) {
+                    response.set("Content-Type", "text/plain");
+                    response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+                    return;
+                }
+                response.render("explore", {
+                    title: "Explore",
+                    mobileOS: platform,
+                    loggedIn: loggedIn,
+                    email: email,
+                    admin: admin,
+                    presentations: presentations,
+                    pictures: pictures
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
         });
     });
+    app.get("/explore/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/explore");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+
     app.get("/schedule", function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
@@ -291,6 +358,26 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 smtpTransport.close();
             });
         }, 4);
+    });
+
+    // Feedback form
+    app.get("/feedback", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        response.render("feedback", {
+            title: "Feedback",
+            mobileOS: platform,
+            loggedIn: loggedIn,
+            email: email,
+            admin: admin
+        }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
     });
 
     // Register for sessions
@@ -445,7 +532,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
 
-        Collections.Presentations.find().toArray(function (err, presentations) {
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
             response.render("admin/sessions", { title: "Presentations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
                 if (err)
                     console.error(err);
@@ -475,16 +562,18 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var data = {
             "presenter": request.body.name || "",
             "title": request.body.title || "",
-            "media.mainVideo": request.body.youtubeID || undefined,
             "abstract": request.body.abstract || "",
             "sessionNumber": parseInt(request.body.session, 10)
         };
         if (request.body.uploadedPDF)
             data.pdfID = request.body.uploadedPDF;
+        if (request.body.youtubeID)
+            data["media.mainVideo"] = request.body.youtubeID;
 
+        var mediaIDs = [];
         try  {
             if (request.body.uploadedMedia)
-                data["media.mainVideo"] = JSON.parse(request.body.uploadedMedia);
+                mediaIDs = JSON.parse(request.body.uploadedMedia);
         } catch (e) {
             response.send({
                 "status": "failure",
@@ -506,8 +595,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             function (callback) {
                 var imageType = /image.*/;
                 var images = [];
-                for (var i = 0; i < data["media.mainVideo"].length; i++) {
-                    var file = data["media.mainVideo"][i];
+                for (var i = 0; i < mediaIDs.length; i++) {
+                    var file = mediaIDs[i];
                     var mimeType = mime.lookup(file);
                     var image = !!mimeType.match(imageType);
                     if (image) {
