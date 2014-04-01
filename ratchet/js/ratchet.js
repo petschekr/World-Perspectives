@@ -333,7 +333,7 @@
   // Core PUSH functionality
   // =======================
 
-  var PUSH = function (options) {
+  window.PUSH = function (options) {
     var key;
     var xhr = PUSH.xhr;
 

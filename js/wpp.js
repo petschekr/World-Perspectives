@@ -415,11 +415,17 @@ $(document).ready(function () {
 
         preferences[id] = preference;
     });
-    $(document).on("click", "#finishbutton", function () {
+    $(document).on("click", "#finishbutton", function (e) {
         var numberSelected = Object.keys(preferences).length;
         if (numberSelected !== 3) {
             alert("You must select three choices");
-            return false;
+            return;
         }
+        window.PUSH({
+            url: "/register",
+            hash: "",
+            timeout: undefined,
+            transition: "slide-out"
+        });
     });
 });

@@ -13,6 +13,7 @@ interface HTMLElement {
 }
 interface Window {
 	URL: any;
+	PUSH: any;
 }
 
 var uploadedMedia: string[] = [];
@@ -455,11 +456,17 @@ $(document).ready(function(): void {
 
 		preferences[id] = preference;
 	});
-	$(document).on("click", "#finishbutton", function(): any {
+	$(document).on("click", "#finishbutton", function(e): void {
 		var numberSelected: number = Object.keys(preferences).length;
 		if (numberSelected !== 3) {
 			alert("You must select three choices");
-			return false;
+			return;
 		}
+		window.PUSH({
+			url: "/register",
+			hash: "",
+			timeout: undefined,
+			transition: "slide-out"
+		});
 	});
 });
