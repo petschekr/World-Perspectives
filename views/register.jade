@@ -27,19 +27,15 @@ block content
 						span.badge 12:40 PM - 1:30 PM
 						| Session 4
 		else
-			ul.table-view
+			ul.table-view.explore
 				for presentation in presentations
 					li.table-view-cell.media
-						img.media-object.pull-left(src='http://placehold.it/42x42')
+						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
 						.media-body
 							strong= presentation.title
 							br
 							small= presentation.presenter
-							p
-								if presentation.abstract.length < 100
-									| #{presentation.abstract}
-								else
-									| #{presentation.abstract.substr(0, 100) + "..."}
+							p #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
 						.btns
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="1") 1st Choice
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="2") 2nd Choice

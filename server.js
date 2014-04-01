@@ -411,19 +411,47 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             response.redirect("/register");
             return;
         }
-        Collections.Presentations.find({ "sessionNumber": sessionNumber }).toArray(function (err, presentations) {
-            response.render("register", {
-                title: "Session " + sessionNumber.toString(),
-                mobileOS: platform,
-                loggedIn: loggedIn,
-                email: email,
-                admin: admin,
-                sessionNumber: sessionNumber,
-                presentations: presentations
-            }, function (err, html) {
-                if (err)
-                    console.error(err);
-                response.send(html);
+        Collections.Presentations.find({ "sessionNumber": sessionNumber }, { sort: "presenter" }).toArray(function (err, presentations) {
+            var presenterNames = [];
+            for (var i = 0; i < presentations.length; i++) {
+                presenterNames.push(presentations[i].presenter);
+            }
+            var pictures = {};
+
+            // Max concurrent requests is 10
+            async.eachLimit(presenterNames, 10, function (presenter, callback) {
+                Collections.Pictures.findOne({ "name": presenter }, function (err, presenterMedia) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!presenterMedia) {
+                        callback();
+                        return;
+                    }
+                    pictures[presenter] = presenterMedia.picture;
+                    callback();
+                });
+            }, function (err) {
+                if (err) {
+                    response.set("Content-Type", "text/plain");
+                    response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+                    return;
+                }
+                response.render("register", {
+                    title: "Session " + sessionNumber.toString(),
+                    mobileOS: platform,
+                    loggedIn: loggedIn,
+                    email: email,
+                    admin: admin,
+                    sessionNumber: sessionNumber,
+                    presentations: presentations,
+                    pictures: pictures
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
             });
         });
     });
