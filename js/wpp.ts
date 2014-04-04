@@ -446,15 +446,17 @@ $(document).ready(function(): void {
 		$(this).siblings().css("opacity", "1");
 		$(this).css("opacity", "0.3");
 
-		// Deselect other button of same choice
-		for (var buttonID in preferences) {
-			if (preferences[buttonID] === preference) {
-				$("*[data-id=" + buttonID + "][data-order=" + preference + "]").css("opacity", "1");
-				delete preferences[buttonID];
+		for (var i: number = 1; i <= 3; i++) {
+			if (preferences[i] == id) {
+				$("*[data-id=" + id + "][data-order=" + i + "]").css("opacity", "1");
+				delete preferences[i];
 			}
 		}
+		// Deselect other button of same choice
+		if (preferences[preference])
+			$("*[data-id=" + preferences[preference] + "][data-order=" + preference + "]").css("opacity", "1");
 
-		preferences[id] = preference;
+		preferences[preference] = id;
 	});
 	$(document).on("click", "#finishbutton", function(e): void {
 		var numberSelected: number = Object.keys(preferences).length;

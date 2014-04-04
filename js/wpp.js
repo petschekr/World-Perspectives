@@ -406,14 +406,18 @@ $(document).ready(function () {
         $(this).siblings().css("opacity", "1");
         $(this).css("opacity", "0.3");
 
-        for (var buttonID in preferences) {
-            if (preferences[buttonID] === preference) {
-                $("*[data-id=" + buttonID + "][data-order=" + preference + "]").css("opacity", "1");
-                delete preferences[buttonID];
+        for (var i = 1; i <= 3; i++) {
+            if (preferences[i] == id) {
+                $("*[data-id=" + id + "][data-order=" + i + "]").css("opacity", "1");
+                delete preferences[i];
             }
         }
 
-        preferences[id] = preference;
+        // Deselect other button of same choice
+        if (preferences[preference])
+            $("*[data-id=" + preferences[preference] + "][data-order=" + preference + "]").css("opacity", "1");
+
+        preferences[preference] = id;
     });
     $(document).on("click", "#finishbutton", function (e) {
         var numberSelected = Object.keys(preferences).length;
