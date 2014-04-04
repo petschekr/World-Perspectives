@@ -27,9 +27,6 @@ block content
 	.presentation-info
 		if youtubeID
 			iframe.youtube(type="text/html", src="http://www.youtube.com/embed/#{youtubeID}?html5=1", allowfullscreen, frameborder="0")
-		#presentationthumbnails
-			for image in presentation.media.images
-				.thumbnail(style="background-image: url(/media/#{image});")
 		h2.content-padded #{presentation.presenter}
 			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
