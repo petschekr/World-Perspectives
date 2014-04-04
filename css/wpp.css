@@ -231,7 +231,7 @@ select {
 	position: initial;
 	margin-right: -85px;
 }
-.icon-check {
+.register .icon-check {
 	-webkit-transform: translateY(5%) translateX(15%);
 	transform: translateY(5%) translateX(15%);
 	color: #1EA82E;
