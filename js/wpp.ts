@@ -464,6 +464,9 @@ $(document).ready(function(): void {
 			alert("You must select three choices");
 			return;
 		}
+		// document.title = "Session 1", "Session 2", etc.
+		localStorage.setItem(document.title, JSON.stringify(preferences));
+		preferences = {};
 		window.PUSH({
 			url: "/register",
 			hash: "",
