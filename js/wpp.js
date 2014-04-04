@@ -439,16 +439,16 @@ $(document).ready(function () {
     function pageLoad() {
         if (window.location.pathname == "/register") {
             if (localStorage["Session 1"]) {
-                $("a[href='/register/1']").append('<span class="icon icon-check"></span>');
+                $("a[href='/register/1'] span.icon-check").css("opacity", "1");
             }
             if (localStorage["Session 2"]) {
-                $("a[href='/register/2']").append('<span class="icon icon-check"></span>');
+                $("a[href='/register/2'] span.icon-check").css("opacity", "1");
             }
             if (localStorage["Session 3"]) {
-                $("a[href='/register/3']").append('<span class="icon icon-check"></span>');
+                $("a[href='/register/3'] span.icon-check").css("opacity", "1");
             }
             if (localStorage["Session 4"]) {
-                $("a[href='/register/4']").append('<span class="icon icon-check"></span>');
+                $("a[href='/register/4'] span.icon-check").css("opacity", "1");
             }
         }
     }

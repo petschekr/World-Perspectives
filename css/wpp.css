@@ -235,6 +235,7 @@ select {
 	-webkit-transform: translateY(5%) translateX(15%);
 	transform: translateY(5%) translateX(15%);
 	color: #1EA82E;
+	opacity: 0;
 }
 
 

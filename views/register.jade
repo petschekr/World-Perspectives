@@ -9,23 +9,27 @@ block tabs
 block content
 	if loggedIn
 		if !sessionNumber
-			ul.table-view
+			ul.table-view.register
 				li.table-view-cell
 					a.navigate-right(href="/register/1", data-transition="slide-in")
 						span.badge 8:50 AM - 9:40 PM
 						| Session 1
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/2", data-transition="slide-in")
 						span.badge 9:50 AM - 10:40 PM
 						| Session 2
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/3", data-transition="slide-in")
 						span.badge 11:40 AM - 12:30 PM
 						| Session 3
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/4", data-transition="slide-in")
 						span.badge 12:40 PM - 1:30 PM
 						| Session 4
+						span.icon.icon-check
 		else
 			ul.table-view.explore
 				for presentation in presentations
