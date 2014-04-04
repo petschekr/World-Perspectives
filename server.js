@@ -91,6 +91,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         cookie: {
             path: "/",
             httpOnly: true,
+            secure: true,
             maxAge: 3600000 * 24 * 7
         }
     }));

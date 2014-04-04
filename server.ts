@@ -138,6 +138,7 @@ app.use(express.session({
 	cookie: {
 		path: "/",
 		httpOnly: true,
+		secure: true,
 		maxAge: 3600000 * 24 * 7 // 1 week
 	}
 }));
