@@ -26,7 +26,7 @@ block content
 	- var youtubeID = presentation.media.mainVideo;
 	.presentation-info
 		if youtubeID
-			iframe.youtube(type="text/html", src="http://www.youtube.com/embed/#{youtubeID}?html5=1", allowfullscreen, frameborder="0")
+			iframe.youtube(type="text/html", src="https://www.youtube.com/embed/#{youtubeID}?html5=1", allowfullscreen, frameborder="0")
 		#presentationthumbnails
 			for image in presentation.media.images
 				.thumbnail(style="background-image: url(/media/#{image});")
