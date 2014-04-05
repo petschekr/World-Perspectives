@@ -6,6 +6,14 @@ block tabs
 	+tab("My Schedule", "/schedule", "icon-list", false)
 	+tab("Feedback", "/feedback", "icon-compose", false)
 
+
+block buttons
+	if loggedIn && sessionNumber
+		a.btn.btn-link.btn-nav.pull-left(href="/register", data-transition="slide-out")
+			span.icon.icon-left-nav
+			| Back
+	a.icon.icon-gear.pull-right(href="#settings")
+
 block content
 	if loggedIn
 		if !sessionNumber

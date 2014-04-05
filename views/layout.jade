@@ -40,9 +40,10 @@ html
 				span.tab-label= name
 		block header
 			header.bar.bar-nav
-				if !loggedIn
-					a.btn.btn-primary.pull-left(href="#login") Login
-				a.icon.icon-gear.pull-right(href="#settings")
+				block buttons
+					if !loggedIn
+						a.btn.btn-primary.pull-left(href="#login") Login
+					a.icon.icon-gear.pull-right(href="#settings")
 				h1.title= title
 			nav.bar.bar-tab
 				block tabs
