@@ -35,6 +35,10 @@ interface Presentation {
 	media: {mainVideo?: string; images?: string[]; videos?: string[]};
 	pdfID: string;
 	abstract: string;
+	location: {
+		name: string;
+		capacity: number;
+	};
 }
 class Student {
 	public Name: string;
@@ -850,6 +854,8 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		uploadedPDF: string;
 		abstract: string;
 		session: number;
+		location: string;
+		locationCapacity: number;
 		//email: string;
 	} = {
 		"name": request.body.name || "",
@@ -858,7 +864,9 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		"uploadedMedia": [],
 		"uploadedPDF": request.body.uploadedPDF || undefined,
 		"abstract": request.body.abstract || "",
-		"session": parseInt(request.body.session, 10)
+		"session": parseInt(request.body.session, 10),
+		"location": request.body.location || "",
+		"locationCapacity": parseInt(request.body.locationCapacity)
 	};
 	try {
 		if (request.body.uploadedMedia)
@@ -871,7 +879,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		});
 		return;
 	}
-	if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+	if (isNaN(data.session) || isNaN(data.locationCapacity) || data.name === "" || data.title === "" || data.abstract === "") {
 		response.send({
 			"status": "failure",
 			"reason": "Invalid information"
@@ -888,6 +896,10 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 			mainVideo: data.youtubeID,
 			images: [],
 			videos: []
+		},
+		location: {
+			name: data.location,
+			capacity: data.locationCapacity
 		},
 		pdfID: data.uploadedPDF,
 		abstract: data.abstract

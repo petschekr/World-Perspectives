@@ -789,7 +789,9 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             "uploadedMedia": [],
             "uploadedPDF": request.body.uploadedPDF || undefined,
             "abstract": request.body.abstract || "",
-            "session": parseInt(request.body.session, 10)
+            "session": parseInt(request.body.session, 10),
+            "location": request.body.location || "",
+            "locationCapacity": parseInt(request.body.locationCapacity)
         };
         try  {
             if (request.body.uploadedMedia)
@@ -801,7 +803,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
             return;
         }
-        if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+        if (isNaN(data.session) || isNaN(data.locationCapacity) || data.name === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
                 "reason": "Invalid information"
@@ -818,6 +820,10 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 mainVideo: data.youtubeID,
                 images: [],
                 videos: []
+            },
+            location: {
+                name: data.location,
+                capacity: data.locationCapacity
             },
             pdfID: data.uploadedPDF,
             abstract: data.abstract
