@@ -451,6 +451,13 @@ $(document).ready(function () {
                 $("a[href='/register/4'] span.icon-check").css("opacity", "1");
             }
         }
+        if (window.location.pathname.match(/^\/register\/\d$/)) {
+            // Load register preferences
+            preferences = JSON.parse(localStorage.getItem(document.title));
+            for (var key in preferences) {
+                $("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
+            }
+        }
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
