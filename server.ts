@@ -692,11 +692,15 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		"abstract": string;
 		"pdfID"?: string;
 		"sessionNumber": number;
+		"location.name": string;
+		"location.capacity": number;
 	} = {
 		"presenter": request.body.name || "",
 		"title": request.body.title || "",
 		"abstract": request.body.abstract || "",
-		"sessionNumber": parseInt(request.body.session, 10)
+		"sessionNumber": parseInt(request.body.session, 10),
+		"location.name": request.body.location || "",
+		"location.capacity": parseInt(request.body.locationCapacity, 10)
 	};
 	if (request.body.uploadedPDF)
 		data.pdfID = request.body.uploadedPDF;
@@ -715,7 +719,7 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		});
 		return;
 	}
-	if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+	if (isNaN(data.sessionNumber) || isNaN(data["location.capacity"]) || data.presenter === "" || data.title === "" || data.abstract === "") {
 		response.send({
 			"status": "failure",
 			"reason": "Invalid information"
@@ -866,7 +870,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		"abstract": request.body.abstract || "",
 		"session": parseInt(request.body.session, 10),
 		"location": request.body.location || "",
-		"locationCapacity": parseInt(request.body.locationCapacity)
+		"locationCapacity": parseInt(request.body.locationCapacity, 10)
 	};
 	try {
 		if (request.body.uploadedMedia)
