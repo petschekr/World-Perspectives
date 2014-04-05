@@ -281,6 +281,8 @@ $(document).ready(function(): void {
 			uploadedPDF: string;
 			abstract: string;
 			session: string;
+			location: string;
+			locationCapacity: number;
 		} = {
 			"name": $("#create input").get(0).value,
 			"title": $("#create input").get(1).value,
@@ -288,9 +290,17 @@ $(document).ready(function(): void {
 			"uploadedMedia": JSON.stringify(uploadedMedia),
 			"uploadedPDF": uploadedPDF,
 			"abstract": $("#create textarea").val(),
-			"session": undefined
+			"session": undefined,
+			"location": undefined,
+			"locationCapacity": undefined
 		};
-		var session: string = $("#create select").val();
+		var location: string = $("#create select").first().val(); 
+		location = location.match(/([\w ]+) /)[1];
+		data.location = location;
+		var locationCapacity: number = $("#create option:selected").first().data("capacity");
+		data.locationCapacity = locationCapacity;
+
+		var session: string = $("#create select").last().val();
 		session = session.match(/^Session (\d)/)[1];
 		data.session = session;
 		if (data.name === "" || data.title === "" || data.abstract === "") {

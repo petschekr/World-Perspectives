@@ -261,9 +261,17 @@ $(document).ready(function () {
             "uploadedMedia": JSON.stringify(uploadedMedia),
             "uploadedPDF": uploadedPDF,
             "abstract": $("#create textarea").val(),
-            "session": undefined
+            "session": undefined,
+            "location": undefined,
+            "locationCapacity": undefined
         };
-        var session = $("#create select").val();
+        var location = $("#create select").first().val();
+        location = location.match(/([\w ]+) /)[1];
+        data.location = location;
+        var locationCapacity = $("#create option:selected").first().data("capacity");
+        data.locationCapacity = locationCapacity;
+
+        var session = $("#create select").last().val();
         session = session.match(/^Session (\d)/)[1];
         data.session = session;
         if (data.name === "" || data.title === "" || data.abstract === "") {
