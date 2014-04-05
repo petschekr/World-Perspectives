@@ -419,7 +419,7 @@ $(document).ready(function () {
 
         preferences[preference] = id;
     });
-    $(document).on("click", "#finishbutton", function (e) {
+    $(document).on("touchend", "#finish-session", function (e) {
         var numberSelected = Object.keys(preferences).length;
         if (numberSelected !== 3) {
             alert("You must select three choices");
@@ -434,6 +434,39 @@ $(document).ready(function () {
             hash: "",
             timeout: undefined,
             transition: "slide-out"
+        });
+    });
+    $(document).on("touchend", "#finish-registering", function () {
+        var data = {};
+        for (var i = 1; i <= 4; i++) {
+            try  {
+                data["Session " + i] = JSON.parse(localStorage.getItem("Session " + i));
+            } catch (e) {
+                alert("Invalid preference data");
+                return;
+            }
+            if (!data["Session " + i]) {
+                alert("You must select your preferences for each session");
+                return;
+            }
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/register",
+            data: { payload: JSON.stringify(data) },
+            success: function (res, status, xhr) {
+                if (res.status == "success") {
+                    $(".content").fadeOut();
+                } else {
+                    console.error(res);
+                    alert("An error occurred while registering");
+                }
+            },
+            error: function (xhr, status, err) {
+                console.error(err);
+                alert("An error occurred while registering");
+            }
         });
     });
     function pageLoad() {

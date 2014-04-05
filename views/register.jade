@@ -38,6 +38,8 @@ block content
 						span.badge 12:40 PM - 1:30 PM
 						| Session 4
 						span.icon.icon-check
+			br
+			button#finish-registering.btn.btn-block.btn-outlined.btn-primary Finish
 		else
 			ul.table-view.explore
 				for presentation in presentations
@@ -53,6 +55,6 @@ block content
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="2") 2nd Choice
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="3") 3rd Choice
 			br
-			button#finishbutton.btn.btn-block.btn-outlined.btn-primary Finish
+			button#finish-session.btn.btn-block.btn-outlined.btn-primary Finish
 	else
 		p.content-padded You must log in before registering

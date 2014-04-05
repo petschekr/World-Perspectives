@@ -21,9 +21,9 @@ interface Attendance {
 }
 interface SessionChoice {
 	sessionNumber: number;
-	firstChoice: Presentation;
-	secondChoice: Presentation;
-	thirdChoice: Presentation;
+	firstChoice: string;
+	secondChoice: string;
+	thirdChoice: string;
 }
 interface Presentation {
 	sessionNumber: number;
@@ -451,6 +451,46 @@ app.get("/register", function(request: express3.Request, response: express3.Resp
 		response.send(html);
 	});
 });
+// Register a user's preferences
+app.post("/register", function(request: express3.Request, response: express3.Response): void {
+	var email: string = request.session["email"];
+	if (!email) {
+		response.send({
+			status: "failure",
+			error: "You are not logged in"
+		});
+		return;
+	}
+	var preferences: SessionChoice[] = [];
+	var data = JSON.parse(request.body.payload);
+
+	for (var i: number = 1; i <= 4; i++) {
+		var preference: SessionChoice = {
+			sessionNumber: i,
+			firstChoice: undefined,
+			secondChoice: undefined,
+			thirdChoice: undefined
+		};
+		preference.firstChoice = data["Session " + i][1];
+		preference.secondChoice = data["Session " + i][2];
+		preference.thirdChoice = data["Session " + i][3];
+		preferences.push(preference);
+	}
+	Collections.Users.update({"email": email}, {$set: {"userInfo.SessionChoices": preferences}}, {w:1}, function(err) {
+		if (err) {
+			console.error(err);
+			response.send({
+				status: "failure",
+				error: "The database encountered an error"
+			});
+			return;
+		}
+		response.send({
+			status: "success"
+		});
+	});
+});
+
 app.get("/register/:sessionNumber", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

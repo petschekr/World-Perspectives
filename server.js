@@ -400,6 +400,47 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             response.send(html);
         });
     });
+
+    // Register a user's preferences
+    app.post("/register", function (request, response) {
+        var email = request.session["email"];
+        if (!email) {
+            response.send({
+                status: "failure",
+                error: "You are not logged in"
+            });
+            return;
+        }
+        var preferences = [];
+        var data = JSON.parse(request.body.payload);
+
+        for (var i = 1; i <= 4; i++) {
+            var preference = {
+                sessionNumber: i,
+                firstChoice: undefined,
+                secondChoice: undefined,
+                thirdChoice: undefined
+            };
+            preference.firstChoice = data["Session " + i][1];
+            preference.secondChoice = data["Session " + i][2];
+            preference.thirdChoice = data["Session " + i][3];
+            preferences.push(preference);
+        }
+        Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences } }, { w: 1 }, function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error"
+                });
+                return;
+            }
+            response.send({
+                status: "success"
+            });
+        });
+    });
+
     app.get("/register/:sessionNumber", function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
