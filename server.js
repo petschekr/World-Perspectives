@@ -426,7 +426,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             preference.thirdChoice = data["Session " + i][3];
             preferences.push(preference);
         }
-        Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences } }, { w: 1 }, function (err) {
+        Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true } }, { w: 1 }, function (err) {
             if (err) {
                 console.error(err);
                 response.send({
