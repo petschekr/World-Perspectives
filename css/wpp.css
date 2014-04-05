@@ -299,7 +299,7 @@ p.abstract {
 }
 
 /* Large devices (large desktops, 1200px and up) */
-@media (min-width: 1920px) {
+@media (min-width: 1800px) {
 	.youtube {
 		height: 600px;
 	}
