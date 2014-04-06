@@ -133,6 +133,8 @@ var app: express3.Application = express();
 app.use(express.compress());
 app.use(express.bodyParser());
 app.use(express.cookieParser());
+// Trust Nodejitsu's reverse proxy
+app.enable("trust proxy");
 app.use(express.session({
 	secret: "5e3e4acccc5de18e9e44c5c34da5da7f658301e35c5da6471b8cee83b855d587",
 	cookie: {
@@ -140,7 +142,8 @@ app.use(express.session({
 		httpOnly: true,
 		secure: true,
 		maxAge: 3600000 * 24 * 7 // 1 week
-	}
+	},
+	proxy: true
 }));
 
 app.set("views", __dirname + "/views");
