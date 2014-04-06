@@ -39,11 +39,13 @@ interface Presentation {
 		name: string;
 		capacity: number;
 	};
+	// String array of *names*
+	attendees: string[];
 }
 class Student {
 	public Name: string;
 	public Email: string;
-	public Sessions: ScheduleItem[] = [];
+	public Sessions: string[] = [];
 	public SessionChoices: SessionChoice[] = [];
 	public Attendance: Attendance[] = [];
 	public RegisteredForSessions: boolean = false;
@@ -74,7 +76,7 @@ class Student {
 	}
 	importUser(userData: {
 		Name: string;
-		Sessions: ScheduleItem[];
+		Sessions: string[];
 		SessionChoices: SessionChoice[];
 		Attendance: Attendance[];
 		RegisteredForSessions: boolean;
@@ -109,11 +111,13 @@ var Collections: {
 	Schedule: mongodb.Collection;
 	Presentations: mongodb.Collection;
 	Pictures: mongodb.Collection;
+	Names: mongodb.Collection;
 } = {
 	Users: db.collection("users"),
 	Schedule: db.collection("schedule"),
 	Presentations: db.collection("presentations"),
-	Pictures: db.collection("pictures")
+	Pictures: db.collection("pictures"),
+	Names: db.collection("names")
 };
 // Retrieve the schedule
 var Schedule: ScheduleItem[] = [];
@@ -480,7 +484,61 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		preference.thirdChoice = data["Session " + i][3];
 		preferences.push(preference);
 	}
-	Collections.Users.update({"email": email}, {$set: {"userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true}}, {w:1}, function(err) {
+	async.parallel([
+		function(callback) {
+			// Insert the user's preferences into the DB
+			Collections.Users.update({"email": email}, {$set: {"userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true}}, {w:1}, callback);
+		},
+		function(callback) {
+			// Sort the user into sessions based on their preferences
+			async.each(preferences, function(preference: SessionChoice, callback2: any) {
+				Collections.Presentations.findOne({"sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice}, function(err: Error, presentation: Presentation) {
+					if (err) {
+						callback2(err);
+						return;
+					}
+					if (!presentation) {
+						callback2(new Error("Could not find presentation"));
+						return;
+					}
+					var capacity: number = presentation.location.capacity;
+					var minCapacity: number = capacity / 2;
+					var attendees: number = presentation.attendees.length;
+
+					function registerForSession(preference: string) {
+						var studentName: string;
+						async.waterfall([
+							function(callback3) {
+								Collections.Names.findOne({"email": email}, function(err: Error, student: any) {
+									if (err)
+										callback3(err);
+									else
+										callback3(null, student.name);
+								});
+							},
+							function(studentName: string, callback3) {
+								Collections.Presentations.update({"sessionID": preference}, {$push: {attendees: studentName}}, {w:1}, function(err: Error) {
+									if (err) {
+										callback3(err);
+										return;
+									}
+									Collections.Users.update({"email": email}, {$push: {"userInfo.Sessions": preference}}, {w:1}, callback3);
+								});
+							}
+						], callback2);
+					}
+
+					if (attendees < minCapacity) {
+						// Less than minimum capacity to place them in their first choice
+						registerForSession(preference.firstChoice);
+					}
+					/*else if () {
+
+					}*/
+				});
+			}, callback);
+		}
+	], function(err: Error) {
 		if (err) {
 			console.error(err);
 			response.send({
@@ -489,6 +547,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 			});
 			return;
 		}
+
 		response.send({
 			status: "success"
 		});
@@ -905,6 +964,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 			name: data.location,
 			capacity: data.locationCapacity
 		},
+		attendees: [],
 		pdfID: data.uploadedPDF,
 		abstract: data.abstract
 	}

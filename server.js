@@ -61,7 +61,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         Users: db.collection("users"),
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations"),
-        Pictures: db.collection("pictures")
+        Pictures: db.collection("pictures"),
+        Names: db.collection("names")
     };
 
     // Retrieve the schedule
@@ -426,7 +427,61 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             preference.thirdChoice = data["Session " + i][3];
             preferences.push(preference);
         }
-        Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true } }, { w: 1 }, function (err) {
+        async.parallel([
+            function (callback) {
+                // Insert the user's preferences into the DB
+                Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true } }, { w: 1 }, callback);
+            },
+            function (callback) {
+                // Sort the user into sessions based on their preferences
+                async.each(preferences, function (preference, callback2) {
+                    Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice }, function (err, presentation) {
+                        if (err) {
+                            callback2(err);
+                            return;
+                        }
+                        if (!presentation) {
+                            callback2(new Error("Could not find presentation"));
+                            return;
+                        }
+                        var capacity = presentation.location.capacity;
+                        var minCapacity = capacity / 2;
+                        var attendees = presentation.attendees.length;
+
+                        function registerForSession(preference) {
+                            var studentName;
+                            async.waterfall([
+                                function (callback3) {
+                                    Collections.Names.findOne({ "email": email }, function (err, student) {
+                                        if (err)
+                                            callback3(err);
+                                        else
+                                            callback3(null, student.name);
+                                    });
+                                },
+                                function (studentName, callback3) {
+                                    Collections.Presentations.update({ "sessionID": preference }, { $push: { attendees: studentName } }, { w: 1 }, function (err) {
+                                        if (err) {
+                                            callback3(err);
+                                            return;
+                                        }
+                                        Collections.Users.update({ "email": email }, { $push: { "userInfo.Sessions": preference } }, { w: 1 }, callback3);
+                                    });
+                                }
+                            ], callback2);
+                        }
+
+                        if (attendees < minCapacity) {
+                            // Less than minimum capacity to place them in their first choice
+                            registerForSession(preference.firstChoice);
+                        }
+                        /*else if () {
+                        
+                        }*/
+                    });
+                }, callback);
+            }
+        ], function (err) {
             if (err) {
                 console.error(err);
                 response.send({
@@ -435,6 +490,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 });
                 return;
             }
+
             response.send({
                 status: "success"
             });
@@ -827,6 +883,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 name: data.location,
                 capacity: data.locationCapacity
             },
+            attendees: [],
             pdfID: data.uploadedPDF,
             abstract: data.abstract
         };
