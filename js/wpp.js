@@ -103,7 +103,7 @@ $(document).ready(function () {
         if (this.files.length < 1)
             return;
         var file = this.files[0];
-        $("#create p").text(file.name);
+        $("#create p").first().text(file.name);
         $("#pdfprogress").show();
         $("#pdfeditprogress").show();
 
