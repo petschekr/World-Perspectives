@@ -351,7 +351,7 @@ $(document).ready(function () {
         var locationCapacity = $("#create option").eq($("select").first().get(0).selectedIndex).data("capacity");
         data.locationCapacity = locationCapacity;
 
-        var session = $("#create select").last().val();
+        var session = $("select").eq(1).val();
         session = session.match(/^Session (\d)/)[1];
         data.session = session;
         if (data.name === "" || data.title === "" || data.abstract === "") {
