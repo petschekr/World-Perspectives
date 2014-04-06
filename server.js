@@ -61,7 +61,8 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         Users: db.collection("users"),
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations"),
-        Pictures: db.collection("pictures")
+        Pictures: db.collection("pictures"),
+        Names: db.collection("names")
     };
 
     // Retrieve the schedule
@@ -414,6 +415,102 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             response.send(html);
         });
     });
+
+    // Register a user's preferences
+    app.post("/register", function (request, response) {
+        var email = request.session["email"];
+        if (!email) {
+            response.send({
+                status: "failure",
+                error: "You are not logged in"
+            });
+            return;
+        }
+        var preferences = [];
+        var data = JSON.parse(request.body.payload);
+
+        for (var i = 1; i <= 4; i++) {
+            var preference = {
+                sessionNumber: i,
+                firstChoice: undefined,
+                secondChoice: undefined,
+                thirdChoice: undefined
+            };
+            preference.firstChoice = data["Session " + i][1];
+            preference.secondChoice = data["Session " + i][2];
+            preference.thirdChoice = data["Session " + i][3];
+            preferences.push(preference);
+        }
+        async.parallel([
+            function (callback) {
+                // Insert the user's preferences into the DB
+                Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true } }, { w: 1 }, callback);
+            },
+            function (callback) {
+                // Sort the user into sessions based on their preferences
+                async.each(preferences, function (preference, callback2) {
+                    Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice }, function (err, presentation) {
+                        if (err) {
+                            callback2(err);
+                            return;
+                        }
+                        if (!presentation) {
+                            callback2(new Error("Could not find presentation"));
+                            return;
+                        }
+                        var capacity = presentation.location.capacity;
+                        var minCapacity = capacity / 2;
+                        var attendees = presentation.attendees.length;
+
+                        function registerForSession(preference) {
+                            var studentName;
+                            async.waterfall([
+                                function (callback3) {
+                                    Collections.Names.findOne({ "email": email }, function (err, student) {
+                                        if (err)
+                                            callback3(err);
+                                        else
+                                            callback3(null, student.name);
+                                    });
+                                },
+                                function (studentName, callback3) {
+                                    Collections.Presentations.update({ "sessionID": preference }, { $push: { attendees: studentName } }, { w: 1 }, function (err) {
+                                        if (err) {
+                                            callback3(err);
+                                            return;
+                                        }
+                                        Collections.Users.update({ "email": email }, { $push: { "userInfo.Sessions": preference } }, { w: 1 }, callback3);
+                                    });
+                                }
+                            ], callback2);
+                        }
+
+                        if (attendees < minCapacity) {
+                            // Less than minimum capacity to place them in their first choice
+                            registerForSession(preference.firstChoice);
+                        }
+                        /*else if () {
+                        
+                        }*/
+                    });
+                }, callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error"
+                });
+                return;
+            }
+
+            response.send({
+                status: "success"
+            });
+        });
+    });
+
     app.get("/register/:sessionNumber", function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
@@ -425,19 +522,47 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             response.redirect("/register");
             return;
         }
-        Collections.Presentations.find({ "sessionNumber": sessionNumber }).toArray(function (err, presentations) {
-            response.render("register", {
-                title: "Session " + sessionNumber.toString(),
-                mobileOS: platform,
-                loggedIn: loggedIn,
-                email: email,
-                admin: admin,
-                sessionNumber: sessionNumber,
-                presentations: presentations
-            }, function (err, html) {
-                if (err)
-                    console.error(err);
-                response.send(html);
+        Collections.Presentations.find({ "sessionNumber": sessionNumber }, { sort: "presenter" }).toArray(function (err, presentations) {
+            var presenterNames = [];
+            for (var i = 0; i < presentations.length; i++) {
+                presenterNames.push(presentations[i].presenter);
+            }
+            var pictures = {};
+
+            // Max concurrent requests is 10
+            async.eachLimit(presenterNames, 10, function (presenter, callback) {
+                Collections.Pictures.findOne({ "name": presenter }, function (err, presenterMedia) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!presenterMedia) {
+                        callback();
+                        return;
+                    }
+                    pictures[presenter] = presenterMedia.picture;
+                    callback();
+                });
+            }, function (err) {
+                if (err) {
+                    response.set("Content-Type", "text/plain");
+                    response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+                    return;
+                }
+                response.render("register", {
+                    title: "Session " + sessionNumber.toString(),
+                    mobileOS: platform,
+                    loggedIn: loggedIn,
+                    email: email,
+                    admin: admin,
+                    sessionNumber: sessionNumber,
+                    presentations: presentations,
+                    pictures: pictures
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
             });
         });
     });
@@ -577,7 +702,9 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             "presenter": request.body.name || "",
             "title": request.body.title || "",
             "abstract": request.body.abstract || "",
-            "sessionNumber": parseInt(request.body.session, 10)
+            "sessionNumber": parseInt(request.body.session, 10),
+            "location.name": request.body.location || "",
+            "location.capacity": parseInt(request.body.locationCapacity, 10)
         };
         if (request.body.uploadedPDF)
             data.pdfID = request.body.uploadedPDF;
@@ -595,7 +722,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             });
             return;
         }
-        if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+        if (isNaN(data.sessionNumber) || isNaN(data["location.capacity"]) || data.presenter === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
                 "reason": "Invalid information"
@@ -734,7 +861,9 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             "uploadedMedia": [],
             "uploadedPDF": request.body.uploadedPDF || undefined,
             "abstract": request.body.abstract || "",
-            "session": parseInt(request.body.session, 10)
+            "session": parseInt(request.body.session, 10),
+            "location": request.body.location || "",
+            "locationCapacity": parseInt(request.body.locationCapacity, 10)
         };
         try  {
             if (request.body.uploadedMedia)
@@ -746,7 +875,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             });
             return;
         }
-        if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+        if (isNaN(data.session) || isNaN(data.locationCapacity) || data.name === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
                 "reason": "Invalid information"
@@ -764,6 +893,11 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                 images: [],
                 videos: []
             },
+            location: {
+                name: data.location,
+                capacity: data.locationCapacity
+            },
+            attendees: [],
             pdfID: data.uploadedPDF,
             abstract: data.abstract
         };

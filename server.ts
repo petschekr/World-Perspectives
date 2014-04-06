@@ -21,9 +21,9 @@ interface Attendance {
 }
 interface SessionChoice {
 	sessionNumber: number;
-	firstChoice: Presentation;
-	secondChoice: Presentation;
-	thirdChoice: Presentation;
+	firstChoice: string;
+	secondChoice: string;
+	thirdChoice: string;
 }
 interface Presentation {
 	sessionNumber: number;
@@ -35,11 +35,17 @@ interface Presentation {
 	media: {mainVideo?: string; images?: string[]; videos?: string[]};
 	pdfID: string;
 	abstract: string;
+	location: {
+		name: string;
+		capacity: number;
+	};
+	// String array of *names*
+	attendees: string[];
 }
 class Student {
 	public Name: string;
 	public Email: string;
-	public Sessions: ScheduleItem[] = [];
+	public Sessions: string[] = [];
 	public SessionChoices: SessionChoice[] = [];
 	public Attendance: Attendance[] = [];
 	public RegisteredForSessions: boolean = false;
@@ -70,7 +76,7 @@ class Student {
 	}
 	importUser(userData: {
 		Name: string;
-		Sessions: ScheduleItem[];
+		Sessions: string[];
 		SessionChoices: SessionChoice[];
 		Attendance: Attendance[];
 		RegisteredForSessions: boolean;
@@ -105,11 +111,13 @@ var Collections: {
 	Schedule: mongodb.Collection;
 	Presentations: mongodb.Collection;
 	Pictures: mongodb.Collection;
+	Names: mongodb.Collection;
 } = {
 	Users: db.collection("users"),
 	Schedule: db.collection("schedule"),
 	Presentations: db.collection("presentations"),
-	Pictures: db.collection("pictures")
+	Pictures: db.collection("pictures"),
+	Names: db.collection("names")
 };
 // Retrieve the schedule
 var Schedule: ScheduleItem[] = [];
@@ -464,6 +472,101 @@ app.get("/register", function(request: express3.Request, response: express3.Resp
 		response.send(html);
 	});
 });
+// Register a user's preferences
+app.post("/register", function(request: express3.Request, response: express3.Response): void {
+	var email: string = request.session["email"];
+	if (!email) {
+		response.send({
+			status: "failure",
+			error: "You are not logged in"
+		});
+		return;
+	}
+	var preferences: SessionChoice[] = [];
+	var data = JSON.parse(request.body.payload);
+
+	for (var i: number = 1; i <= 4; i++) {
+		var preference: SessionChoice = {
+			sessionNumber: i,
+			firstChoice: undefined,
+			secondChoice: undefined,
+			thirdChoice: undefined
+		};
+		preference.firstChoice = data["Session " + i][1];
+		preference.secondChoice = data["Session " + i][2];
+		preference.thirdChoice = data["Session " + i][3];
+		preferences.push(preference);
+	}
+	async.parallel([
+		function(callback) {
+			// Insert the user's preferences into the DB
+			Collections.Users.update({"email": email}, {$set: {"userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true}}, {w:1}, callback);
+		},
+		function(callback) {
+			// Sort the user into sessions based on their preferences
+			async.each(preferences, function(preference: SessionChoice, callback2: any) {
+				Collections.Presentations.findOne({"sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice}, function(err: Error, presentation: Presentation) {
+					if (err) {
+						callback2(err);
+						return;
+					}
+					if (!presentation) {
+						callback2(new Error("Could not find presentation"));
+						return;
+					}
+					var capacity: number = presentation.location.capacity;
+					var minCapacity: number = capacity / 2;
+					var attendees: number = presentation.attendees.length;
+
+					function registerForSession(preference: string) {
+						var studentName: string;
+						async.waterfall([
+							function(callback3) {
+								Collections.Names.findOne({"email": email}, function(err: Error, student: any) {
+									if (err)
+										callback3(err);
+									else
+										callback3(null, student.name);
+								});
+							},
+							function(studentName: string, callback3) {
+								Collections.Presentations.update({"sessionID": preference}, {$push: {attendees: studentName}}, {w:1}, function(err: Error) {
+									if (err) {
+										callback3(err);
+										return;
+									}
+									Collections.Users.update({"email": email}, {$push: {"userInfo.Sessions": preference}}, {w:1}, callback3);
+								});
+							}
+						], callback2);
+					}
+
+					if (attendees < minCapacity) {
+						// Less than minimum capacity to place them in their first choice
+						registerForSession(preference.firstChoice);
+					}
+					/*else if () {
+
+					}*/
+				});
+			}, callback);
+		}
+	], function(err: Error) {
+		if (err) {
+			console.error(err);
+			response.send({
+				status: "failure",
+				error: "The database encountered an error"
+			});
+			return;
+		}
+
+		response.send({
+			status: "success"
+		});
+	});
+});
+
 app.get("/register/:sessionNumber", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
@@ -475,19 +578,46 @@ app.get("/register/:sessionNumber", function(request: express3.Request, response
 		response.redirect("/register");
 		return;
 	}
-	Collections.Presentations.find({"sessionNumber": sessionNumber}).toArray(function(err, presentations: Presentation[]) {
-		response.render("register", {
-			title: "Session " + sessionNumber.toString(),
-			mobileOS: platform,
-			loggedIn: loggedIn,
-			email: email,
-			admin: admin,
-			sessionNumber: sessionNumber,
-			presentations: presentations
-		}, function(err: any, html: string): void {
-			if (err)
-				console.error(err);
-			response.send(html);
+	Collections.Presentations.find({"sessionNumber": sessionNumber}, {sort: "presenter"}).toArray(function(err, presentations: Presentation[]) {
+		var presenterNames: string[] = [];
+		for (var i: number = 0; i < presentations.length; i++) {
+			presenterNames.push(presentations[i].presenter);
+		}
+		var pictures = {};
+		// Max concurrent requests is 10
+		async.eachLimit(presenterNames, 10, function(presenter: string, callback: any) {
+			Collections.Pictures.findOne({"name": presenter}, function(err: Error, presenterMedia: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!presenterMedia) {
+					callback();
+					return;
+				}
+				pictures[presenter] = presenterMedia.picture;
+				callback();
+			});
+		}, function(err: Error) {
+			if (err) {
+				response.set("Content-Type", "text/plain");
+				response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+				return;
+			}
+			response.render("register", {
+				title: "Session " + sessionNumber.toString(),
+				mobileOS: platform,
+				loggedIn: loggedIn,
+				email: email,
+				admin: admin,
+				sessionNumber: sessionNumber,
+				presentations: presentations,
+				pictures: pictures
+			}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
 		});
 	});
 });
@@ -634,11 +764,15 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		"abstract": string;
 		"pdfID"?: string;
 		"sessionNumber": number;
+		"location.name": string;
+		"location.capacity": number;
 	} = {
 		"presenter": request.body.name || "",
 		"title": request.body.title || "",
 		"abstract": request.body.abstract || "",
-		"sessionNumber": parseInt(request.body.session, 10)
+		"sessionNumber": parseInt(request.body.session, 10),
+		"location.name": request.body.location || "",
+		"location.capacity": parseInt(request.body.locationCapacity, 10)
 	};
 	if (request.body.uploadedPDF)
 		data.pdfID = request.body.uploadedPDF;
@@ -657,7 +791,7 @@ app.post("/admin/presentations/edit/:id", AdminAuth, function(request: express3.
 		});
 		return;
 	}
-	if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+	if (isNaN(data.sessionNumber) || isNaN(data["location.capacity"]) || data.presenter === "" || data.title === "" || data.abstract === "") {
 		response.send({
 			"status": "failure",
 			"reason": "Invalid information"
@@ -796,6 +930,8 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		uploadedPDF: string;
 		abstract: string;
 		session: number;
+		location: string;
+		locationCapacity: number;
 		//email: string;
 	} = {
 		"name": request.body.name || "",
@@ -804,7 +940,9 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		"uploadedMedia": [],
 		"uploadedPDF": request.body.uploadedPDF || undefined,
 		"abstract": request.body.abstract || "",
-		"session": parseInt(request.body.session, 10)
+		"session": parseInt(request.body.session, 10),
+		"location": request.body.location || "",
+		"locationCapacity": parseInt(request.body.locationCapacity, 10)
 	};
 	try {
 		if (request.body.uploadedMedia)
@@ -817,7 +955,7 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 		});
 		return;
 	}
-	if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+	if (isNaN(data.session) || isNaN(data.locationCapacity) || data.name === "" || data.title === "" || data.abstract === "") {
 		response.send({
 			"status": "failure",
 			"reason": "Invalid information"
@@ -835,6 +973,11 @@ app.post("/admin/presentations", AdminAuth, function(request: express3.Request, 
 			images: [],
 			videos: []
 		},
+		location: {
+			name: data.location,
+			capacity: data.locationCapacity
+		},
+		attendees: [],
 		pdfID: data.uploadedPDF,
 		abstract: data.abstract
 	}

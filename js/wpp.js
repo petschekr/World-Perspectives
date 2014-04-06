@@ -261,9 +261,17 @@ $(document).ready(function () {
             "uploadedMedia": JSON.stringify(uploadedMedia),
             "uploadedPDF": uploadedPDF,
             "abstract": $("#create textarea").val(),
-            "session": undefined
+            "session": undefined,
+            "location": undefined,
+            "locationCapacity": undefined
         };
-        var session = $("#create select").val();
+        var location = $("select").first().val();
+        location = location.match(/([\w ]+) /)[1];
+        data.location = location;
+        var locationCapacity = $("#create option").eq($("select").first().get(0).selectedIndex).data("capacity");
+        data.locationCapacity = locationCapacity;
+
+        var session = $("#create select").last().val();
         session = session.match(/^Session (\d)/)[1];
         data.session = session;
         if (data.name === "" || data.title === "" || data.abstract === "") {
@@ -333,9 +341,17 @@ $(document).ready(function () {
             "uploadedMedia": JSON.stringify(uploadedMedia),
             "uploadedPDF": uploadedPDF,
             "abstract": $("textarea").val(),
-            "session": undefined
+            "session": undefined,
+            "location": undefined,
+            "locationCapacity": undefined
         };
-        var session = $("#create select").val();
+        var location = $("select").first().val();
+        location = location.match(/([\w ]+) /)[1];
+        data.location = location;
+        var locationCapacity = $("#create option").eq($("select").first().get(0).selectedIndex).data("capacity");
+        data.locationCapacity = locationCapacity;
+
+        var session = $("#create select").last().val();
         session = session.match(/^Session (\d)/)[1];
         data.session = session;
         if (data.name === "" || data.title === "" || data.abstract === "") {
@@ -406,20 +422,92 @@ $(document).ready(function () {
         $(this).siblings().css("opacity", "1");
         $(this).css("opacity", "0.3");
 
-        for (var buttonID in preferences) {
-            if (preferences[buttonID] === preference) {
-                $("*[data-id=" + buttonID + "][data-order=" + preference + "]").css("opacity", "1");
-                delete preferences[buttonID];
+        for (var i = 1; i <= 3; i++) {
+            if (preferences[i] == id) {
+                $("*[data-id=" + id + "][data-order=" + i + "]").css("opacity", "1");
+                delete preferences[i];
             }
         }
 
-        preferences[id] = preference;
+        // Deselect other button of same choice
+        if (preferences[preference])
+            $("*[data-id=" + preferences[preference] + "][data-order=" + preference + "]").css("opacity", "1");
+
+        preferences[preference] = id;
     });
-    $(document).on("click", "#finishbutton", function () {
+    $(document).on("touchend", "#finish-session", function (e) {
         var numberSelected = Object.keys(preferences).length;
         if (numberSelected !== 3) {
             alert("You must select three choices");
-            return false;
+            return;
         }
+
+        // document.title = "Session 1", "Session 2", etc.
+        localStorage.setItem(document.title, JSON.stringify(preferences));
+        preferences = {};
+        window.PUSH({
+            url: "/register",
+            hash: "",
+            timeout: undefined,
+            transition: "slide-out"
+        });
     });
+    $(document).on("touchend", "#finish-registering", function () {
+        var data = {};
+        for (var i = 1; i <= 4; i++) {
+            try  {
+                data["Session " + i] = JSON.parse(localStorage.getItem("Session " + i));
+            } catch (e) {
+                alert("Invalid preference data");
+                return;
+            }
+            if (!data["Session " + i]) {
+                alert("You must select your preferences for each session");
+                return;
+            }
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/register",
+            data: { payload: JSON.stringify(data) },
+            success: function (res, status, xhr) {
+                if (res.status == "success") {
+                    $(".content").fadeOut();
+                } else {
+                    console.error(res);
+                    alert("An error occurred while registering");
+                }
+            },
+            error: function (xhr, status, err) {
+                console.error(err);
+                alert("An error occurred while registering");
+            }
+        });
+    });
+    function pageLoad() {
+        if (window.location.pathname == "/register") {
+            if (localStorage["Session 1"]) {
+                $("a[href='/register/1'] span.icon-check").css("opacity", "1");
+            }
+            if (localStorage["Session 2"]) {
+                $("a[href='/register/2'] span.icon-check").css("opacity", "1");
+            }
+            if (localStorage["Session 3"]) {
+                $("a[href='/register/3'] span.icon-check").css("opacity", "1");
+            }
+            if (localStorage["Session 4"]) {
+                $("a[href='/register/4'] span.icon-check").css("opacity", "1");
+            }
+        }
+        if (window.location.pathname.match(/^\/register\/\d$/)) {
+            // Load register preferences
+            preferences = JSON.parse(localStorage.getItem(document.title));
+            for (var key in preferences) {
+                $("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
+            }
+        }
+    }
+    window.addEventListener("push", pageLoad);
+    pageLoad();
 });

@@ -6,45 +6,55 @@ block tabs
 	+tab("My Schedule", "/schedule", "icon-list", false)
 	+tab("Feedback", "/feedback", "icon-compose", false)
 
+
+block buttons
+	if loggedIn && sessionNumber
+		a.btn.btn-link.btn-nav.pull-left(href="/register", data-transition="slide-out")
+			span.icon.icon-left-nav
+			| Back
+	a.icon.icon-gear.pull-right(href="#settings")
+
 block content
 	if loggedIn
 		if !sessionNumber
-			ul.table-view
+			ul.table-view.register
 				li.table-view-cell
 					a.navigate-right(href="/register/1", data-transition="slide-in")
 						span.badge 8:50 AM - 9:40 PM
 						| Session 1
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/2", data-transition="slide-in")
 						span.badge 9:50 AM - 10:40 PM
 						| Session 2
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/3", data-transition="slide-in")
 						span.badge 11:40 AM - 12:30 PM
 						| Session 3
+						span.icon.icon-check
 				li.table-view-cell
 					a.navigate-right(href="/register/4", data-transition="slide-in")
 						span.badge 12:40 PM - 1:30 PM
 						| Session 4
+						span.icon.icon-check
+			br
+			button#finish-registering.btn.btn-block.btn-outlined.btn-primary Finish
 		else
-			ul.table-view
+			ul.table-view.explore
 				for presentation in presentations
 					li.table-view-cell.media
-						img.media-object.pull-left(src='http://placehold.it/42x42')
+						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
 						.media-body
 							strong= presentation.title
 							br
 							small= presentation.presenter
-							p
-								if presentation.abstract.length < 100
-									| #{presentation.abstract}
-								else
-									| #{presentation.abstract.substr(0, 100) + "..."}
+							p #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
 						.btns
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="1") 1st Choice
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="2") 2nd Choice
 							button.btn.btn-primary(data-id=presentation.sessionID, data-order="3") 3rd Choice
-
-			a#finishbutton.btn.btn-block.btn-outlined.btn-primary(href="/register", data-transition="slide-out") Finish
+			br
+			button#finish-session.btn.btn-block.btn-outlined.btn-primary Finish
 	else
 		p.content-padded You must log in before registering

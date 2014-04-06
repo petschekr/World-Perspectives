@@ -203,9 +203,6 @@ select {
 	border: 1px solid #d1d1d1;
 }
 
-li.media {
-	/*width: 115%;*/
-}
 .media .btn {
 	position: initial;
 	-webkit-transform: none !important;
@@ -233,6 +230,12 @@ li.media {
 .table-view-cell > a:not(.btn) {
 	position: initial;
 	margin-right: -85px;
+}
+.register .icon-check {
+	-webkit-transform: translateY(5%) translateX(15%);
+	transform: translateY(5%) translateX(15%);
+	color: #1EA82E;
+	opacity: 0;
 }
 
 p.medium-abstract {
@@ -284,6 +287,9 @@ p.abstract {
 	p.large-abstract {
 		display: block;
 	}
+	.btns {
+		width: 98vw;
+	}
 	p.abstract {
 		-webkit-column-count: 3;
 		-moz-column-count: 3;
@@ -292,7 +298,7 @@ p.abstract {
 }
 
 /* Large devices (large desktops, 1200px and up) */
-@media (min-width: 1920px) {
+@media (min-width: 1800px) {
 	.youtube {
 		height: 600px;
 	}
