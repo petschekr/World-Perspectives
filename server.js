@@ -442,7 +442,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             },
             function (callback) {
                 // Sort the user into sessions based on their preferences
-                async.each(preferences, function (preference, callback2) {
+                async.eachSeries(preferences, function (preference, callback2) {
                     var choices = [];
                     choices.push(preference.firstChoice);
                     choices.push(preference.secondChoice);

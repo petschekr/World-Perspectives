@@ -499,7 +499,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		},
 		function(callback) {
 			// Sort the user into sessions based on their preferences
-			async.each(preferences, function(preference: SessionChoice, callback2: any) {
+			async.eachSeries(preferences, function(preference: SessionChoice, callback2: any) {
 				var choices: string[] = [];
 				choices.push(preference.firstChoice);
 				choices.push(preference.secondChoice);
