@@ -584,7 +584,8 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 			console.error(err);
 			response.send({
 				status: "failure",
-				error: "The database encountered an error"
+				error: "The database encountered an error",
+				rawError: err
 			});
 			return;
 		}

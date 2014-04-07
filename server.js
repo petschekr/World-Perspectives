@@ -521,7 +521,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 console.error(err);
                 response.send({
                     status: "failure",
-                    error: "The database encountered an error"
+                    error: "The database encountered an error",
+                    rawError: err
                 });
                 return;
             }
