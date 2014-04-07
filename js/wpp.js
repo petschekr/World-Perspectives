@@ -467,11 +467,14 @@ $(document).ready(function () {
             }
         }
 
+        // Disable the button in case the request takes a while
+        $("#finish-registering").attr("disabled", true).text("Registering...");
         $.ajax({
             type: "POST",
             url: "/register",
             data: { payload: JSON.stringify(data) },
             success: function (res, status, xhr) {
+                $("#finish-registering").attr("disabled", false).text("Finish");
                 if (res.status == "success") {
                     $(".content").fadeOut();
                 } else {
@@ -480,6 +483,7 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr, status, err) {
+                $("#finish-registering").attr("disabled", false).text("Finish");
                 console.error(err);
                 alert("An error occurred while registering");
             }
