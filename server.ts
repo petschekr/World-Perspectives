@@ -447,16 +447,23 @@ app.get("/register", function(request: express3.Request, response: express3.Resp
 	var email: string = request.session["email"];
 	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
 	
-	response.render("register", {
-		title: "Register",
-		mobileOS: platform,
-		loggedIn: loggedIn,
-		email: email,
-		admin: admin,
-	}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	Collections.Users.findOne({"email": email}, function(err: Error, user) {
+		if (!user)
+			return response.send("User not found");
+
+		var registered: boolean = user.userInfo.RegisteredForSessions;
+		response.render("register", {
+			title: "Register",
+			mobileOS: platform,
+			loggedIn: loggedIn,
+			email: email,
+			admin: admin,
+			registered: registered
+		}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 // Register a user's preferences

@@ -389,16 +389,23 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var email = request.session["email"];
         var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
 
-        response.render("register", {
-            title: "Register",
-            mobileOS: platform,
-            loggedIn: loggedIn,
-            email: email,
-            admin: admin
-        }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        Collections.Users.findOne({ "email": email }, function (err, user) {
+            if (!user)
+                return response.send("User not found");
+
+            var registered = user.userInfo.RegisteredForSessions;
+            response.render("register", {
+                title: "Register",
+                mobileOS: platform,
+                loggedIn: loggedIn,
+                email: email,
+                admin: admin,
+                registered: registered
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
 

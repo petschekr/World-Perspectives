@@ -15,7 +15,10 @@ block buttons
 	a.icon.icon-gear.pull-right(href="#settings")
 
 block content
-	if loggedIn
+	if registered
+		h2.content-padded Congrats! You've already registered.
+		h5.content-padded You can now go to your schedule to view what presentations you'll be attending.
+	else if loggedIn
 		if !sessionNumber
 			ul.table-view.register
 				li.table-view-cell
