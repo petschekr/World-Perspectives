@@ -296,18 +296,85 @@ app.get("/schedule", function(request: express3.Request, response: express3.Resp
 		}
 		scheduleForJade.push(scheduleItem);
 	}
-	response.render("schedule", {
-		title: "My Schedule",
-		mobileOS: platform,
-		loggedIn: loggedIn,
-		email: email,
-		admin: admin,
-		renderSchedule: scheduleForJade,
-		realSchedule: Schedule
-	}, function(err: any, html: string): void {
-		if (err)
+	function respond(presentations: Presentation[] = undefined, callback: Function = undefined): void {
+		response.render("schedule", {
+			title: "My Schedule",
+			mobileOS: platform,
+			loggedIn: loggedIn,
+			email: email,
+			admin: admin,
+			renderSchedule: scheduleForJade,
+			realSchedule: Schedule,
+			presentations: presentations
+		}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+			if (callback)
+				callback()
+		});
+	}
+	if (!loggedIn) {
+		respond();
+		return;
+	}
+	async.waterfall([
+		function(callback): void {
+			Collections.Users.findOne({"email": email}, callback);
+		},
+		function(user, callback): void {
+			if (!user || !user.userInfo.RegisteredForSessions) {
+				respond();
+				return
+			}
+			async.map(user.userInfo.Sessions, function(sessionItemID: string, callbackMap: any): void {
+				Collections.Presentations.findOne({"sessionID": sessionItemID}, callbackMap);
+			}, function(err: Error, results: Presentation[]) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				respond(results, callback);
+			});
+		}
+	], function(err: Error): void {
+		if (err) {
 			console.error(err);
-		response.send(html);
+			response.send({
+				status: "failure",
+				error: "The database encountered an error",
+				rawError: err
+			});
+			return;
+		}
+	});
+});
+app.get("/schedule/:id", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/schedule");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 

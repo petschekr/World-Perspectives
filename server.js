@@ -243,18 +243,87 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             };
             scheduleForJade.push(scheduleItem);
         }
-        response.render("schedule", {
-            title: "My Schedule",
-            mobileOS: platform,
-            loggedIn: loggedIn,
-            email: email,
-            admin: admin,
-            renderSchedule: scheduleForJade,
-            realSchedule: Schedule
-        }, function (err, html) {
-            if (err)
+        function respond(presentations, callback) {
+            if (typeof presentations === "undefined") { presentations = undefined; }
+            if (typeof callback === "undefined") { callback = undefined; }
+            response.render("schedule", {
+                title: "My Schedule",
+                mobileOS: platform,
+                loggedIn: loggedIn,
+                email: email,
+                admin: admin,
+                renderSchedule: scheduleForJade,
+                realSchedule: Schedule,
+                presentations: presentations
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+                if (callback)
+                    callback();
+            });
+        }
+        if (!loggedIn) {
+            respond();
+            return;
+        }
+        async.waterfall([
+            function (callback) {
+                Collections.Users.findOne({ "email": email }, callback);
+            },
+            function (user, callback) {
+                if (!user || !user.userInfo.RegisteredForSessions) {
+                    respond();
+                    return;
+                }
+                async.map(user.userInfo.Sessions, function (sessionItemID, callbackMap) {
+                    Collections.Presentations.findOne({ "sessionID": sessionItemID }, callbackMap);
+                }, function (err, results) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    respond(results, callback);
+                });
+            }
+        ], function (err) {
+            if (err) {
                 console.error(err);
-            response.send(html);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error",
+                    rawError: err
+                });
+                return;
+            }
+        });
+    });
+    app.get("/schedule/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/schedule");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
 

@@ -10,16 +10,31 @@ block content
 	//#timemarker
 	ul.table-view.schedule
 		- var i = 0;
-		each scheduleBlock in renderSchedule
+		each scheduleBlock, index in renderSchedule
 			- var fadeValue = (realSchedule[i].end.getTime() < Date.now()) ? "0.3" : "1";
 			- i++;
-			li.table-view-cell(style="opacity: #{fadeValue}")= scheduleBlock.title
-				p
-					if scheduleBlock.end
-						span.badge.badge-positive= scheduleBlock.start
-						| &nbsp;-&nbsp;
-						span.badge.badge-negative= scheduleBlock.end
-					else
-						span.badge= scheduleBlock.start
+			li.table-view-cell(style="opacity: #{fadeValue}")
+				if !realSchedule[index].sessionNumber || !presentations
+					| #{scheduleBlock.title}
+					p
+						if scheduleBlock.end
+							span.badge.badge-positive= scheduleBlock.start
+							| &nbsp;-&nbsp;
+							span.badge.badge-negative= scheduleBlock.end
+						else
+							span.badge= scheduleBlock.start
+				else
+					- var presentation = presentations[realSchedule[index].sessionNumber - 1];
+					a.navigate-right(href="/schedule/#{presentation.sessionID}", data-transition="slide-in")
+						| #{presentation.title}
+						br
+						i: small #{scheduleBlock.title}
+						p
+							if scheduleBlock.end
+								span.badge.badge-positive= scheduleBlock.start
+								| &nbsp;-&nbsp;
+								span.badge.badge-negative= scheduleBlock.end
+							else
+								span.badge= scheduleBlock.start
 	if !loggedIn
-		p.content-padded(style="text-align: center;") <i>Please log in to see a personalized schedule</i>
+		p.content-padded(style="text-align: center;") <i>Please log in and register for presentations to see a personalized schedule</i>
