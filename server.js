@@ -427,6 +427,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             preference.thirdChoice = data["Session " + i][3];
             preferences.push(preference);
         }
+        var receivedPresentations = [null, null, null, null];
         async.parallel([
             function (callback) {
                 // Insert the user's preferences into the DB
@@ -435,49 +436,83 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             function (callback) {
                 // Sort the user into sessions based on their preferences
                 async.each(preferences, function (preference, callback2) {
-                    Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice }, function (err, presentation) {
+                    var choices = [];
+                    choices.push(preference.firstChoice);
+                    choices.push(preference.secondChoice);
+                    choices.push(preference.thirdChoice);
+                    async.map(choices, function (choiceID, callback3) {
+                        Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: choiceID }, function (err, presentation) {
+                            if (!presentation) {
+                                callback3(new Error("Could not find presentation"));
+                                return;
+                            }
+                            callback3(null, presentation);
+                        });
+                    }, function (err, presentations) {
                         if (err) {
                             callback2(err);
                             return;
                         }
-                        if (!presentation) {
-                            callback2(new Error("Could not find presentation"));
-                            return;
-                        }
-                        var capacity = presentation.location.capacity;
-                        var minCapacity = capacity / 2;
-                        var attendees = presentation.attendees.length;
-
-                        function registerForSession(preference) {
+                        function registerForSession(preferenceID) {
                             var studentName;
                             async.waterfall([
-                                function (callback3) {
+                                function (callback4) {
                                     Collections.Names.findOne({ "email": email }, function (err, student) {
                                         if (err)
-                                            callback3(err);
+                                            callback4(err);
                                         else
-                                            callback3(null, student.name);
+                                            callback4(null, student.name);
                                     });
                                 },
-                                function (studentName, callback3) {
-                                    Collections.Presentations.update({ "sessionID": preference }, { $push: { attendees: studentName } }, { w: 1 }, function (err) {
+                                function (studentName, callback4) {
+                                    Collections.Presentations.update({ "sessionID": preferenceID }, { $push: { attendees: studentName } }, { w: 1 }, function (err) {
                                         if (err) {
-                                            callback3(err);
+                                            callback4(err);
                                             return;
                                         }
-                                        Collections.Users.update({ "email": email }, { $push: { "userInfo.Sessions": preference } }, { w: 1 }, callback3);
+                                        Collections.Users.update({ "email": email }, { $push: { "userInfo.Sessions": preferenceID } }, { w: 1 }, function (err) {
+                                            callback4(err);
+                                        });
+                                    });
+                                },
+                                function (callback4) {
+                                    Collections.Presentations.findOne({ "sessionID": preferenceID }, function (err, presentation) {
+                                        // If there's an error, presentation will be null therefore preserving the order of the array. Otherwise, err is null anyway
+                                        receivedPresentations[presentation.sessionNumber - 1] = presentation; // Guarantee order
+                                        callback4(err);
                                     });
                                 }
                             ], callback2);
                         }
 
-                        if (attendees < minCapacity) {
-                            // Less than minimum capacity to place them in their first choice
+                        var presentation1Attendees = presentations[0].attendees.length;
+                        var presentation1Capacity = presentations[0].location.capacity;
+                        var presentation2Attendees = presentations[1].attendees.length;
+                        var presentation2Capacity = presentations[1].location.capacity;
+                        var presentation3Attendees = presentations[2].attendees.length;
+                        var presentation3Capacity = presentations[2].location.capacity;
+
+                        if (presentation1Attendees < (presentation1Capacity / 2)) {
+                            // Less than minimum capacity so place them in their first choice
                             registerForSession(preference.firstChoice);
+                        } else if (presentation2Attendees < (presentation2Capacity / 2)) {
+                            // Their first choice is above minimum and their second isn't above minimum
+                            registerForSession(preference.secondChoice);
+                        } else if (presentation3Attendees < (presentation3Capacity / 2)) {
+                            // Their first and second choices are above minimum and their third isn't
+                            registerForSession(preference.thirdChoice);
+                        } else if (presentation1Attendees < presentation1Capacity) {
+                            // Their first choice isn't above capacity yet
+                            registerForSession(preference.firstChoice);
+                        } else if (presentation2Attendees < presentation2Capacity) {
+                            // Their second choice isn't above capacity yet
+                            registerForSession(preference.secondChoice);
+                        } else if (presentation3Attendees < presentation3Capacity) {
+                            // Their third choice isn't above capacity yet
+                            registerForSession(preference.thirdChoice);
+                        } else {
+                            callback2(new Error("All presentations are full or an error occured grouping you into presentations"));
                         }
-                        /*else if () {
-                        
-                        }*/
                     });
                 }, callback);
             }
@@ -492,7 +527,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             }
 
             response.send({
-                status: "success"
+                status: "success",
+                receivedPresentations: receivedPresentations
             });
         });
     });

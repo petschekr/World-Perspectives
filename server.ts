@@ -484,6 +484,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		preference.thirdChoice = data["Session " + i][3];
 		preferences.push(preference);
 	}
+	var receivedPresentations: Presentation[] = [null, null, null, null];
 	async.parallel([
 		function(callback) {
 			// Insert the user's preferences into the DB
@@ -492,49 +493,89 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		function(callback) {
 			// Sort the user into sessions based on their preferences
 			async.each(preferences, function(preference: SessionChoice, callback2: any) {
-				Collections.Presentations.findOne({"sessionNumber": preference.sessionNumber, sessionID: preference.firstChoice}, function(err: Error, presentation: Presentation) {
+				var choices: string[] = [];
+				choices.push(preference.firstChoice);
+				choices.push(preference.secondChoice);
+				choices.push(preference.thirdChoice);
+				async.map(choices, function(choiceID: string, callback3: any) {
+					Collections.Presentations.findOne({"sessionNumber": preference.sessionNumber, sessionID: choiceID}, function(err: Error, presentation: Presentation) {
+						if (!presentation) {
+							callback3(new Error("Could not find presentation"));
+							return;
+						}
+						callback3(null, presentation);
+					});
+				}, function(err: Error, presentations: Presentation[]) {
 					if (err) {
 						callback2(err);
 						return;
 					}
-					if (!presentation) {
-						callback2(new Error("Could not find presentation"));
-						return;
-					}
-					var capacity: number = presentation.location.capacity;
-					var minCapacity: number = capacity / 2;
-					var attendees: number = presentation.attendees.length;
-
-					function registerForSession(preference: string) {
+					function registerForSession(preferenceID: string) {
 						var studentName: string;
 						async.waterfall([
-							function(callback3) {
+							function(callback4) {
 								Collections.Names.findOne({"email": email}, function(err: Error, student: any) {
 									if (err)
-										callback3(err);
+										callback4(err);
 									else
-										callback3(null, student.name);
+										callback4(null, student.name);
 								});
 							},
-							function(studentName: string, callback3) {
-								Collections.Presentations.update({"sessionID": preference}, {$push: {attendees: studentName}}, {w:1}, function(err: Error) {
+							function(studentName: string, callback4) {
+								Collections.Presentations.update({"sessionID": preferenceID}, {$push: {attendees: studentName}}, {w:1}, function(err: Error) {
 									if (err) {
-										callback3(err);
+										callback4(err);
 										return;
 									}
-									Collections.Users.update({"email": email}, {$push: {"userInfo.Sessions": preference}}, {w:1}, callback3);
+									Collections.Users.update({"email": email}, {$push: {"userInfo.Sessions": preferenceID}}, {w:1}, function(err: Error) {
+										callback4(err);
+									});
+								});
+							},
+							function(callback4) {
+								Collections.Presentations.findOne({"sessionID": preferenceID}, function(err: Error, presentation: Presentation) {
+									// If there's an error, presentation will be null therefore preserving the order of the array. Otherwise, err is null anyway
+									receivedPresentations[presentation.sessionNumber - 1] = presentation; // Guarantee order
+									callback4(err);
 								});
 							}
 						], callback2);
 					}
 
-					if (attendees < minCapacity) {
-						// Less than minimum capacity to place them in their first choice
+					var presentation1Attendees: number = presentations[0].attendees.length;
+					var presentation1Capacity: number = presentations[0].location.capacity;
+					var presentation2Attendees: number = presentations[1].attendees.length;
+					var presentation2Capacity: number = presentations[1].location.capacity;
+					var presentation3Attendees: number = presentations[2].attendees.length;
+					var presentation3Capacity: number = presentations[2].location.capacity;
+
+					if (presentation1Attendees < (presentation1Capacity / 2)) {
+						// Less than minimum capacity so place them in their first choice
 						registerForSession(preference.firstChoice);
 					}
-					/*else if () {
-
-					}*/
+					else if (presentation2Attendees < (presentation2Capacity / 2)) {
+						// Their first choice is above minimum and their second isn't above minimum
+						registerForSession(preference.secondChoice);
+					}
+					else if (presentation3Attendees < (presentation3Capacity / 2)) {
+						// Their first and second choices are above minimum and their third isn't
+						registerForSession(preference.thirdChoice);
+					}
+					else if (presentation1Attendees < presentation1Capacity) {
+						// Their first choice isn't above capacity yet
+						registerForSession(preference.firstChoice);
+					}
+					else if (presentation2Attendees < presentation2Capacity) {
+						// Their second choice isn't above capacity yet
+						registerForSession(preference.secondChoice);
+					}
+					else if (presentation3Attendees < presentation3Capacity) {
+						// Their third choice isn't above capacity yet
+						registerForSession(preference.thirdChoice);
+					}
+					else {
+						callback2(new Error("All presentations are full or an error occured grouping you into presentations"));
+					}
 				});
 			}, callback);
 		}
@@ -549,7 +590,8 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		}
 
 		response.send({
-			status: "success"
+			status: "success",
+			receivedPresentations: receivedPresentations
 		});
 	});
 });
