@@ -491,7 +491,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 		preference.thirdChoice = data["Session " + i][3];
 		preferences.push(preference);
 	}
-	var receivedPresentations: Presentation[] = [null, null, null, null];
+	var receivedPresentations: Presentation[] = [];
 	async.parallel([
 		function(callback) {
 			// Insert the user's preferences into the DB
@@ -504,7 +504,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 				choices.push(preference.firstChoice);
 				choices.push(preference.secondChoice);
 				choices.push(preference.thirdChoice);
-				async.map(choices, function(choiceID: string, callback3: any) {
+				async.mapSeries(choices, function(choiceID: string, callback3: any) {
 					Collections.Presentations.findOne({"sessionNumber": preference.sessionNumber, sessionID: choiceID}, function(err: Error, presentation: Presentation) {
 						if (!presentation) {
 							callback3(new Error("Could not find presentation"));
@@ -542,7 +542,7 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 							function(callback4) {
 								Collections.Presentations.findOne({"sessionID": preferenceID}, function(err: Error, presentation: Presentation) {
 									// If there's an error, presentation will be null therefore preserving the order of the array. Otherwise, err is null anyway
-									receivedPresentations[presentation.sessionNumber - 1] = presentation; // Guarantee order
+									receivedPresentations.push(presentation);
 									callback4(err);
 								});
 							}

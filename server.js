@@ -434,7 +434,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             preference.thirdChoice = data["Session " + i][3];
             preferences.push(preference);
         }
-        var receivedPresentations = [null, null, null, null];
+        var receivedPresentations = [];
         async.parallel([
             function (callback) {
                 // Insert the user's preferences into the DB
@@ -447,7 +447,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     choices.push(preference.firstChoice);
                     choices.push(preference.secondChoice);
                     choices.push(preference.thirdChoice);
-                    async.map(choices, function (choiceID, callback3) {
+                    async.mapSeries(choices, function (choiceID, callback3) {
                         Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: choiceID }, function (err, presentation) {
                             if (!presentation) {
                                 callback3(new Error("Could not find presentation"));
@@ -485,7 +485,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                                 function (callback4) {
                                     Collections.Presentations.findOne({ "sessionID": preferenceID }, function (err, presentation) {
                                         // If there's an error, presentation will be null therefore preserving the order of the array. Otherwise, err is null anyway
-                                        receivedPresentations[presentation.sessionNumber - 1] = presentation; // Guarantee order
+                                        receivedPresentations.push(presentation);
                                         callback4(err);
                                     });
                                 }
