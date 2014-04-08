@@ -243,7 +243,33 @@ select {
 #received-presentations {
 	display: none;
 }
+.input-group-bootstrap {
+	position: relative;
+	display: table;
+	border-collapse: separate;
+}
+.input-group-bootstrap input {
+	padding: 10px 10px;
+	margin-bottom: 0;
+}
+.input-group-bootstrap input, .input-group-addon-bootstrap {
+	display: table-cell;
+}
+.input-group-addon-bootstrap {
+	padding: 6px 12px;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1;
+	color: #555;
+	text-align: center;
+	background-color: #E9E9E9;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	border-left: 0;
 
+	width: 1%;
+	white-space: nowrap;
+	vertical-align: middle;
+}
 
 p.medium-abstract {
 	display: none;

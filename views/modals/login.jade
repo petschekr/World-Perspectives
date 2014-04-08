@@ -6,7 +6,10 @@
 	.content
 		br
 		#login-1
-			input(type="text", placeholder="FirstClass username", autocorrect="off", autocapitalize="off")
+			.input-group-bootstrap
+				input(type="text", placeholder="FirstClass username", autocorrect="off", autocapitalize="off")
+				span.input-group-addon-bootstrap @gfacademy.org
+			br
 			button.btn.btn-positive.btn-block.btn-outlined Send code
 		p#login-message.content-padded
 		#login-2
