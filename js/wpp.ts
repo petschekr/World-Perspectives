@@ -30,12 +30,19 @@ $(document).ready(function(): void {
 		}
 	}
 	var processing: boolean = false;
-	$(document).on("click", "#login-1 button", function(): void {
+	$(document).on("touchend", "#login-1 button", function(): void {
 		if (processing)
 			return;
 		else
 			processing = true;
-		var username: string = $("#login-1 > input").val().trim();
+		var username: string = $("#login-1 input").val()
+		var usernameParsed: any = username.match(/^([a-z]{3,})(@gfacademy.org)?$/i);
+		if (!usernameParsed) {
+			alert("That's an invalid username");
+			return
+		}
+		username = usernameParsed[1].trim();
+		
 		$("#login-1 button").text("Sending code...");
 		$("#login-1 button").attr("disabled", "disabled");
 		$.ajax({
@@ -66,7 +73,7 @@ $(document).ready(function(): void {
 			}
 		});
 	});
-	$(document).on("click", "#login-2 button", function(): void {
+	$(document).on("touchend", "#login-2 button", function(): void {
 		if (processing)
 			return;
 		else
