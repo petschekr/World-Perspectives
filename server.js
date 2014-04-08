@@ -61,7 +61,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         Users: db.collection("users"),
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations"),
-        Pictures: db.collection("pictures")
+        Pictures: db.collection("pictures"),
+        Names: db.collection("names")
     };
 
     // Retrieve the schedule
@@ -242,18 +243,87 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             };
             scheduleForJade.push(scheduleItem);
         }
-        response.render("schedule", {
-            title: "My Schedule",
-            mobileOS: platform,
-            loggedIn: loggedIn,
-            email: email,
-            admin: admin,
-            renderSchedule: scheduleForJade,
-            realSchedule: Schedule
-        }, function (err, html) {
-            if (err)
+        function respond(presentations, callback) {
+            if (typeof presentations === "undefined") { presentations = undefined; }
+            if (typeof callback === "undefined") { callback = undefined; }
+            response.render("schedule", {
+                title: "My Schedule",
+                mobileOS: platform,
+                loggedIn: loggedIn,
+                email: email,
+                admin: admin,
+                renderSchedule: scheduleForJade,
+                realSchedule: Schedule,
+                presentations: presentations
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+                if (callback)
+                    callback();
+            });
+        }
+        if (!loggedIn) {
+            respond();
+            return;
+        }
+        async.waterfall([
+            function (callback) {
+                Collections.Users.findOne({ "email": email }, callback);
+            },
+            function (user, callback) {
+                if (!user || !user.userInfo.RegisteredForSessions) {
+                    respond();
+                    return;
+                }
+                async.map(user.userInfo.Sessions, function (sessionItemID, callbackMap) {
+                    Collections.Presentations.findOne({ "sessionID": sessionItemID }, callbackMap);
+                }, function (err, results) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    respond(results, callback);
+                });
+            }
+        ], function (err) {
+            if (err) {
                 console.error(err);
-            response.send(html);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error",
+                    rawError: err
+                });
+                return;
+            }
+        });
+    });
+    app.get("/schedule/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/schedule");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
         });
     });
 
@@ -377,6 +447,222 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             if (err)
                 console.error(err);
             response.send(html);
+        });
+    });
+
+    // Register for sessions
+    app.get("/register", function (request, response) {
+        request.session["email"] = "petschekr@gfacademy.org";
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        Collections.Users.findOne({ "email": email }, function (err, user) {
+            if (!user)
+                return response.send("User not found");
+
+            var registered = user.userInfo.RegisteredForSessions;
+            response.render("register", {
+                title: "Register",
+                mobileOS: platform,
+                loggedIn: loggedIn,
+                email: email,
+                admin: admin,
+                registered: registered
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+
+    // Register a user's preferences
+    app.post("/register", function (request, response) {
+        var email = request.session["email"];
+        if (!email) {
+            response.send({
+                status: "failure",
+                error: "You are not logged in"
+            });
+            return;
+        }
+        var preferences = [];
+        var data = JSON.parse(request.body.payload);
+
+        for (var i = 1; i <= 4; i++) {
+            var preference = {
+                sessionNumber: i,
+                firstChoice: undefined,
+                secondChoice: undefined,
+                thirdChoice: undefined
+            };
+            preference.firstChoice = data["Session " + i][1];
+            preference.secondChoice = data["Session " + i][2];
+            preference.thirdChoice = data["Session " + i][3];
+            preferences.push(preference);
+        }
+        var receivedPresentations = [];
+        async.parallel([
+            function (callback) {
+                // Insert the user's preferences into the DB
+                Collections.Users.update({ "email": email }, { $set: { "userInfo.SessionChoices": preferences, "userInfo.RegisteredForSessions": true } }, { w: 1 }, callback);
+            },
+            function (callback) {
+                // Sort the user into sessions based on their preferences
+                async.eachSeries(preferences, function (preference, callback2) {
+                    var choices = [];
+                    choices.push(preference.firstChoice);
+                    choices.push(preference.secondChoice);
+                    choices.push(preference.thirdChoice);
+                    async.mapSeries(choices, function (choiceID, callback3) {
+                        Collections.Presentations.findOne({ "sessionNumber": preference.sessionNumber, sessionID: choiceID }, function (err, presentation) {
+                            if (!presentation) {
+                                callback3(new Error("Could not find presentation"));
+                                return;
+                            }
+                            callback3(null, presentation);
+                        });
+                    }, function (err, presentations) {
+                        if (err) {
+                            callback2(err);
+                            return;
+                        }
+                        function registerForSession(preferenceID) {
+                            var studentName;
+                            async.waterfall([
+                                function (callback4) {
+                                    Collections.Names.findOne({ "email": email }, function (err, student) {
+                                        if (err)
+                                            callback4(err);
+                                        else
+                                            callback4(null, student.name);
+                                    });
+                                },
+                                function (studentName, callback4) {
+                                    Collections.Presentations.update({ "sessionID": preferenceID }, { $push: { attendees: studentName } }, { w: 1 }, function (err) {
+                                        if (err) {
+                                            callback4(err);
+                                            return;
+                                        }
+                                        Collections.Users.update({ "email": email }, { $push: { "userInfo.Sessions": preferenceID } }, { w: 1 }, function (err) {
+                                            callback4(err);
+                                        });
+                                    });
+                                },
+                                function (callback4) {
+                                    Collections.Presentations.findOne({ "sessionID": preferenceID }, function (err, presentation) {
+                                        // If there's an error, presentation will be null therefore preserving the order of the array. Otherwise, err is null anyway
+                                        receivedPresentations.push(presentation);
+                                        callback4(err);
+                                    });
+                                }
+                            ], callback2);
+                        }
+
+                        var presentation1Attendees = presentations[0].attendees.length;
+                        var presentation1Capacity = presentations[0].location.capacity;
+                        var presentation2Attendees = presentations[1].attendees.length;
+                        var presentation2Capacity = presentations[1].location.capacity;
+                        var presentation3Attendees = presentations[2].attendees.length;
+                        var presentation3Capacity = presentations[2].location.capacity;
+
+                        if (presentation1Attendees < (presentation1Capacity / 2)) {
+                            // Less than minimum capacity so place them in their first choice
+                            registerForSession(preference.firstChoice);
+                        } else if (presentation2Attendees < (presentation2Capacity / 2)) {
+                            // Their first choice is above minimum and their second isn't above minimum
+                            registerForSession(preference.secondChoice);
+                        } else if (presentation3Attendees < (presentation3Capacity / 2)) {
+                            // Their first and second choices are above minimum and their third isn't
+                            registerForSession(preference.thirdChoice);
+                        } else if (presentation1Attendees < presentation1Capacity) {
+                            // Their first choice isn't above capacity yet
+                            registerForSession(preference.firstChoice);
+                        } else if (presentation2Attendees < presentation2Capacity) {
+                            // Their second choice isn't above capacity yet
+                            registerForSession(preference.secondChoice);
+                        } else if (presentation3Attendees < presentation3Capacity) {
+                            // Their third choice isn't above capacity yet
+                            registerForSession(preference.thirdChoice);
+                        } else {
+                            callback2(new Error("All presentations are full or an error occured grouping you into presentations"));
+                        }
+                    });
+                }, callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error",
+                    rawError: err
+                });
+                return;
+            }
+
+            response.send({
+                status: "success",
+                receivedPresentations: receivedPresentations
+            });
+        });
+    });
+
+    app.get("/register/:sessionNumber", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+
+        var sessionNumber = parseInt(request.params.sessionNumber, 10);
+        if (isNaN(sessionNumber)) {
+            response.redirect("/register");
+            return;
+        }
+        Collections.Presentations.find({ "sessionNumber": sessionNumber }, { sort: "presenter" }).toArray(function (err, presentations) {
+            var presenterNames = [];
+            for (var i = 0; i < presentations.length; i++) {
+                presenterNames.push(presentations[i].presenter);
+            }
+            var pictures = {};
+
+            // Max concurrent requests is 10
+            async.eachLimit(presenterNames, 10, function (presenter, callback) {
+                Collections.Pictures.findOne({ "name": presenter }, function (err, presenterMedia) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!presenterMedia) {
+                        callback();
+                        return;
+                    }
+                    pictures[presenter] = presenterMedia.picture;
+                    callback();
+                });
+            }, function (err) {
+                if (err) {
+                    response.set("Content-Type", "text/plain");
+                    response.send(500, "A database error occured\n\n" + JSON.stringify(err));
+                    return;
+                }
+                response.render("register", {
+                    title: "Session " + sessionNumber.toString(),
+                    mobileOS: platform,
+                    loggedIn: loggedIn,
+                    email: email,
+                    admin: admin,
+                    sessionNumber: sessionNumber,
+                    presentations: presentations,
+                    pictures: pictures
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
         });
     });
 
@@ -515,7 +801,9 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             "presenter": request.body.name || "",
             "title": request.body.title || "",
             "abstract": request.body.abstract || "",
-            "sessionNumber": parseInt(request.body.session, 10)
+            "sessionNumber": parseInt(request.body.session, 10),
+            "location.name": request.body.location || "",
+            "location.capacity": parseInt(request.body.locationCapacity, 10)
         };
         if (request.body.uploadedPDF)
             data.pdfID = request.body.uploadedPDF;
@@ -533,7 +821,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
             return;
         }
-        if (isNaN(data.sessionNumber) || data.presenter === "" || data.title === "" || data.abstract === "") {
+        if (isNaN(data.sessionNumber) || isNaN(data["location.capacity"]) || data.presenter === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
                 "reason": "Invalid information"
@@ -672,7 +960,9 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             "uploadedMedia": [],
             "uploadedPDF": request.body.uploadedPDF || undefined,
             "abstract": request.body.abstract || "",
-            "session": parseInt(request.body.session, 10)
+            "session": parseInt(request.body.session, 10),
+            "location": request.body.location || "",
+            "locationCapacity": parseInt(request.body.locationCapacity, 10)
         };
         try  {
             if (request.body.uploadedMedia)
@@ -684,7 +974,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
             return;
         }
-        if (isNaN(data.session) || data.name === "" || data.title === "" || data.abstract === "") {
+        if (isNaN(data.session) || isNaN(data.locationCapacity) || data.name === "" || data.title === "" || data.abstract === "") {
             response.send({
                 "status": "failure",
                 "reason": "Invalid information"
@@ -702,6 +992,11 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 images: [],
                 videos: []
             },
+            location: {
+                name: data.location,
+                capacity: data.locationCapacity
+            },
+            attendees: [],
             pdfID: data.uploadedPDF,
             abstract: data.abstract
         };

@@ -32,7 +32,14 @@ block content
 	input(type="url", placeholder="URL to YouTube video", value=youtubeValue)
 	br
 	textarea(rows="5", placeholder="Abstract")= presentation.abstract
-	br
+	p.content-padded Location
+	select
+		- var locations = ["Bedford Gym", "Choral Room", "Oak Room", "WPP Room", "G112", "G110", "G109", "G107", "Dance Studio"];
+		- var capacities = [100, 80, 60, 40, 30, 30, 30, 30, 50];
+		each location, index in locations
+			- var isSelected = (presentation.location.name == location);
+			option(data-capacity=capacities[index], selected=isSelected) #{location} (#{capacities[index]})
+	p.content-padded(style="margin-top: 0;") Session
 	select
 		- var session1Selected = (presentation.sessionNumber == 1) ? true : false;
 		- var session2Selected = (presentation.sessionNumber == 2) ? true : false;

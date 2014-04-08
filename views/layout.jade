@@ -27,7 +27,7 @@ html
 					var fb = new FingerBlast("body");
 				}
 			});
-		script(src="/ratchet/js/ratchet.min.js")
+		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
 	body
 		mixin tab(name, url, iconClass, active)
@@ -40,9 +40,10 @@ html
 				span.tab-label= name
 		block header
 			header.bar.bar-nav
-				if !loggedIn
-					a.btn.btn-primary.pull-left(href="#login") Login
-				a.icon.icon-gear.pull-right(href="#settings")
+				block buttons
+					if !loggedIn
+						a.btn.btn-primary.pull-left(href="#login") Login
+					a.icon.icon-gear.pull-right(href="#settings")
 				h1.title= title
 			nav.bar.bar-tab
 				block tabs
@@ -64,8 +65,8 @@ html
 				$(document).ready(function() {
 					function forceLogin() {
 						console.log(window.location.pathname);
-						//if (window.location.pathname == "/schedule")
-							//$("#login").addClass("active");
+						if (window.location.pathname == "/register")
+							$("#login").addClass("active");
 					}
 					forceLogin();
 					window.addEventListener("push", forceLogin);

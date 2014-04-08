@@ -203,6 +203,23 @@ select {
 	border: 1px solid #d1d1d1;
 }
 
+.media .btn {
+	position: initial;
+	-webkit-transform: none !important;
+	transform: none !important;
+	width: 28vw;
+	-webkit-transition: opacity 0.4s;
+	transition: opacity 0.4s;
+}
+.btns {
+	text-align: center;
+	margin-top: 10px;
+	width: 90vw;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .profile-img {
 	background-size: cover;
 	background-position: 50% 50%;
@@ -214,6 +231,19 @@ select {
 	position: initial;
 	margin-right: -85px;
 }
+.register .icon-check {
+	-webkit-transform: translateY(5%) translateX(15%);
+	transform: translateY(5%) translateX(15%);
+	color: #1EA82E;
+	opacity: 0;
+}
+.register {
+	margin-top: 15px;
+}
+#received-presentations {
+	display: none;
+}
+
 
 p.medium-abstract {
 	display: none;
@@ -264,6 +294,9 @@ p.abstract {
 	p.large-abstract {
 		display: block;
 	}
+	.btns {
+		width: 98vw;
+	}
 	p.abstract {
 		-webkit-column-count: 3;
 		-moz-column-count: 3;
@@ -272,7 +305,7 @@ p.abstract {
 }
 
 /* Large devices (large desktops, 1200px and up) */
-@media (min-width: 1920px) {
+@media (min-width: 1800px) {
 	.youtube {
 		height: 600px;
 	}

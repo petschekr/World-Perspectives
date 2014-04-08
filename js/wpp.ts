@@ -13,10 +13,13 @@ interface HTMLElement {
 }
 interface Window {
 	URL: any;
+	PUSH: any;
 }
 
 var uploadedMedia: string[] = [];
 var uploadedPDF: string;
+
+var preferences = {};
 $(document).ready(function(): void {
 	if (window.navigator.standalone) {
 		if (localStorage.getItem("login-state") == "2") {
@@ -118,7 +121,7 @@ $(document).ready(function(): void {
 		if (this.files.length < 1)
 			return;
 		var file: File = this.files[0];
-		$("#create p").text(file.name);
+		$("#create p").first().text(file.name);
 		$("#pdfprogress").show();
 		$("#pdfeditprogress").show();
 
@@ -278,6 +281,8 @@ $(document).ready(function(): void {
 			uploadedPDF: string;
 			abstract: string;
 			session: string;
+			location: string;
+			locationCapacity: number;
 		} = {
 			"name": $("#create input").get(0).value,
 			"title": $("#create input").get(1).value,
@@ -285,9 +290,17 @@ $(document).ready(function(): void {
 			"uploadedMedia": JSON.stringify(uploadedMedia),
 			"uploadedPDF": uploadedPDF,
 			"abstract": $("#create textarea").val(),
-			"session": undefined
+			"session": undefined,
+			"location": undefined,
+			"locationCapacity": undefined
 		};
-		var session: string = $("#create select").val();
+		var location: string = $("select").first().val(); 
+		location = location.match(/([\w ]+) /)[1];
+		data.location = location;
+		var locationCapacity: number = $("#create option").eq($("select").first().get(0).selectedIndex).data("capacity");
+		data.locationCapacity = locationCapacity;
+
+		var session: string = $("#create select").last().val();
 		session = session.match(/^Session (\d)/)[1];
 		data.session = session;
 		if (data.name === "" || data.title === "" || data.abstract === "") {
@@ -361,6 +374,8 @@ $(document).ready(function(): void {
 			uploadedPDF: string;
 			abstract: string;
 			session: string;
+			location: string;
+			locationCapacity: number;
 		} = {
 			"name": $("input").get(0).value,
 			"title": $("input").get(1).value,
@@ -368,9 +383,17 @@ $(document).ready(function(): void {
 			"uploadedMedia": JSON.stringify(uploadedMedia),
 			"uploadedPDF": uploadedPDF,
 			"abstract": $("textarea").val(),
-			"session": undefined
+			"session": undefined,
+			"location": undefined,
+			"locationCapacity": undefined
 		};
-		var session: string = $("#create select").val();
+		var location: string = $("select").first().val(); 
+		location = location.match(/([\w ]+) /)[1];
+		data.location = location;
+		var locationCapacity: number = $("#create option").eq($("select").first().get(0).selectedIndex).data("capacity");
+		data.locationCapacity = locationCapacity;
+
+		var session: string = $("select").eq(1).val();
 		session = session.match(/^Session (\d)/)[1];
 		data.session = session;
 		if (data.name === "" || data.title === "" || data.abstract === "") {
@@ -434,4 +457,111 @@ $(document).ready(function(): void {
 		$("#imagemodal .content div").css("backgroundImage", $(this).css("backgroundImage"));
 		$("#imagemodal").addClass("active");
 	});
+
+	$(document).on("touchend", ".btns button", function(): void {
+		var preference: number = parseInt($(this).data("order"), 10);
+		var id: string = $(this).data("id");
+		
+		// Deselect other buttons
+		$(this).siblings().css("opacity", "1");
+		$(this).css("opacity", "0.3");
+
+		for (var i: number = 1; i <= 3; i++) {
+			if (preferences[i] == id) {
+				$("*[data-id=" + id + "][data-order=" + i + "]").css("opacity", "1");
+				delete preferences[i];
+			}
+		}
+		// Deselect other button of same choice
+		if (preferences[preference])
+			$("*[data-id=" + preferences[preference] + "][data-order=" + preference + "]").css("opacity", "1");
+
+		preferences[preference] = id;
+	});
+	$(document).on("touchend", "#finish-session", function(e): void {
+		var numberSelected: number = Object.keys(preferences).length;
+		if (numberSelected !== 3) {
+			alert("You must select three choices");
+			return;
+		}
+		// document.title = "Session 1", "Session 2", etc.
+		localStorage.setItem(document.title, JSON.stringify(preferences));
+		preferences = {};
+		window.PUSH({
+			url: "/register",
+			hash: "",
+			timeout: undefined,
+			transition: "slide-out"
+		});
+	});
+	$(document).on("touchend", "#finish-registering", function(): void {
+		var data = {};
+		for (var i: number = 1; i <= 4; i++) {
+			try {
+				data["Session " + i] = JSON.parse(localStorage.getItem("Session " + i));
+			}
+			catch(e) {
+				alert("Invalid preference data");
+				return;
+			}
+			if (!data["Session " + i]) {
+				alert("You must select your preferences for each session");
+				return;
+			}
+		}
+		// Disable the button in case the request takes a while
+		$("#finish-registering").attr("disabled", true).text("Registering...");
+		$.ajax({
+			type: "POST",
+			url: "/register",
+			data: {payload: JSON.stringify(data)},
+			success: function(res, status, xhr) {
+				$("#finish-registering").attr("disabled", false).text("Finish");
+				if (res.status == "success") {
+					// Populate the list with received sessions
+					for (var i: number = 0; i < res.receivedPresentations.length; i++) {
+						$("#received-presentations li").eq(i).find("strong").text(res.receivedPresentations[i].title);
+						$("#received-presentations li").eq(i).find("small").text(res.receivedPresentations[i].presenter);
+					}
+					$(".register").fadeOut(400, function() {
+						$("#received-presentations").fadeIn();
+					});
+				}
+				else {
+					console.error(res);
+					alert("An error occurred while registering");
+				}
+			},
+			error: function(xhr, status, err) {
+				$("#finish-registering").attr("disabled", false).text("Finish");
+				console.error(err);
+				alert("An error occurred while registering");
+			}
+		});
+	});
+	function pageLoad(): void {
+		if (window.location.pathname == "/register") {
+			if (localStorage["Session 1"]) {
+				$("a[href='/register/1'] span.icon-check").css("opacity", "1");
+			}
+			if (localStorage["Session 2"]) {
+				$("a[href='/register/2'] span.icon-check").css("opacity", "1");
+			}
+			if (localStorage["Session 3"]) {
+				$("a[href='/register/3'] span.icon-check").css("opacity", "1");
+			}
+			if (localStorage["Session 4"]) {
+				$("a[href='/register/4'] span.icon-check").css("opacity", "1");
+			}
+		}
+		if (window.location.pathname.match(/^\/register\/\d$/)) {
+			// Load register preferences
+			preferences = JSON.parse(localStorage.getItem(document.title));
+			for (var key in preferences) {
+				$("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
+			}
+		}
+	}
+	window.addEventListener("push", pageLoad);
+	pageLoad();
 });

@@ -1,0 +1,86 @@
+extends layout
+
+block tabs
+	+tab("Explore", "/explore", "icon-search", false)
+	+tab("Register", "/register", "icon-check", true)
+	+tab("My Schedule", "/schedule", "icon-list", false)
+	+tab("Feedback", "/feedback", "icon-compose", false)
+
+
+block buttons
+	if loggedIn && sessionNumber
+		a.btn.btn-link.btn-nav.pull-left(href="/register", data-transition="slide-out")
+			span.icon.icon-left-nav
+			| Back
+	a.icon.icon-gear.pull-right(href="#settings")
+
+block content
+	if registered
+		h2.content-padded Congrats! You've already registered
+		h5.content-padded You can now go to your schedule to view what presentations you'll be attending.
+	else if loggedIn
+		if !sessionNumber
+			.register
+				ul.table-view
+					li.table-view-cell
+						a.navigate-right(href="/register/1", data-transition="slide-in")
+							span.badge 8:50 AM - 9:40 PM
+							| Session 1
+							span.icon.icon-check
+					li.table-view-cell
+						a.navigate-right(href="/register/2", data-transition="slide-in")
+							span.badge 9:50 AM - 10:40 PM
+							| Session 2
+							span.icon.icon-check
+					li.table-view-cell
+						a.navigate-right(href="/register/3", data-transition="slide-in")
+							span.badge 11:40 AM - 12:30 PM
+							| Session 3
+							span.icon.icon-check
+					li.table-view-cell
+						a.navigate-right(href="/register/4", data-transition="slide-in")
+							span.badge 12:40 PM - 1:30 PM
+							| Session 4
+							span.icon.icon-check
+				br
+				button#finish-registering.btn.btn-block.btn-outlined.btn-primary Finish
+
+			#received-presentations
+				h2.content-padded You've been placed in the following presentations
+				h5.content-padded If you have any questions or this is incorrect in any way please contact Mr. Llanque or Ryan Petschek.
+				ul.table-view
+					each iteration in [1, 2, 3, 4]
+						li.table-view-cell
+							//- presentation.title
+							strong
+							br
+							//- presentation.presenter
+							small
+							span.badge
+								case iteration
+									when 1
+										| 8:50 AM - 9:40 PM
+									when 2
+										| 9:50 AM - 10:40 PM
+									when 3
+										| 11:40 AM - 12:30 PM
+									when 4
+										| 12:40 PM - 1:30 PM
+		else
+			ul.table-view.explore
+				for presentation in presentations
+					li.table-view-cell.media
+						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
+						.media-body
+							strong= presentation.title
+							br
+							small= presentation.presenter
+							p #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
+						.btns
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="1") 1st Choice
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="2") 2nd Choice
+							button.btn.btn-primary(data-id=presentation.sessionID, data-order="3") 3rd Choice
+			br
+			button#finish-session.btn.btn-block.btn-outlined.btn-primary Finish
+	else
+		p.content-padded You must log in before registering
