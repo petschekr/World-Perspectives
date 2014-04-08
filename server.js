@@ -444,7 +444,6 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
 
     // Register for sessions
     app.get("/register", function (request, response) {
-        request.session["email"] = "petschekr@gfacademy.org";
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
