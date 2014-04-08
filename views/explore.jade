@@ -9,6 +9,10 @@ block header
 		h1.title= title
 	nav.bar.bar-tab
 		block tabs
+			+tab("Explore", "", "icon-search", true)
+			+tab("Register", "/register", "icon-check", false)
+			+tab("My Schedule", "/schedule", "icon-list", false)
+			+tab("Feedback", "/feedback", "icon-compose", false)
 
 block content
 
@@ -36,8 +40,3 @@ block content
 
 block footer
 	br
-block tabs
-	+tab("Explore", "", "icon-search", true)
-	+tab("Register", "/register", "icon-check", false)
-	+tab("My Schedule", "/schedule", "icon-list", false)
-	+tab("Feedback", "/feedback", "icon-compose", false)
