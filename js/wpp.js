@@ -5,7 +5,7 @@ var preferences = {};
 $(document).ready(function () {
     if (window.navigator.standalone) {
         if (localStorage.getItem("login-state") == "2") {
-            $("#login-1 > input").val(localStorage.getItem("login-username"));
+            $("#login-1 input").val(localStorage.getItem("login-username"));
             $("#login-message").text(localStorage.getItem("login-message")).show();
             $("#login-2").show();
             $("#login").addClass("active");
@@ -60,7 +60,7 @@ $(document).ready(function () {
             return;
         else
             processing = true;
-        var username = $("#login-1 > input").val().trim();
+        var username = $("#login-1 input").val().trim();
         var code = $("#login-2 > input").val().trim();
         $.ajax({
             type: "GET",
