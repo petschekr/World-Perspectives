@@ -65,7 +65,7 @@ html
 				$(document).ready(function() {
 					function forceLogin() {
 						console.log(window.location.pathname);
-						if (window.location.pathname == "/register")
+						if (window.location.pathname.match(/^\/register\/?(1|2|3|4)?$/))
 							$("#login").addClass("active");
 					}
 					forceLogin();

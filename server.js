@@ -156,15 +156,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
     });
 
     app.get("/", function (request, response) {
-        var platform = getPlatform(request);
-        var loggedIn = !!request.session["email"];
-        var email = request.session["email"];
-        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
-        response.render("index", { title: "World Perspectives Symposium", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
-        });
+        response.redirect("/explore");
     });
     app.get("/explore", function (request, response) {
         var platform = getPlatform(request);
@@ -466,7 +458,6 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
 
     // Register for sessions
     app.get("/register", function (request, response) {
-        //request.session["email"] = "petschekr@gfacademy.org";
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
@@ -1236,11 +1227,22 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         });
     });
 
+    app.get("/admin/registrations", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        response.render("admin/feedback", { title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+        response.render("admin/feedback", { title: "Feedback", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
             if (err)
                 console.error(err);
             response.send(html);
