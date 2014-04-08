@@ -142,15 +142,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     }
 
     app.get("/", function (request, response) {
-        var platform = getPlatform(request);
-        var loggedIn = !!request.session["email"];
-        var email = request.session["email"];
-        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
-        response.render("index", { title: "World Perspectives Symposium", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
-        });
+        response.redirect("/explore");
     });
     app.get("/explore", function (request, response) {
         var platform = getPlatform(request);

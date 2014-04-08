@@ -1,6 +1,8 @@
 extends layout
 
 block content
+	div(style="text-align: center;")
+		img.logo(src="/img/WPPLogo.png", alt="World Perspective Program | GFA", width="142", height="172")
 	if presentations.length > 0
 		ul.table-view.explore
 			for presentation in presentations

@@ -195,15 +195,7 @@ function getTime(date: Date): string {
 }
 
 app.get("/", function(request: express3.Request, response: express3.Response): void {
-	var platform: string = getPlatform(request);
-	var loggedIn: boolean = !!request.session["email"];
-	var email: string = request.session["email"];
-	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
-	response.render("index", {title: "World Perspectives Symposium", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
-	});
+	response.redirect("/explore");
 });
 app.get("/explore", function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);

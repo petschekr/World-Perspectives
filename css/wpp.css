@@ -18,7 +18,7 @@ input {
 }
 img.logo {
 	text-align: center;
-	margin-top: 20px;
+	margin: 10px;
 }
 /* Remove unnecessary whitespace on the Explore page */
 .table-view.explore {
