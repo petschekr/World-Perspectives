@@ -106,7 +106,7 @@ $(document).ready(function () {
     });
 
     // PDF file picker
-    $("input[type=file]:first-of-type").on("change", function () {
+    $("input[type=file]").eq(0).on("change", function () {
         if (this.files.length < 1)
             return;
         var file = this.files[0];
