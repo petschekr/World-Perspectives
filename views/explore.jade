@@ -23,9 +23,6 @@ block content
 							p.large-abstract #{(presentation.abstract.split(" ").length >= 80)? presentation.abstract.split(" ").splice(0, 80).join(" ") + "..." : presentation.abstract}
 	else
 		p.content-padded(style="text-align: center;"): i No presentations created yet
-	script(src="/js/swipe.js")
-	script.
-		window.mySwipe = Swipe(document.getElementById('slider'));
 
 block footer
 	br

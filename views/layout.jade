@@ -21,11 +21,18 @@ html
 		script(src="/js/jquery-1.11.0.min.js")
 		script(src="/js/touchsupport.js")
 		script(src="/js/fingerblast.js")
+		script(src="/js/swipe.js")
 		script.
 			$(document).ready(function() {
 				if (!Modernizr.touch) {
 					var fb = new FingerBlast("body");
 				}
+				function setUpSwipe() {
+					if (window.location.pathname == "/explore")
+						window.SwipeThrough = Swipe(document.getElementById("slider"));
+				}
+				setUpSwipe();
+				window.addEventListener("push", setUpSwipe);
 			});
 		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
