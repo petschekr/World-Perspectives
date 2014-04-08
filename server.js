@@ -1213,11 +1213,22 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    app.get("/admin/registrations", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+            if (err)
+                console.error(err);
+            response.send(html);
+        });
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        response.render("admin/feedback", { title: "Admin", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
+        response.render("admin/feedback", { title: "Feedback", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
             if (err)
                 console.error(err);
             response.send(html);
