@@ -124,7 +124,7 @@ $(document).ready(function(): void {
 		$("input[type=file]").last().click();
 	});
 	// PDF file picker
-	$("input[type=file]").first().on("change", function(): void {
+	$("input[type=file]").eq(0).on("change", function(): void {
 		if (this.files.length < 1)
 			return;
 		var file: File = this.files[0];
