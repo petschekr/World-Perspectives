@@ -512,6 +512,8 @@ $(document).ready(function () {
         }
         if (window.location.pathname.match(/^\/register\/\d$/)) {
             // Load register preferences
+            if (!localStorage.getItem(document.title))
+                return;
             preferences = JSON.parse(localStorage.getItem(document.title));
             for (var key in preferences) {
                 $("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
