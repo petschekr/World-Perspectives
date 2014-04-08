@@ -288,6 +288,11 @@ p.abstract {
 	-moz-column-rule: 1px dotted #555;
 	column-rule: 1px dotted #555;
 }
+
+#received-presentations span.badge {
+	/* For small mobile devices (phones) */
+	display: none;
+}
 /* Small devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 	.youtube {
@@ -309,6 +314,11 @@ p.abstract {
 		-webkit-column-count: 2;
 		-moz-column-count: 2;
 		column-count: 2;
+	}
+}
+@media (min-width: 1024px) {
+	#received-presentations span.badge {
+		display: initial;
 	}
 }
 @media (min-width: 1200px) {
