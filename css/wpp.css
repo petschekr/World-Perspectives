@@ -1,3 +1,43 @@
+.hero {
+	padding: 80px 30px 75px 30px;
+	color:#fff;
+	text-align:center;
+}
+
+#globalization {
+	background:url('https://s3.amazonaws.com/worldperspectivesmedia/globalization+and+its+discontents.jpg');
+	background-repeat:no-repeat;
+	background-size:cover;
+}
+
+#health {
+	background:url('https://s3.amazonaws.com/worldperspectivesmedia/Global+Health+in+a+Local+Context.jpg');
+	background-repeat:no-repeat;
+	background-size:cover;
+}
+
+h3 {
+	letter-spacing: 2px;
+	line-height: 1.3;
+	font-size: 23px;
+	font-weight: 500;
+}
+
+.swipe {
+  overflow: hidden;
+  visibility: hidden;
+  position: relative;
+}
+.swipe-wrap {
+  overflow: hidden;
+  position: relative;
+}
+.swipe-wrap > div {
+  float:left;
+  width:100%;
+  position: relative;
+}
+
 .bar, .btn {
 	-webkit-user-select: none;
 	-ms-user-select: none;

@@ -530,3 +530,4 @@ $(document).ready(function () {
     window.addEventListener("push", pageLoad);
     pageLoad();
 });
+
