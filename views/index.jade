@@ -23,3 +23,8 @@ block content
 			li.table-view-cell
 				a.push-right(href="/feedback", data-transition="fade")
 					strong Provide feedback
+	script(src="/js/jquery.wysiwygetize.min.js")
+	script.
+		$(function () {
+			$('textarea').wysiwygetize();
+		});

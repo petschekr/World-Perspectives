@@ -14,7 +14,6 @@ html
 		meta(name="apple-mobile-web-app-status-bar-style", content="black")
 		
 		link(href="/ratchet/css/ratchet.css", rel="stylesheet")
-		link(href="/ratchet/css/ratchet-theme-ios.min.css", rel="stylesheet")
 
 		link(rel="stylesheet", href="/css/wpp.css")
 		//script(src="//code.jquery.com/jquery-1.11.0.min.js")
@@ -24,11 +23,12 @@ html
 		script.
 			$(document).ready(function() {
 				if (!Modernizr.touch) {
-					var fb = new FingerBlast("body");
+					var fb = new FingerBlast('body');
 				}
 			});
 		script(src="/ratchet/js/ratchet.min.js")
 		script(src="/js/wpp.js")
+		block extendHead
 	body
 		mixin tab(name, url, iconClass, active)
 			if active
