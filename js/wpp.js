@@ -467,19 +467,29 @@ $(document).ready(function () {
             }
         }
 
+        // Disable the button in case the request takes a while
+        $("#finish-registering").attr("disabled", true).text("Registering...");
         $.ajax({
             type: "POST",
             url: "/register",
             data: { payload: JSON.stringify(data) },
             success: function (res, status, xhr) {
+                $("#finish-registering").attr("disabled", false).text("Finish");
                 if (res.status == "success") {
-                    $(".content").fadeOut();
+                    for (var i = 0; i < res.receivedPresentations.length; i++) {
+                        $("#received-presentations li").eq(i).find("strong").text(res.receivedPresentations[i].title);
+                        $("#received-presentations li").eq(i).find("small").text(res.receivedPresentations[i].presenter);
+                    }
+                    $(".register").fadeOut(400, function () {
+                        $("#received-presentations").fadeIn();
+                    });
                 } else {
                     console.error(res);
                     alert("An error occurred while registering");
                 }
             },
             error: function (xhr, status, err) {
+                $("#finish-registering").attr("disabled", false).text("Finish");
                 console.error(err);
                 alert("An error occurred while registering");
             }
