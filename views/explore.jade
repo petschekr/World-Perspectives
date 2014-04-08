@@ -1,5 +1,15 @@
 extends layout
 
+block header
+	header.bar.bar-nav(style="border-bottom: none;")
+		block buttons
+			if !loggedIn
+				a.btn.btn-primary.pull-left(href="#login") Login
+			a.icon.icon-gear.pull-right(href="#settings")
+		h1.title= title
+	nav.bar.bar-tab
+		block tabs
+
 block content
 
 	div#slider.swipe
