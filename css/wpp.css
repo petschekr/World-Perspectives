@@ -24,10 +24,10 @@
 	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/Global+Health+in+a+Local+Context.jpg");
 }
 #science {
-	background-image: none;
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/science.jpg");
 }
 #incentives {
-	background-image: none;
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/incentives.jpg");
 }
 
 .swipe {
