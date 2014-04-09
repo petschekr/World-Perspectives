@@ -27,12 +27,6 @@ html
 				if (!Modernizr.touch) {
 					var fb = new FingerBlast("body");
 				}
-				function setUpSwipe() {
-					if (window.location.pathname == "/explore")
-						window.SwipeThrough = Swipe(document.getElementById("slider"));
-				}
-				setUpSwipe();
-				window.addEventListener("push", setUpSwipe);
 			});
 		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
