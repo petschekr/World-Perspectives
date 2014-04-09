@@ -540,4 +540,10 @@ $(document).ready(function () {
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
+    $("#left").click(function () {
+        window.SwipeThrough.prev();
+    });
+    $("#right").click(function () {
+        window.SwipeThrough.next();
+    });
 });

@@ -48,6 +48,32 @@
 	position: relative;
 }
 
+#left {
+	left: 5px;
+}
+#right {
+	right: 5px;
+}
+.icon.navigation {
+	position: absolute;
+	top: 140px;
+
+	background-color: rgba(255, 255, 255, 0.7);
+	width: 50px;
+	height: 50px;
+	margin: 3px;
+	font-size: 24px;
+	line-height: 50px;
+	text-align: center;
+	/*border: 1px solid #ddd;*/
+	border-radius: 25px;
+
+	display: none;
+}
+.icon.navigation:hover {
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
 .bar, .btn {
 	-webkit-user-select: none;
 	-ms-user-select: none;

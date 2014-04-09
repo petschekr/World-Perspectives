@@ -26,6 +26,10 @@ html
 			$(document).ready(function() {
 				if (!Modernizr.touch) {
 					var fb = new FingerBlast("body");
+					// Show the direction buttons
+					$(document).ready(function() {
+						$(".icon.navigation").show();
+					})
 				}
 			});
 		script(src="/ratchet/js/ratchet.js")
