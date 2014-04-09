@@ -1,29 +1,57 @@
 extends layout
 
+block header
+	header.bar.bar-nav(style="border-bottom: none;")
+		block buttons
+			if !loggedIn
+				a.btn.btn-primary.pull-left(href="#login") Login
+			a.icon.icon-gear.pull-right(href="#settings")
+		h1.title= title
+	nav.bar.bar-tab
+		block tabs
+			+tab("Explore", "", "icon-search", true)
+			+tab("Register", "/register", "icon-check", false)
+			+tab("My Schedule", "/schedule", "icon-list", false)
+			+tab("Feedback", "/feedback", "icon-compose", false)
+
 block content
-	div(style="text-align: center;")
-		img.logo(src="/img/WPPLogo.png", alt="World Perspective Program | GFA", width="142", height="172")
+
+	#slider.swipe
+		.swipe-wrap
+			.hero.session-panel#health
+				h3 Global Health in Local Context
+					br
+					small Session 1
+			.hero.session-panel#globalization
+				h3 Globalization and its Discontents
+					br
+					small Session 2
+			.hero.session-panel#science
+				h3 Science, Technology, and Change
+					br
+					small Session 3
+			.hero.session-panel#incentives
+				h3 The Power of Incentives in Decision-Making
+					br
+					small Session 4
+
 	if presentations.length > 0
-		ul.table-view.explore
-			for presentation in presentations
-				li.table-view-cell.media
-					a.navigate-right(href="/explore/#{presentation.sessionID}", data-transition="slide-in")
-						.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
-						.media-body
-							strong= presentation.title
-							br
-							small= presentation.presenter
-							p.small-abstract #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
-							p.medium-abstract #{(presentation.abstract.split(" ").length >= 40)? presentation.abstract.split(" ").splice(0, 40).join(" ") + "..." : presentation.abstract}
-							p.large-abstract #{(presentation.abstract.split(" ").length >= 80)? presentation.abstract.split(" ").splice(0, 80).join(" ") + "..." : presentation.abstract}
+		for sessionNumber in [1, 2, 3, 4]
+			ul.table-view.explore
+				for presentation in presentations
+					if presentation.sessionNumber == sessionNumber
+						li.table-view-cell.media
+							a.navigate-right(href="/explore/#{presentation.sessionID}", data-transition="slide-in")
+								.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
+								.media-body
+									strong= presentation.title
+									br
+									small= presentation.presenter
+									p.small-abstract #{(presentation.abstract.split(" ").length >= 25)? presentation.abstract.split(" ").splice(0, 25).join(" ") + "..." : presentation.abstract}
+									p.medium-abstract #{(presentation.abstract.split(" ").length >= 40)? presentation.abstract.split(" ").splice(0, 40).join(" ") + "..." : presentation.abstract}
+									p.large-abstract #{(presentation.abstract.split(" ").length >= 80)? presentation.abstract.split(" ").splice(0, 80).join(" ") + "..." : presentation.abstract}
 	else
 		p.content-padded(style="text-align: center;"): i No presentations created yet
 
-
 block footer
 	br
-block tabs
-	+tab("Explore", "", "icon-search", true)
-	+tab("Register", "/register", "icon-check", false)
-	+tab("My Schedule", "/schedule", "icon-list", false)
-	+tab("Feedback", "/feedback", "icon-compose", false)
