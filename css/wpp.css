@@ -23,6 +23,12 @@
 #health {
 	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/Global+Health+in+a+Local+Context.jpg");
 }
+#science {
+	background-image: none;
+}
+#incentives {
+	background-image: none;
+}
 
 .swipe {
 	overflow: hidden;
