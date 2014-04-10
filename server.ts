@@ -137,6 +137,7 @@ var express = require("express");
 var mime = require("mime");
 var gm = require("gm");
 var app: express3.Application = express();
+var MongoStore = require("connect-mongo")(express);
 
 app.use(express.compress());
 app.use(express.bodyParser());
@@ -151,7 +152,8 @@ app.use(express.session({
 		secure: true,
 		maxAge: 3600000 * 24 * 7 // 1 week
 	},
-	proxy: true
+	proxy: true,
+	store: new MongoStore({db: db})
 }));
 
 app.set("views", __dirname + "/views");

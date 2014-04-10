@@ -83,6 +83,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
     var mime = require("mime");
     var gm = require("gm");
     var app = express();
+    var MongoStore = require("connect-mongo")(express);
 
     app.use(express.compress());
     app.use(express.bodyParser());
@@ -98,7 +99,8 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             secure: true,
             maxAge: 3600000 * 24 * 7
         },
-        proxy: true
+        proxy: true,
+        store: new MongoStore({ db: db })
     }));
 
     app.set("views", __dirname + "/views");

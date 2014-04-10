@@ -12,6 +12,7 @@ html
 		meta(name="viewport", content="initial-scale=1, maximum-scale=1, user-scalable=no")
 		meta(name="apple-mobile-web-app-capable", content="yes")
 		meta(name="apple-mobile-web-app-status-bar-style", content="black")
+		link(rel="apple-touch-icon", href="/img/apple-touch-icon.png")
 		
 		link(href="/ratchet/css/ratchet.css", rel="stylesheet")
 		link(href="/ratchet/css/ratchet-theme-ios.css", rel="stylesheet")
@@ -26,6 +27,10 @@ html
 			$(document).ready(function() {
 				if (!Modernizr.touch) {
 					var fb = new FingerBlast("body");
+					// Show the direction buttons
+					$(document).ready(function() {
+						$(".icon.navigation").show();
+					})
 				}
 			});
 		script(src="/ratchet/js/ratchet.js")
