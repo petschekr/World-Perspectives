@@ -9,7 +9,7 @@
  */
 
 a {
-  color: #007aff;
+  color: #3CCBB7;
 }
 a:active {
   color: #0062cc;
@@ -52,8 +52,8 @@ p {
 
 .btn-primary {
   color: #fff;
-  border: 1px solid #007aff;
-  background-color: #007aff;
+  border: 1px solid #3CCBB7;
+  background-color: #3CCBB7;
 }
 .btn-primary:active, .btn-primary.active {
   border: 1px solid #0062cc;
@@ -84,7 +84,7 @@ p {
   background-color: transparent;
 }
 .btn-outlined.btn-primary {
-  color: #007aff;
+  color: #3CCBB7;
 }
 .btn-outlined.btn-positive {
   color: #4cd964;
@@ -97,7 +97,7 @@ p {
 }
 
 .btn-link {
-  color: #007aff;
+  color: #3CCBB7;
   background-color: transparent;
   border: none;
 }
@@ -117,12 +117,9 @@ p {
 }
 
 .bar {
-  border-bottom: 0;
-  
-  background-color: rgba(247, 247, 247, 0.98);
-  -webkit-box-shadow: 0 0 1px rgba(0, 0, 0, 0.85);
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.85);
+	background-color: rgba(247, 247, 247, 0.95);
 }
+
 .bar.bar-header-secondary {
   top: 44px;
 }
@@ -136,22 +133,18 @@ p {
   border-top: 0;
 }
 
-.bar-tab {
-  border-top: 0;
-}
-
 .tab-item {
   color: #929292;
 }
 .tab-item.active, .tab-item:active {
-  color: #007aff !important;
+  color: #3CCBB7 !important;
 }
 
 .bar-nav .btn-link {
-  color: #007aff;
+  color: #3CCBB7;
 }
 .bar-nav .btn-link:active {
-  color: #007aff;
+  color: #3CCBB7;
   opacity: .6;
 }
 
@@ -162,10 +155,10 @@ p {
 
 .badge-primary {
   color: #fff;
-  background-color: #007aff;
+  background-color: #3CCBB7;
 }
 .badge-primary.badge-inverted {
-  color: #007aff;
+  color: #3CCBB7;
   background-color: transparent;
 }
 
@@ -310,10 +303,10 @@ textarea,
 }
 
 .segmented-control-primary {
-  border: 1px solid #007aff;
+  border: 1px solid #3CCBB7;
 }
 .segmented-control-primary .control-item {
-  color: #007aff;
+  color: #3CCBB7;
   border-color: inherit;
 }
 .segmented-control-primary .control-item:active {
@@ -321,7 +314,7 @@ textarea,
 }
 .segmented-control-primary .control-item.active {
   color: #fff;
-  background-color: #007aff;
+  background-color: #3CCBB7;
 }
 
 .segmented-control-positive {
