@@ -414,9 +414,8 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 		var smtpTransport: any = nodemailer.createTransport("SMTP", {
 			service: "Gmail",
 			auth: {
-				// Sent from petschekr@gmail.com (Temporary)
-				user: "petschekr@gmail.com",
-				pass: "zvkmegclukmcognx"
+				user: "worldperspectivesprogram@gmail.com",
+				pass: "dragon14"
 			}
 		});
 		var mailOptions: {
@@ -426,7 +425,7 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 			text: string;
 			html: string;
 		} = {
-			from: "World Perspectives Program <petschekr@gmail.com>",
+			from: "World Perspectives Program <worldperspectivesprogram@gmail.com>",
 			to: email,
 			subject: "Login Code",
 			text: "Your login code is:\n\n" + code,
