@@ -57,21 +57,19 @@
 .icon.navigation {
 	position: absolute;
 	top: 140px;
-
-	background-color: rgba(255, 255, 255, 0.7);
 	width: 50px;
 	height: 50px;
 	margin: 3px;
 	font-size: 24px;
 	line-height: 50px;
 	text-align: center;
-	/*border: 1px solid #ddd;*/
-	border-radius: 25px;
+	color: #fff !important;
+	opacity: 0.8;
 
 	display: none;
 }
 .icon.navigation:hover {
-	background-color: rgba(255, 255, 255, 0.5);
+	opacity: 1;
 }
 
 .bar, .btn {
