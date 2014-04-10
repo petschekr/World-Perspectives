@@ -19,27 +19,27 @@ block content
 	#slider.swipe
 		.swipe-wrap
 			.hero.session-panel#health
-				h3 Global Health in Local Context
-					br
-					small Session 1
+				h4 Session 1
+				div.herotitle
+					h3 Global Health in Local Context
 			.hero.session-panel#globalization
-				h3 Globalization and its Discontents
-					br
-					small Session 2
+				h4 Session 2
+				div.herotitle
+					h3 Globalization and its Discontents
 			.hero.session-panel#science
-				h3 Science, Technology, and Change
-					br
-					small Session 3
+				h4 Session 3
+				div.herotitle
+					h3 Science, Technology, and Change
 			.hero.session-panel#incentives
-				h3 The Power of Incentives in Decision-Making
-					br
-					small Session 4
+				h4 Session 4
+				div.herotitle
+					h3 The Power of Incentives in Decision-Making
 		span.navigation.icon.icon-left#left
 		span.navigation.icon.icon-right#right
 
 	if presentations.length > 0
 		for sessionNumber in [1, 2, 3, 4]
-			ul.table-view.explore
+			ul.table-view.explore.fadeIn
 				for presentation in presentations
 					if presentation.sessionNumber == sessionNumber
 						li.table-view-cell.media
