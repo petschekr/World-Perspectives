@@ -541,6 +541,8 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                                     Collections.Names.findOne({ "email": email }, function (err, student) {
                                         if (err)
                                             callback4(err);
+                                        if (!student)
+                                            callback4(new Error("Invalid user"));
                                         else
                                             callback4(null, student.name);
                                     });

@@ -17,13 +17,13 @@ $(document).ready(function () {
             return;
         else
             processing = true;
-        var username = $("#login-1 input").val();
+        var username = $("#login-1 input").val().toLowerCase();
         var usernameParsed = username.match(/^([a-z]{3,})(@gfacademy.org)?$/i);
         if (!usernameParsed) {
             alert("That's an invalid username");
             return;
         }
-        username = usernameParsed[1].trim();
+        username = usernameParsed[1].trim().toLowerCase();
 
         $("#login-1 button").text("Sending code...");
         $("#login-1 button").attr("disabled", "disabled");
@@ -60,8 +60,8 @@ $(document).ready(function () {
             return;
         else
             processing = true;
-        var username = $("#login-1 input").val().trim();
-        var code = $("#login-2 > input").val().trim();
+        var username = $("#login-1 input").val().trim().toLowerCase();
+        var code = $("#login-2 > input").val().trim().toLowerCase();
         $.ajax({
             type: "GET",
             url: "/login",
