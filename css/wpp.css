@@ -66,6 +66,9 @@
 	font-weight: 500;
 	/* Horizontal | Vertical | Blur Radius | Color */
 	text-shadow: 0px 1px 10px #4d4d4d;
+
+	position: relative;
+	top: -10px;
 }
 
 #globalization {
@@ -104,7 +107,7 @@
 }
 .icon.navigation {
 	position: absolute;
-	top: 140px;
+	top: 130px;
 	width: 50px;
 	height: 50px;
 	margin: 3px;
