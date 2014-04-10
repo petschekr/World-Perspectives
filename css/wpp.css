@@ -339,6 +339,7 @@ select {
 	background-color: #E9E9E9;
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-left: 0;
+	border-right:0;
 
 	width: 1%;
 	white-space: nowrap;

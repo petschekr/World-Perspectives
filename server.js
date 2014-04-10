@@ -366,13 +366,12 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             var smtpTransport = nodemailer.createTransport("SMTP", {
                 service: "Gmail",
                 auth: {
-                    // Sent from petschekr@gmail.com (Temporary)
-                    user: "petschekr@gmail.com",
-                    pass: "zvkmegclukmcognx"
+                    user: "worldperspectivesprogram@gmail.com",
+                    pass: "dragon14"
                 }
             });
             var mailOptions = {
-                from: "World Perspectives Program <petschekr@gmail.com>",
+                from: "World Perspectives Program <worldperspectivesprogram@gmail.com>",
                 to: email,
                 subject: "Login Code",
                 text: "Your login code is:\n\n" + code,
