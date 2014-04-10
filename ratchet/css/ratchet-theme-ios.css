@@ -144,7 +144,7 @@ p {
   color: #929292;
 }
 .tab-item.active, .tab-item:active {
-  color: #007aff;
+  color: #007aff !important;
 }
 
 .bar-nav .btn-link {
