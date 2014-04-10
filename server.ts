@@ -426,13 +426,7 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 	}
 	var email: string = username + "@gfacademy.org";
 	createNonce(function(code: string): void {
-		var smtpTransport: any = nodemailer.createTransport("SMTP", {
-			service: "Gmail",
-			auth: {
-				user: "worldperspectivesprogram@gmail.com",
-				pass: "dragon14"
-			}
-		});
+		var mail = require("nodemailer").mail;
 		var mailOptions: {
 			from: string;
 			to: string;
@@ -446,49 +440,39 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 			text: "Your login code is:\n\n" + code,
 			html: "<h4>Your login code is:</h4><span>" + code + "</span>"
 		};
-		smtpTransport.sendMail(mailOptions, function(err: any, emailResponse: any): void {
-			if (err) {
-				console.log(err);
-				response.json({
-					"error": "Email failed to send",
-					"info": err
+		mail(mailOptions);
+		Collections.Users.findOne({username: username}, function(err, previousUser) {
+			if (previousUser) {
+				Collections.Users.update({username: username}, {$set: {code: code}}, {w:1}, function(err) {
+					if (err) {
+						response.json({
+							"error": "The database encountered an error",
+							"info": err
+						});
+						return;
+					}
 				});
-				return;
 			}
-			Collections.Users.findOne({username: username}, function(err, previousUser) {
-				if (previousUser) {
-					Collections.Users.update({username: username}, {$set: {code: code}}, {w:1}, function(err) {
-						if (err) {
-							response.json({
-								"error": "The database encountered an error",
-								"info": err
-							});
-							return;
-						}
-					});
-				}
-				else {
-					var user: Student = new Student(username, email);
-					Collections.Users.insert({
-						"username": username,
-						"email": email,
-						"code": code,
-						"userInfo": user.exportUser()
-					}, {w:1}, function(err: any): void {
-						if (err) {
-							response.json({
-								"error": "The database encountered an error",
-								"info": err
-							});
-							return;
-						}
-					});
-				}
-				response.json({
-					"success": "Email sent successfully"
+			else {
+				var user: Student = new Student(username, email);
+				Collections.Users.insert({
+					"username": username,
+					"email": email,
+					"code": code,
+					"userInfo": user.exportUser()
+				}, {w:1}, function(err: any): void {
+					if (err) {
+						response.json({
+							"error": "The database encountered an error",
+							"info": err
+						});
+						return;
+					}
 				});
+			}
+			response.json({
+				"success": "Email sent successfully"
 			});
-			smtpTransport.close();
 		});
 	}, 4);
 });
@@ -611,6 +595,8 @@ app.post("/register", function(request: express3.Request, response: express3.Res
 								Collections.Names.findOne({"email": email}, function(err: Error, student: any) {
 									if (err)
 										callback4(err);
+									if (!student)
+										callback4(new Error("Invalid user"))
 									else
 										callback4(null, student.name);
 								});

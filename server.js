@@ -377,13 +377,7 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         }
         var email = username + "@gfacademy.org";
         createNonce(function (code) {
-            var smtpTransport = nodemailer.createTransport("SMTP", {
-                service: "Gmail",
-                auth: {
-                    user: "worldperspectivesprogram@gmail.com",
-                    pass: "dragon14"
-                }
-            });
+            var mail = require("nodemailer").mail;
             var mailOptions = {
                 from: "World Perspectives Program <worldperspectivesprogram@gmail.com>",
                 to: email,
@@ -391,48 +385,38 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                 text: "Your login code is:\n\n" + code,
                 html: "<h4>Your login code is:</h4><span>" + code + "</span>"
             };
-            smtpTransport.sendMail(mailOptions, function (err, emailResponse) {
-                if (err) {
-                    console.log(err);
-                    response.json({
-                        "error": "Email failed to send",
-                        "info": err
+            mail(mailOptions);
+            Collections.Users.findOne({ username: username }, function (err, previousUser) {
+                if (previousUser) {
+                    Collections.Users.update({ username: username }, { $set: { code: code } }, { w: 1 }, function (err) {
+                        if (err) {
+                            response.json({
+                                "error": "The database encountered an error",
+                                "info": err
+                            });
+                            return;
+                        }
                     });
-                    return;
+                } else {
+                    var user = new Student(username, email);
+                    Collections.Users.insert({
+                        "username": username,
+                        "email": email,
+                        "code": code,
+                        "userInfo": user.exportUser()
+                    }, { w: 1 }, function (err) {
+                        if (err) {
+                            response.json({
+                                "error": "The database encountered an error",
+                                "info": err
+                            });
+                            return;
+                        }
+                    });
                 }
-                Collections.Users.findOne({ username: username }, function (err, previousUser) {
-                    if (previousUser) {
-                        Collections.Users.update({ username: username }, { $set: { code: code } }, { w: 1 }, function (err) {
-                            if (err) {
-                                response.json({
-                                    "error": "The database encountered an error",
-                                    "info": err
-                                });
-                                return;
-                            }
-                        });
-                    } else {
-                        var user = new Student(username, email);
-                        Collections.Users.insert({
-                            "username": username,
-                            "email": email,
-                            "code": code,
-                            "userInfo": user.exportUser()
-                        }, { w: 1 }, function (err) {
-                            if (err) {
-                                response.json({
-                                    "error": "The database encountered an error",
-                                    "info": err
-                                });
-                                return;
-                            }
-                        });
-                    }
-                    response.json({
-                        "success": "Email sent successfully"
-                    });
+                response.json({
+                    "success": "Email sent successfully"
                 });
-                smtpTransport.close();
             });
         }, 4);
     });
