@@ -160,9 +160,13 @@ img.logo {
 	border-top: none;
 	border-bottom: none;
 }
-.table-view.schedule, .table-view.settings {
+.table-view.settings {
 	margin-top: 0 !important;
 	border-top: none;
+}
+#settings h4 {
+	font-weight: normal;
+	text-align: center;
 }
 .table-view.attendance span.badge.badge-positive {
 	-webkit-transform: translateY(-50%) translateX(-110%);
