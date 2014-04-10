@@ -672,6 +672,39 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+    app.get("/register/:sessionNumber/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+        var sessionNumber = parseInt(request.params.sessionNumber, 10);
+        if (isNaN(sessionNumber)) {
+            response.redirect("/register");
+            return;
+        }
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/register");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromRegister: true, sessionNumber: sessionNumber, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
 
     // Admin pages
     function AdminAuth(request, response, next) {

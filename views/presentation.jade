@@ -15,6 +15,10 @@ block header
 				a.btn.btn-link.btn-nav.pull-left(href="/schedule", data-transition="slide-out")
 					span.icon.icon-left-nav
 					| Back
+			else if fromRegister
+				a.btn.btn-link.btn-nav.pull-left(href="/register/#{sessionNumber}", data-transition="slide-out")
+					span.icon.icon-left-nav
+					| Back
 			else
 				a.btn.btn-link.btn-nav.pull-left(href="/explore", data-transition="slide-out")
 					span.icon.icon-left-nav
