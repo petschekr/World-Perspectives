@@ -39,7 +39,7 @@ block content
 
 	if presentations.length > 0
 		for sessionNumber in [1, 2, 3, 4]
-			ul.table-view.explore
+			ul.table-view.explore.animated.fadeIn
 				for presentation in presentations
 					if presentation.sessionNumber == sessionNumber
 						li.table-view-cell.media

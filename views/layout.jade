@@ -13,6 +13,7 @@ html
 		meta(name="apple-mobile-web-app-capable", content="yes")
 		meta(name="apple-mobile-web-app-status-bar-style", content="black")
 		
+		link(href="/css/animate.css", rel="stylesheet")
 		link(href="/ratchet/css/ratchet.css", rel="stylesheet")
 		link(href="/ratchet/css/ratchet-theme-ios.css", rel="stylesheet")
 
@@ -34,7 +35,7 @@ html
 			});
 		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
-	body
+	body.animated.fadeIn
 		mixin tab(name, url, iconClass, active)
 			if active
 				- var activeClass = "active"
