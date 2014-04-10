@@ -14,10 +14,12 @@ html
 		meta(name="apple-mobile-web-app-status-bar-style", content="black")
 		link(rel="apple-touch-icon", href="/img/apple-touch-icon.png")
 		
+		link(href="/css/animate.css", rel="stylesheet")
 		link(href="/ratchet/css/ratchet.css", rel="stylesheet")
 		link(href="/ratchet/css/ratchet-theme-ios.css", rel="stylesheet")
 
 		link(rel="stylesheet", href="/css/wpp.css")
+		link(rel="shortcut icon", href="/img/favicon.ico")
 		//script(src="//code.jquery.com/jquery-1.11.0.min.js")
 		script(src="/js/jquery-1.11.0.min.js")
 		script(src="/js/touchsupport.js")
@@ -35,7 +37,7 @@ html
 			});
 		script(src="/ratchet/js/ratchet.js")
 		script(src="/js/wpp.js")
-	body
+	body.fadeIn
 		mixin tab(name, url, iconClass, active)
 			if active
 				- var activeClass = "active"

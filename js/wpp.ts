@@ -577,9 +577,15 @@ $(document).ready(function(): void {
 				callback: function(index: number, elem: HTMLElement): void {
 					$("ul").not($("ul").eq(index)).hide()
 					$("ul").eq(index).show();
+					// Save the index to LocalStorage for later retrieval
+					localStorage.setItem("slideshow", index.toString());
 				}
 			});
 			$("ul").not($("ul").eq(0)).hide();
+			if (localStorage.getItem("slideshow")) {
+				var index: number = parseInt(localStorage.getItem("slideshow"), 10);
+				window.SwipeThrough.slide(index, 1); // 1 ms transition
+			}
 		}
 	}
 	window.addEventListener("push", pageLoad);

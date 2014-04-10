@@ -4,13 +4,15 @@
 		h1.title Settings
 
 	.content
-		ul.table-view.settings
-			li.table-view-cell Display duration of each schedule block
-				.toggle
-					.toggle-handle
+		//- ul.table-view.settings
+		//- 	li.table-view-cell Display duration of each schedule block
+		//- 		.toggle
+		//- 			.toggle-handle
+		br
 		if admin
 			a.btn.btn-primary.btn-block(href="/admin") Admin Panel
 			br
 		if loggedIn
 			button#signout.btn.btn-negative.btn-block Sign Out
 			br
+		h4.content-padded Designed and developed by Ryan Petschek and Jules Becker

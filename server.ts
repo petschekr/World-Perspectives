@@ -429,9 +429,8 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 		var smtpTransport: any = nodemailer.createTransport("SMTP", {
 			service: "Gmail",
 			auth: {
-				// Sent from petschekr@gmail.com (Temporary)
-				user: "petschekr@gmail.com",
-				pass: "zvkmegclukmcognx"
+				user: "worldperspectivesprogram@gmail.com",
+				pass: "dragon14"
 			}
 		});
 		var mailOptions: {
@@ -441,7 +440,7 @@ app.post("/login", function(request: express3.Request, response: express3.Respon
 			text: string;
 			html: string;
 		} = {
-			from: "World Perspectives Program <petschekr@gmail.com>",
+			from: "World Perspectives Program <worldperspectivesprogram@gmail.com>",
 			to: email,
 			subject: "Login Code",
 			text: "Your login code is:\n\n" + code,
@@ -743,6 +742,39 @@ app.get("/register/:sessionNumber", function(request: express3.Request, response
 					console.error(err);
 				response.send(html);
 			});
+		});
+	});
+});
+app.get("/register/:sessionNumber/:id", function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+	var sessionNumber: number = parseInt(request.params.sessionNumber, 10);
+	if (isNaN(sessionNumber)) {
+		response.redirect("/register");
+		return;
+	}
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/register");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromRegister: true, sessionNumber: sessionNumber, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
 		});
 	});
 });

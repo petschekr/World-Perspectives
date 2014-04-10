@@ -380,13 +380,12 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             var smtpTransport = nodemailer.createTransport("SMTP", {
                 service: "Gmail",
                 auth: {
-                    // Sent from petschekr@gmail.com (Temporary)
-                    user: "petschekr@gmail.com",
-                    pass: "zvkmegclukmcognx"
+                    user: "worldperspectivesprogram@gmail.com",
+                    pass: "dragon14"
                 }
             });
             var mailOptions = {
-                from: "World Perspectives Program <petschekr@gmail.com>",
+                from: "World Perspectives Program <worldperspectivesprogram@gmail.com>",
                 to: email,
                 subject: "Login Code",
                 text: "Your login code is:\n\n" + code,
@@ -684,6 +683,39 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                         console.error(err);
                     response.send(html);
                 });
+            });
+        });
+    });
+    app.get("/register/:sessionNumber/:id", function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+        var sessionNumber = parseInt(request.params.sessionNumber, 10);
+        if (isNaN(sessionNumber)) {
+            response.redirect("/register");
+            return;
+        }
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/register");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromRegister: true, sessionNumber: sessionNumber, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
             });
         });
     });

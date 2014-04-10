@@ -1,7 +1,51 @@
+/* ANIMATIONS */
+
+.fadeIn {
+	-moz-animation-duration: 1s;
+	-webkit-animation-duration: 1s;
+	animation-duration: 1s;
+	-moz-animation-fill-mode: both;
+	-webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
+	-moz-animation-name: fadeIn;
+	-webkit-animation-name: fadeIn;
+	animation-name: fadeIn;
+}
+
+@-moz-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@-webkit-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
 .hero {
-	padding: 190px 30px 75px 30px;
+	padding: 12px 50px;
 	color: white;
 	text-align: center;
+	height: 315px !important;
+}
+
+.herotitle {
+	padding-top:112px;
 }
 
 .session-panel {
@@ -9,7 +53,21 @@
 	background-size: cover;
 	background-position: center center;
 }
-.session-panel > h3 {
+.session-panel > h4 {
+	display:inline-block;
+	letter-spacing: 1px;
+	line-height: 1.1;
+	font-size: 16px;
+	font-weight: 500;
+	/* Horizontal | Vertical | Blur Radius | Color */
+	text-shadow: 0px 1px 10px #4d4d4d;
+	text-align:center;
+	opacity:0.95;
+}
+
+.herotitle > h3 {
+	padding-top:70px;
+	display: inline;
 	letter-spacing: 2px;
 	line-height: 1.3;
 	font-size: 23px;
@@ -18,8 +76,9 @@
 	text-shadow: 0px 1px 10px #4d4d4d;
 
 	position: relative;
-	top: -50px;
+	top: -10px;
 }
+
 #globalization {
 	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/globalization+and+its+discontents.jpg");
 }
@@ -56,7 +115,7 @@
 }
 .icon.navigation {
 	position: absolute;
-	top: 140px;
+	top: 130px;
 	width: 50px;
 	height: 50px;
 	margin: 3px;
@@ -101,9 +160,13 @@ img.logo {
 	border-top: none;
 	border-bottom: none;
 }
-.table-view.schedule, .table-view.settings {
+.table-view.settings {
 	margin-top: 0 !important;
 	border-top: none;
+}
+#settings h4 {
+	font-weight: normal;
+	text-align: center;
 }
 .table-view.attendance span.badge.badge-positive {
 	-webkit-transform: translateY(-50%) translateX(-110%);
@@ -339,6 +402,7 @@ select {
 	background-color: #E9E9E9;
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-left: 0;
+	border-right:0;
 
 	width: 1%;
 	white-space: nowrap;
