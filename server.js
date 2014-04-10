@@ -543,6 +543,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                                     Collections.Names.findOne({ "email": email }, function (err, student) {
                                         if (err)
                                             callback4(err);
+                                        if (!student)
+                                            callback4(new Error("Invalid user"));
                                         else
                                             callback4(null, student.name);
                                     });
