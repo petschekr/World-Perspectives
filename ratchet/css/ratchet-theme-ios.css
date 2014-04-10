@@ -12,7 +12,7 @@ a {
   color: #3CCBB7;
 }
 a:active {
-  color: #0062cc;
+  color: #2f9c8e;
 }
 
 .content {
@@ -56,8 +56,8 @@ p {
   background-color: #3CCBB7;
 }
 .btn-primary:active, .btn-primary.active {
-  border: 1px solid #0062cc;
-  background-color: #0062cc;
+  border: 1px solid #2f9c8e;
+  background-color: #2f9c8e;
 }
 
 .btn-positive {
@@ -102,7 +102,7 @@ p {
   border: none;
 }
 .btn-link:active, .btn-link.active {
-  color: #0062cc;
+  color: #2f9c8e;
   background-color: transparent;
 }
 
