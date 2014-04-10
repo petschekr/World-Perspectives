@@ -1,3 +1,77 @@
+.hero {
+	padding: 190px 30px 75px 30px;
+	color: white;
+	text-align: center;
+}
+
+.session-panel {
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-position: center center;
+}
+.session-panel > h3 {
+	letter-spacing: 2px;
+	line-height: 1.3;
+	font-size: 23px;
+	font-weight: 500;
+	/* Horizontal | Vertical | Blur Radius | Color */
+	text-shadow: 0px 1px 10px #4d4d4d;
+
+	position: relative;
+	top: -50px;
+}
+#globalization {
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/globalization+and+its+discontents.jpg");
+}
+#health {
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/health.jpg");
+}
+#science {
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/science.jpg");
+}
+#incentives {
+	background-image: url("https://s3.amazonaws.com/worldperspectivesmedia/incentives.jpg");
+}
+
+.swipe {
+	overflow: hidden;
+	visibility: hidden;
+	position: relative;
+}
+.swipe-wrap {
+	overflow: hidden;
+	position: relative;
+}
+.swipe-wrap > div {
+	float:left;
+	width:100%;
+	position: relative;
+}
+
+#left {
+	left: 5px;
+}
+#right {
+	right: 5px;
+}
+.icon.navigation {
+	position: absolute;
+	top: 140px;
+	width: 50px;
+	height: 50px;
+	margin: 3px;
+	font-size: 24px;
+	line-height: 50px;
+	text-align: center;
+	color: #fff !important;
+	opacity: 0.8;
+
+	display: none;
+}
+.icon.navigation:hover {
+	opacity: 1;
+}
+
 .bar, .btn {
 	-webkit-user-select: none;
 	-ms-user-select: none;

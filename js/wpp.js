@@ -526,7 +526,24 @@ $(document).ready(function () {
                 $("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
             }
         }
+
+        // For the swipe through banner
+        if (window.location.pathname == "/explore") {
+            window.SwipeThrough = Swipe(document.getElementById("slider"), {
+                callback: function (index, elem) {
+                    $("ul").not($("ul").eq(index)).hide();
+                    $("ul").eq(index).show();
+                }
+            });
+            $("ul").not($("ul").eq(0)).hide();
+        }
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
+    $("#left").click(function () {
+        window.SwipeThrough.prev();
+    });
+    $("#right").click(function () {
+        window.SwipeThrough.next();
+    });
 });

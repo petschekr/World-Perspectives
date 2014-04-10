@@ -83,6 +83,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var mime = require("mime");
     var gm = require("gm");
     var app = express();
+    var MongoStore = require("connect-mongo")(express);
 
     app.use(express.compress());
     app.use(express.bodyParser());
@@ -93,7 +94,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             path: "/",
             httpOnly: true,
             maxAge: 3600000 * 24 * 7
-        }
+        },
+        store: new MongoStore({ db: db })
     }));
 
     app.set("views", __dirname + "/views");

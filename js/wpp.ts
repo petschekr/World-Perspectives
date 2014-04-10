@@ -1,4 +1,4 @@
-declare var $;
+declare var $, Swipe;
 interface Navigator {
 	standalone: boolean;
 }
@@ -14,6 +14,7 @@ interface HTMLElement {
 interface Window {
 	URL: any;
 	PUSH: any;
+	SwipeThrough: any;
 }
 
 var uploadedMedia: string[] = [];
@@ -570,7 +571,23 @@ $(document).ready(function(): void {
 				$("*[data-id=" + preferences[key] + "][data-order=" + key + "]").css("opacity", "0.3");
 			}
 		}
+		// For the swipe through banner
+		if (window.location.pathname == "/explore") {
+			window.SwipeThrough = Swipe(document.getElementById("slider"), {
+				callback: function(index: number, elem: HTMLElement): void {
+					$("ul").not($("ul").eq(index)).hide()
+					$("ul").eq(index).show();
+				}
+			});
+			$("ul").not($("ul").eq(0)).hide();
+		}
 	}
 	window.addEventListener("push", pageLoad);
 	pageLoad();
+	$("#left").click(function() {
+		window.SwipeThrough.prev();
+	});
+	$("#right").click(function() {
+		window.SwipeThrough.next();
+	});
 });
