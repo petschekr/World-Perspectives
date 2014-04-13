@@ -1332,10 +1332,12 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email}, function(err: any, html: string): void {
-		if (err)
-			console.error(err);
-		response.send(html);
+	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
+		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
 	});
 });
 

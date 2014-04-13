@@ -8,7 +8,38 @@ block header
 		h1.title= title
 
 block content
-	
+	.segmented-control
+		a.control-item.active(href="#session1") Session 1
+		a.control-item(href="#session2") Session 2
+		a.control-item(href="#session3") Session 3
+		a.control-item(href="#session4") Session 4
+	.card
+		mixin session (sessionNumber)
+			if presentations.length > 0
+				ul.table-view.explore
+					for presentation in presentations
+						if presentation.sessionNumber == sessionNumber
+							li.table-view-cell
+								a.navigate-right(href="#")
+									strong= presentation.title
+									br
+									small= presentation.presenter
+									p
+										if presentation.abstract.length < 100
+											| #{presentation.abstract}
+										else
+											| #{presentation.abstract.substr(0, 100) + "..."}
+			else
+				p.content-padded(style="text-align: center;"): i No presentations created yet
+
+		#session1.control-content.active
+			+session(1)
+		#session2.control-content
+			+session(2)
+		#session3.control-content
+			+session(3)
+		#session4.control-content
+			+session(4)
 	
 block footer
 	br
