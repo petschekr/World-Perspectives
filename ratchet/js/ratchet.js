@@ -585,7 +585,7 @@
     }
 
     data.title = head.querySelector('title');
-    data.title = data.title && data.title.innerText.trim();
+    data.title = data.title && data.title.textContent.trim();
 
     if (options.transition) {
       data = extendWithDom(data, '.content', body);
