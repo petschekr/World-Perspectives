@@ -1251,10 +1251,69 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email }, function (err, html) {
-            if (err)
-                console.error(err);
-            response.send(html);
+        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
+            response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+    app.get("/admin/registrations/:id", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        var admin = !(!loggedIn || adminEmails.indexOf(email) == -1);
+        var presentationID = request.params.id;
+
+        Collections.Presentations.findOne({ "sessionID": presentationID }, function (err, presentation) {
+            if (!presentation) {
+                response.redirect("/admin/registrations");
+                return;
+            }
+            var startTime;
+            var endTime;
+            for (var i = 0; i < Schedule.length; i++) {
+                if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+                    startTime = getTime(Schedule[i].start);
+                    endTime = getTime(Schedule[i].end);
+                    break;
+                }
+            }
+            async.map(presentation.attendees, function (attendee, callback) {
+                Collections.Names.findOne({ "name": attendee }, function (err, user) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!user) {
+                        callback(new Error("User not defined: '" + attendee + "'"));
+                        return;
+                    }
+                    Collections.Users.findOne({ "username": user.username }, function (err, user) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        if (!user) {
+                            callback(new Error("User not defined: '" + user.username + "'"));
+                            return;
+                        }
+                        callback(null, user);
+                    });
+                });
+            }, function (err, attendees) {
+                if (err) {
+                    console.error(err);
+                    response.send("An error occurred:<br>" + JSON.stringify(err));
+                    return;
+                }
+                response.render("admin/registration_detail", { title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, presentation: presentation, attendees: attendees, startTime: startTime, endTime: endTime }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
         });
     });
 

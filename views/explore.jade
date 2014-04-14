@@ -44,7 +44,8 @@ block content
 					if presentation.sessionNumber == sessionNumber
 						li.table-view-cell.media
 							a.navigate-right(href="/explore/#{presentation.sessionID}", data-transition="slide-in")
-								.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
+								if pictures[presentation.presenter]
+									.profile-img.pull-left(style='background-image: url("/media/students/#{pictures[presentation.presenter]}");')
 								.media-body
 									strong= presentation.title
 									br
