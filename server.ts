@@ -1340,6 +1340,63 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 		});
 	});
 });
+app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/admin/registrations");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		async.map(presentation.attendees, function(attendee: string, callback: any): void {
+			Collections.Names.findOne({"name": attendee}, function(err: Error, user: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!user) {
+					callback(new Error("User not defined: '" + attendee + "'"));
+					return;
+				}
+				Collections.Users.findOne({"username": user.username}, function(err: Error, user: any) {
+					if (err) {
+						callback(err);
+						return;
+					}
+					if (!user) {
+						callback(new Error("User not defined: '" + user.username + "'"));
+						return;
+					}
+					callback(null, user);
+				});
+			});
+		}, function(err: Error, attendees: any[]) {
+			if (err) {
+				console.error(err);
+				response.send("An error occurred:<br>" + JSON.stringify(err));
+				return;
+			}
+			response.render("admin/registration_detail", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, presentation: presentation, attendees: attendees, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
+	});
+});
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);

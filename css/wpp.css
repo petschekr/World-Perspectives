@@ -414,6 +414,13 @@ select {
 	margin-right: 10px;
 	margin-left: 10px;
 }
+h2.attendees {
+	text-align: center;
+}
+h2.attendees small {
+	font-weight: normal;
+}
+
 
 p.medium-abstract {
 	display: none;

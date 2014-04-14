@@ -20,7 +20,7 @@ block content
 					for presentation in presentations
 						if presentation.sessionNumber == sessionNumber
 							li.table-view-cell
-								a.navigate-right(href="#")
+								a.navigate-right(href="/admin/registrations/#{presentation.sessionID}", data-transition="slide-in")
 									strong= presentation.title
 									br
 									small= presentation.presenter
