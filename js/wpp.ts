@@ -37,7 +37,7 @@ $(document).ready(function(): void {
 		else
 			processing = true;
 		var username: string = $("#login-1 input").val().toLowerCase();
-		var usernameParsed: any = username.match(/^([a-z]{3,})(@gfacademy.org)?$/i);
+		var usernameParsed: any = username.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i);
 		if (!usernameParsed) {
 			alert("That's an invalid username");
 			return
