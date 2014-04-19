@@ -1458,6 +1458,50 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    // Move a student
+    app.post("/admin/registrations/move", AdminAuth, function (request, response) {
+        var name = request.body.name;
+        var newPresentation = request.body.moveToID;
+        var currentPresentation = request.body.currentID;
+        async.waterfall([
+            function (callback) {
+                Collections.Names.findOne({ name: name }, callback);
+            },
+            function (userData, callback) {
+                if (!userData) {
+                    callback(new Error("User not found"));
+                    return;
+                }
+                async.parallel([
+                    function (callback2) {
+                        // Update the first presentation
+                        Collections.Presentations.update({ sessionID: currentPresentation }, { $pull: { attendees: name } }, { w: 1 }, callback2);
+                    },
+                    function (callback2) {
+                        // Update the second presentation
+                        Collections.Presentations.update({ sessionID: newPresentation }, { $push: { attendees: name } }, { w: 1 }, callback2);
+                    },
+                    function (callback2) {
+                        // Update the user's presentations
+                        Collections.Users.update({ username: userData.username, "userInfo.Sessions": currentPresentation }, { $set: { "userInfo.Sessions.$": newPresentation } }, { w: 1 }, callback2);
+                    }
+                ], callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": err
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
+            });
+        });
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];

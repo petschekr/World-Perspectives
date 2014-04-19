@@ -1538,6 +1538,49 @@ app.get("/admin/registrations/info/:id", AdminAuth, function(request: express3.R
 		});
 	});
 });
+// Move a student
+app.post("/admin/registrations/move", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var name: string = request.body.name;
+	var newPresentation: string = request.body.moveToID;
+	var currentPresentation: string = request.body.currentID;
+	async.waterfall([
+		function(callback) {
+			Collections.Names.findOne({name: name}, callback);
+		},
+		function(userData: any, callback) {
+			if (!userData) {
+				callback(new Error("User not found"));
+				return;
+			}
+			async.parallel([
+				function(callback2) {
+					// Update the first presentation
+					Collections.Presentations.update({sessionID: currentPresentation}, {$pull: {attendees: name}}, {w:1}, callback2);
+				},
+				function(callback2) {
+					// Update the second presentation
+					Collections.Presentations.update({sessionID: newPresentation}, {$push: {attendees: name}}, {w:1}, callback2);
+				},
+				function(callback2) {
+					// Update the user's presentations
+					Collections.Users.update({username: userData.username, "userInfo.Sessions": currentPresentation}, {$set: {"userInfo.Sessions.$": newPresentation}}, {w:1}, callback2);
+				}
+			], callback);
+		}
+	], function(err: Error): void {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
+		});
+	});
+});
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
