@@ -1376,7 +1376,6 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                                 Collections.Presentations.find({ $where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber }).toArray(callback4);
                             },
                             function (openPresentations, callback4) {
-                                console.log(openPresentations.length);
                                 var presentationToEnter = openPresentations[Math.floor(Math.random() * openPresentations.length)];
                                 user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
                                 Collections.Names.findOne({ "username": username }, function (err, name) {
@@ -1414,6 +1413,40 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             }
             response.send({
                 "status": "success"
+            });
+        });
+    });
+    app.get("/admin/registrations/info/:id", AdminAuth, function (request, response) {
+        var id = request.params.id;
+        Collections.Presentations.findOne({ "sessionID": id }, function (err, presentation) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": err
+                });
+                return;
+            }
+            if (!presentation) {
+                response.send({
+                    "status": "failure",
+                    "info": "No presentation found"
+                });
+                return;
+            }
+            Collections.Presentations.find({ "sessionNumber": presentation.sessionNumber, "sessionID": { $ne: id } }, { sort: "title" }).toArray(function (err, otherPresentations) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "info": err
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success",
+                    "presentations": otherPresentations
+                });
             });
         });
     });

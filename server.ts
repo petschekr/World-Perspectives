@@ -1497,6 +1497,40 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 		});
 	});
 });
+app.get("/admin/registrations/info/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var id: string = request.params.id;
+	Collections.Presentations.findOne({"sessionID": id}, function(err: Error, presentation: Presentation) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		if (!presentation) {
+			response.send({
+				"status": "failure",
+				"info": "No presentation found"
+			});
+			return;
+		}
+		Collections.Presentations.find({"sessionNumber": presentation.sessionNumber, "sessionID": {$ne: id}}, {sort: "title"}).toArray(function(err: Error, otherPresentations: Presentation[]) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success",
+				"presentations": otherPresentations
+			});
+		});
+	});
+});
 
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);

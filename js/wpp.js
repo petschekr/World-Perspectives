@@ -576,4 +576,24 @@ $(document).ready(function () {
             }
         });
     });
+    $(document).on("touchend", "button.move", function () {
+        $("#move code").text($(this).data("name"));
+        var presentationID = location.pathname.match(/\/(\w+)\/?$/)[1];
+        $.ajax({
+            type: "GET",
+            url: "/admin/registrations/info/" + presentationID,
+            data: {},
+            success: function (res, status, xhr) {
+                var presentations = res.presentations;
+                $("#move option").remove();
+                for (var i = 0; i < presentations.length; i++) {
+                    $("#move select").append("<option>" + "(" + presentations[i].attendees.length + " / " + presentations[i].location.capacity + ") " + presentations[i].title + "</option>");
+                }
+                $("#move").addClass("active");
+            },
+            error: function (xhr, status, err) {
+                console.error(err);
+            }
+        });
+    });
 });
