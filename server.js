@@ -1392,13 +1392,20 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                             return;
                         }
                         var userData = user.exportUser();
-                        Collections.Users.insert({
-                            "username": username,
-                            "email": email,
-                            "code": "",
-                            "autoRegistered": true,
-                            "userInfo": user.exportUser()
-                        }, { w: 1 }, callback2);
+                        Collections.Names.findOne({ username: username }, function (err, userMetaData) {
+                            if (err) {
+                                callback2(err);
+                                return;
+                            }
+                            userData.Teacher = userMetaData.teacher;
+                            Collections.Users.insert({
+                                "username": username,
+                                "email": email,
+                                "code": "",
+                                "autoRegistered": true,
+                                "userInfo": userData
+                            }, { w: 1 }, callback2);
+                        });
                     });
                 }, callback);
             }

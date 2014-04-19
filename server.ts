@@ -1473,13 +1473,20 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 						return;
 					}
 					var userData: any = user.exportUser();
-					Collections.Users.insert({
-						"username": username,
-						"email": email,
-						"code": "",
-						"autoRegistered": true,
-						"userInfo": user.exportUser()
-					}, {w:1}, callback2);
+					Collections.Names.findOne({username: username}, function(err: Error, userMetaData: any): void {
+						if (err) {
+							callback2(err);
+							return;
+						}
+						userData.Teacher = userMetaData.teacher;
+						Collections.Users.insert({
+							"username": username,
+							"email": email,
+							"code": "",
+							"autoRegistered": true,
+							"userInfo": userData
+						}, {w:1}, callback2);
+					});
 				});
 			}, callback);
 		}
