@@ -26,10 +26,12 @@ block content
 		for attendee, index in attendees
 			if attendee.userInfo.Teacher
 				li.table-view-cell= attendee.name
+					button.btn.btn-primary.move(data-username=attendee.username, data-name=attendee.name) Move
 		li.table-view-divider Students
 		for attendee, index in attendees
 			if !attendee.userInfo.Teacher
 				li.table-view-cell= attendee.name
+					button.btn.btn-primary.move(data-username=attendee.username, data-name=attendee.name) Move
 
 block footer
 	br

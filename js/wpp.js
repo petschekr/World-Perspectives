@@ -553,4 +553,77 @@ $(document).ready(function () {
     $("#right").click(function () {
         window.SwipeThrough.next();
     });
+
+    $(document).on("touchend", "#auto-register", function () {
+        // Disable the button in case the request takes a while
+        $("#auto-register").attr("disabled", true).text("Working...");
+        $.ajax({
+            type: "POST",
+            url: "/admin/registrations/auto",
+            data: {},
+            success: function (res, status, xhr) {
+                $("#auto-register").text("Done");
+                if (res.status == "success") {
+                } else {
+                    console.error(res);
+                    alert("An error occurred while registering");
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#auto-register").text("Done");
+                console.error(err);
+                alert("An error occurred while registering");
+            }
+        });
+    });
+    $(document).on("touchend", "button.move", function () {
+        $("#move code").text($(this).data("name"));
+        var presentationID = location.pathname.match(/\/(\w+)\/?$/)[1];
+        $.ajax({
+            type: "GET",
+            url: "/admin/registrations/info/" + presentationID,
+            data: {},
+            success: function (res, status, xhr) {
+                var presentations = res.presentations;
+                $("#move option").remove();
+                for (var i = 0; i < presentations.length; i++) {
+                    $("#move select").append('<option data-id="' + presentations[i].sessionID + '">' + "(" + presentations[i].attendees.length + " / " + presentations[i].location.capacity + ") " + presentations[i].title + "</option>");
+                }
+                $("#move").addClass("active");
+            },
+            error: function (xhr, status, err) {
+                console.error(err);
+            }
+        });
+    });
+    $(document).on("touchend", "#move-btn", function () {
+        var nameToMove = $("#move code").text();
+        var moveToID = $("#move option:selected").data("id");
+        var currentID = location.pathname.match(/\/(\w+)\/?$/)[1];
+        $(this).attr("disabled", true).text("Moving...");
+        $.ajax({
+            type: "POST",
+            url: "/admin/registrations/move",
+            data: {
+                name: nameToMove,
+                moveToID: moveToID,
+                currentID: currentID
+            },
+            success: function (res, status, xhr) {
+                $("#move-btn").attr("disabled", false).text("Move");
+                if (res.status == "success") {
+                    $("*[data-name='" + nameToMove + "']").parent().remove();
+                    $("#move").removeClass("active");
+                } else {
+                    console.error(res);
+                    alert("An error occurred while moving the attendee");
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while moving the attendee");
+            }
+        });
+    });
 });
