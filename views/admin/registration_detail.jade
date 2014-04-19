@@ -1,0 +1,37 @@
+extends ../layout
+
+block header
+	header.bar.bar-nav
+		a.btn.btn-link.btn-nav.pull-left(href="/admin/registrations", data-transition="slide-out")
+			span.icon.icon-left-nav
+			| Back
+		h1.title= title
+
+block content
+	.presentation-info
+		h2.content-padded #{presentation.presenter}
+			small #{startTime} - #{endTime}
+		h1.content-padded= presentation.title
+	h2.content-padded.attendees Attendees
+		small &nbsp;(#{presentation.attendees.length} / #{presentation.location.capacity})
+	ul.table-view
+		for attendee, index in attendees
+			- attendees[index].name = presentation.attendees[index]
+		- attendees.sort(function(a, b) {
+		- 	if(a.name.split(" ")[1] < b.name.split(" ")[1]) return -1;
+		- 	if(a.name.split(" ")[1] > b.name.split(" ")[1]) return 1;
+		- 	return 0;
+		- })
+		li.table-view-divider Teachers
+		for attendee, index in attendees
+			if attendee.userInfo.Teacher
+				li.table-view-cell= attendee.name
+					button.btn.btn-primary.move(data-username=attendee.username, data-name=attendee.name) Move
+		li.table-view-divider Students
+		for attendee, index in attendees
+			if !attendee.userInfo.Teacher
+				li.table-view-cell= attendee.name
+					button.btn.btn-primary.move(data-username=attendee.username, data-name=attendee.name) Move
+
+block footer
+	br

@@ -12,7 +12,7 @@ block content
 	a.btn.btn-primary.btn-block(href="#create") Create a Presentation
 	br
 	if presentations.length > 0
-		ul.table-view.explore
+		ul.table-view.sessions
 			for presentation in presentations
 				li.table-view-cell
 					//a.push-right(href="/admin/presentations/#{presentation.sessionID}", data-transition="slide-in")

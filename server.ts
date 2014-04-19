@@ -1332,11 +1332,263 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
-		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
+
+	var referrerID: string = request.get("referrer");
+	referrerID = path.basename(referrerID);
+
+	async.parallel([
+		function(callback) {
+			Collections.Presentations.find({}, {sort: "presenter"}).toArray(callback);
+		},
+		function(callback) {
+			Collections.Users.find({}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				for (var i = 0; i < users.length; i++) {
+					users[i] = users[i].username;
+				}
+				Collections.Names.find({username: {$nin: users}}).toArray(callback);
+			});
+		},
+		function(callback) {
+			Collections.Presentations.findOne({sessionID: referrerID}, callback);
+		}
+	], function(err: Error, results: any[]) {
+		var presentations: Presentation[] = results[0];
+		var unregisteredStudents: any[] = results[1];
+		var referringPresentation: Presentation = results[2];
+
+		var goToSessionTab: number = 1;
+		if (referringPresentation)
+			goToSessionTab = referringPresentation.sessionNumber;
+
+		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents, goToSessionTab: goToSessionTab}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
+		});
+	});
+});
+app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	var admin: boolean = !(!loggedIn || adminEmails.indexOf(email) == -1);
+	var presentationID = request.params.id;
+
+	Collections.Presentations.findOne({"sessionID": presentationID}, function(err: any, presentation: Presentation): void {
+		if (!presentation) {
+			response.redirect("/admin/registrations");
+			return;
+		}
+		var startTime: string;
+		var endTime: string;
+		for (var i: number = 0; i < Schedule.length; i++) {
+			if (Schedule[i].sessionNumber === presentation.sessionNumber) {
+				startTime = getTime(Schedule[i].start);
+				endTime = getTime(Schedule[i].end);
+				break;
+			}
+		}
+		async.map(presentation.attendees, function(attendee: string, callback: any): void {
+			Collections.Names.findOne({"name": attendee}, function(err: Error, user: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!user) {
+					callback(new Error("User not defined: '" + attendee + "'"));
+					return;
+				}
+				Collections.Users.findOne({"username": user.username}, function(err: Error, user: any) {
+					if (err) {
+						callback(err);
+						return;
+					}
+					if (!user) {
+						callback(new Error("User not defined: '" + user.username + "'"));
+						return;
+					}
+					callback(null, user);
+				});
+			});
+		}, function(err: Error, attendees: any[]) {
+			if (err) {
+				console.error(err);
+				response.send("An error occurred:<br>" + JSON.stringify(err));
+				return;
+			}
+			response.render("admin/registration_detail", {title: "Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, presentation: presentation, attendees: attendees, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
+	});
+});
+// Auto register unregistered students
+app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	async.waterfall([
+		function(callback) {
+			Collections.Users.find({}, {username: 1, _id:0 }).toArray(callback);
+		},
+		function(users: any[], callback) {
+			for (var i = 0; i < users.length; i++) {
+				users[i] = users[i].username;
+			}
+			Collections.Names.find({username: {$nin: users}}).toArray(callback);
+		},
+		function(unregisteredStudents: any[], callback) {
+			Collections.Presentations.find({}).toArray(function(err: Error, presentations: Presentation[]) {
+				// err should be null if there isn't an error
+				callback(err, unregisteredStudents, presentations);
+			});
+		},
+		function(unregisteredStudents: any[], presentations: Presentation[], callback) {
+			// Randomize the list of students (Fisher - Yates Shuffle)
+			for (var i = unregisteredStudents.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var temp = unregisteredStudents[i];
+				unregisteredStudents[i] = unregisteredStudents[j];
+				unregisteredStudents[j] = temp;
+			}
+
+			// Register each student
+			var presentationIndex: number = 0;
+			async.eachSeries(unregisteredStudents, function(unregisteredStudent: any, callback2) {
+				var username: string = unregisteredStudent.username;
+				var email: string = unregisteredStudent.email;
+				var user: Student = new Student(username, email);
+				user.RegisteredForSessions = true;
+				async.eachSeries([1, 2, 3, 4], function(sessionNumber: number, callback3) {
+					async.waterfall([
+						function(callback4) {
+							Collections.Presentations.find({$where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber}).toArray(callback4);
+						},
+						function(openPresentations: Presentation[], callback4) {
+							var presentationToEnter: Presentation = openPresentations[Math.floor(Math.random() * openPresentations.length)];
+							user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
+							Collections.Names.findOne({"username": username}, function(err: Error, name) {
+								callback4(err, presentationToEnter, name.name);
+							});
+						},
+						function(presentationToEnter: Presentation, name: string, callback4) {
+							Collections.Presentations.update({"sessionID": presentationToEnter.sessionID}, {$push: {attendees: name}}, {w:1}, callback4);
+						}
+					], callback3);
+				}, function(err: Error) {
+					if (err) {
+						callback2(err);
+						return;
+					}
+					var userData: any = user.exportUser();
+					Collections.Names.findOne({username: username}, function(err: Error, userMetaData: any): void {
+						if (err) {
+							callback2(err);
+							return;
+						}
+						userData.Teacher = userMetaData.teacher;
+						Collections.Users.insert({
+							"username": username,
+							"email": email,
+							"code": "",
+							"autoRegistered": true,
+							"userInfo": userData
+						}, {w:1}, callback2);
+					});
+				});
+			}, callback);
+		}
+	], function(err: Error) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
+		});
+	});
+});
+app.get("/admin/registrations/info/:id", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var id: string = request.params.id;
+	Collections.Presentations.findOne({"sessionID": id}, function(err: Error, presentation: Presentation) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		if (!presentation) {
+			response.send({
+				"status": "failure",
+				"info": "No presentation found"
+			});
+			return;
+		}
+		Collections.Presentations.find({"sessionNumber": presentation.sessionNumber, "sessionID": {$ne: id}}, {sort: "title"}).toArray(function(err: Error, otherPresentations: Presentation[]) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success",
+				"presentations": otherPresentations
+			});
+		});
+	});
+});
+// Move a student
+app.post("/admin/registrations/move", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var name: string = request.body.name;
+	var newPresentation: string = request.body.moveToID;
+	var currentPresentation: string = request.body.currentID;
+	async.waterfall([
+		function(callback) {
+			Collections.Names.findOne({name: name}, callback);
+		},
+		function(userData: any, callback) {
+			if (!userData) {
+				callback(new Error("User not found"));
+				return;
+			}
+			async.parallel([
+				function(callback2) {
+					// Update the first presentation
+					Collections.Presentations.update({sessionID: currentPresentation}, {$pull: {attendees: name}}, {w:1}, callback2);
+				},
+				function(callback2) {
+					// Update the second presentation
+					Collections.Presentations.update({sessionID: newPresentation}, {$push: {attendees: name}}, {w:1}, callback2);
+				},
+				function(callback2) {
+					// Update the user's presentations
+					Collections.Users.update({username: userData.username, "userInfo.Sessions": currentPresentation}, {$set: {"userInfo.Sessions.$": newPresentation}}, {w:1}, callback2);
+				}
+			], callback);
+		}
+	], function(err: Error): void {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
 		});
 	});
 });

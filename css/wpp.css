@@ -249,11 +249,11 @@ select {
 	line-height: 21px;
 	overflow: auto;
 }
-.table-view-cell > .btn:first-of-type {
+.sessions .table-view-cell > .btn:first-of-type {
 	-webkit-transform: translateY(-115%);
 	transform: translateY(-115%);
 }
-.table-view-cell > .btn:last-of-type {
+.sessions .table-view-cell > .btn:last-of-type {
 	-webkit-transform: translateY(15%);
 	transform: translateY(15%);
 }
@@ -414,6 +414,20 @@ select {
 	margin-right: 10px;
 	margin-left: 10px;
 }
+h2.attendees {
+	text-align: center;
+}
+h2.attendees small {
+	font-weight: normal;
+}
+h4 > code {
+	font-size: 110%;
+	background-color: initial;
+}
+select {
+	line-height: 16px;
+}
+
 
 p.medium-abstract {
 	display: none;
