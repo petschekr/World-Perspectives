@@ -1252,6 +1252,9 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
 
+        var referrerID = request.get("referrer");
+        referrerID = path.basename(referrerID);
+
         async.parallel([
             function (callback) {
                 Collections.Presentations.find({}, { sort: "presenter" }).toArray(callback);
@@ -1267,12 +1270,20 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     }
                     Collections.Names.find({ username: { $nin: users } }).toArray(callback);
                 });
+            },
+            function (callback) {
+                Collections.Presentations.findOne({ sessionID: referrerID }, callback);
             }
         ], function (err, results) {
             var presentations = results[0];
             var unregisteredStudents = results[1];
+            var referringPresentation = results[2];
 
-            response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents }, function (err, html) {
+            var goToSessionTab = 1;
+            if (referringPresentation)
+                goToSessionTab = referringPresentation.sessionNumber;
+
+            response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents, goToSessionTab: goToSessionTab }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);

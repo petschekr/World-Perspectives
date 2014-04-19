@@ -1333,6 +1333,9 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 
+	var referrerID: string = request.get("referrer");
+	referrerID = path.basename(referrerID);
+
 	async.parallel([
 		function(callback) {
 			Collections.Presentations.find({}, {sort: "presenter"}).toArray(callback);
@@ -1348,12 +1351,20 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 				}
 				Collections.Names.find({username: {$nin: users}}).toArray(callback);
 			});
+		},
+		function(callback) {
+			Collections.Presentations.findOne({sessionID: referrerID}, callback);
 		}
 	], function(err: Error, results: any[]) {
 		var presentations: Presentation[] = results[0];
 		var unregisteredStudents: any[] = results[1];
+		var referringPresentation: Presentation = results[2];
 
-		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents}, function(err: any, html: string): void {
+		var goToSessionTab: number = 1;
+		if (referringPresentation)
+			goToSessionTab = referringPresentation.sessionNumber;
+
+		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents, goToSessionTab: goToSessionTab}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);

@@ -8,11 +8,15 @@ block header
 		h1.title= title
 
 block content
+	- var session1Active = (goToSessionTab == 1) ? "active": "";
+	- var session2Active = (goToSessionTab == 2) ? "active": "";
+	- var session3Active = (goToSessionTab == 3) ? "active": "";
+	- var session4Active = (goToSessionTab == 4) ? "active": "";
 	.segmented-control
-		a.control-item.active(href="#session1") Session 1
-		a.control-item(href="#session2") Session 2
-		a.control-item(href="#session3") Session 3
-		a.control-item(href="#session4") Session 4
+		a.control-item(href="#session1", data-session="1", class=session1Active) Session 1
+		a.control-item(href="#session2", data-session="2", class=session2Active) Session 2
+		a.control-item(href="#session3", data-session="3", class=session3Active) Session 3
+		a.control-item(href="#session4", data-session="4", class=session4Active) Session 4
 	.card
 		mixin session (sessionNumber)
 			if presentations.length > 0
@@ -32,13 +36,13 @@ block content
 			else
 				p.content-padded(style="text-align: center;"): i No presentations created yet
 
-		#session1.control-content.active
+		#session1.control-content(class=session1Active)
 			+session(1)
-		#session2.control-content
+		#session2.control-content(class=session2Active)
 			+session(2)
-		#session3.control-content
+		#session3.control-content(class=session3Active)
 			+session(3)
-		#session4.control-content
+		#session4.control-content(class=session4Active)
 			+session(4)
 	h4(style="text-align: center;") #{unregisteredStudents.length} students and teachers haven't signed up yet
 	- var disableAutoRegister = (unregisteredStudents.length <= 0);
