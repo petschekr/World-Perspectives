@@ -553,4 +553,27 @@ $(document).ready(function () {
     $("#right").click(function () {
         window.SwipeThrough.next();
     });
+
+    $(document).on("touchend", "#auto-register", function () {
+        // Disable the button in case the request takes a while
+        $("#auto-register").attr("disabled", true).text("Working...");
+        $.ajax({
+            type: "POST",
+            url: "/admin/registrations/auto",
+            data: {},
+            success: function (res, status, xhr) {
+                $("#auto-register").text("Done");
+                if (res.status == "success") {
+                } else {
+                    console.error(res);
+                    alert("An error occurred while registering");
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#auto-register").text("Done");
+                console.error(err);
+                alert("An error occurred while registering");
+            }
+        });
+    });
 });

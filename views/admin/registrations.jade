@@ -40,6 +40,9 @@ block content
 			+session(3)
 		#session4.control-content
 			+session(4)
-	
+	h4(style="text-align: center;") #{unregisteredStudents.length} students and teachers haven't signed up yet
+	- var disableAutoRegister = (unregisteredStudents.length <= 0);
+	button#auto-register.btn.btn-block.btn-primary(disabled=disableAutoRegister) Register them automatically
+
 block footer
 	br

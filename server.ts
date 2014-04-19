@@ -1332,8 +1332,28 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
-	Collections.Presentations.find({}, {sort: "presenter"}).toArray(function(err: any, presentations: Presentation[]): void {
-		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations}, function(err: any, html: string): void {
+
+	async.parallel([
+		function(callback) {
+			Collections.Presentations.find({}, {sort: "presenter"}).toArray(callback);
+		},
+		function(callback) {
+			Collections.Users.find({}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				for (var i = 0; i < users.length; i++) {
+					users[i] = users[i].username;
+				}
+				Collections.Names.find({username: {$nin: users}}).toArray(callback);
+			});
+		}
+	], function(err: Error, results: any[]) {
+		var presentations: Presentation[] = results[0];
+		var unregisteredStudents: any[] = results[1];
+
+		response.render("admin/registrations", {title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
@@ -1394,6 +1414,86 @@ app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Reques
 					console.error(err);
 				response.send(html);
 			});
+		});
+	});
+});
+// Auto register unregistered students
+app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	async.waterfall([
+		function(callback) {
+			Collections.Users.find({}, {username: 1, _id:0 }).toArray(callback);
+		},
+		function(users: any[], callback) {
+			for (var i = 0; i < users.length; i++) {
+				users[i] = users[i].username;
+			}
+			Collections.Names.find({username: {$nin: users}}).toArray(callback);
+		},
+		function(unregisteredStudents: any[], callback) {
+			Collections.Presentations.find({}).toArray(function(err: Error, presentations: Presentation[]) {
+				// err should be null if there isn't an error
+				callback(err, unregisteredStudents, presentations);
+			});
+		},
+		function(unregisteredStudents: any[], presentations: Presentation[], callback) {
+			// Randomize the list of students (Fisher - Yates Shuffle)
+			for (var i = unregisteredStudents.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var temp = unregisteredStudents[i];
+				unregisteredStudents[i] = unregisteredStudents[j];
+				unregisteredStudents[j] = temp;
+			}
+
+			// Register each student
+			var presentationIndex: number = 0;
+			async.eachSeries(unregisteredStudents, function(unregisteredStudent: any, callback2) {
+				var username: string = unregisteredStudent.username;
+				var email: string = unregisteredStudent.email;
+				var user: Student = new Student(username, email);
+				user.RegisteredForSessions = true;
+				async.eachSeries([1, 2, 3, 4], function(sessionNumber: number, callback3) {
+					async.waterfall([
+						function(callback4) {
+							Collections.Presentations.find({$where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber}).toArray(callback4);
+						},
+						function(openPresentations: Presentation[], callback4) {
+							var presentationToEnter: Presentation = openPresentations[Math.floor(Math.random() * openPresentations.length)];
+							user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
+							Collections.Names.findOne({"username": username}, function(err: Error, name) {
+								callback4(err, presentationToEnter, name.name);
+							});
+						},
+						function(presentationToEnter: Presentation, name: string, callback4) {
+							Collections.Presentations.update({"sessionID": presentationToEnter.sessionID}, {$push: {attendees: name}}, {w:1}, callback4);
+						}
+					], callback3);
+				}, function(err: Error) {
+					if (err) {
+						callback2(err);
+						return;
+					}
+					var userData: any = user.exportUser();
+					Collections.Users.insert({
+						"username": username,
+						"email": email,
+						"code": "",
+						"autoRegistered": true,
+						"userInfo": user.exportUser()
+					}, {w:1}, callback2);
+				});
+			}, callback);
+		}
+	], function(err: Error) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": err
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
 		});
 	});
 });

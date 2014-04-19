@@ -1251,8 +1251,28 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
-        Collections.Presentations.find({}, { sort: "presenter" }).toArray(function (err, presentations) {
-            response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations }, function (err, html) {
+
+        async.parallel([
+            function (callback) {
+                Collections.Presentations.find({}, { sort: "presenter" }).toArray(callback);
+            },
+            function (callback) {
+                Collections.Users.find({}, { username: 1, _id: 0 }).toArray(function (err, users) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    for (var i = 0; i < users.length; i++) {
+                        users[i] = users[i].username;
+                    }
+                    Collections.Names.find({ username: { $nin: users } }).toArray(callback);
+                });
+            }
+        ], function (err, results) {
+            var presentations = results[0];
+            var unregisteredStudents = results[1];
+
+            response.render("admin/registrations", { title: "Registrations", mobileOS: platform, loggedIn: loggedIn, email: email, presentations: presentations, unregisteredStudents: unregisteredStudents }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);
@@ -1313,6 +1333,87 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                         console.error(err);
                     response.send(html);
                 });
+            });
+        });
+    });
+
+    // Auto register unregistered students
+    app.post("/admin/registrations/auto", AdminAuth, function (request, response) {
+        async.waterfall([
+            function (callback) {
+                Collections.Users.find({}, { username: 1, _id: 0 }).toArray(callback);
+            },
+            function (users, callback) {
+                for (var i = 0; i < users.length; i++) {
+                    users[i] = users[i].username;
+                }
+                Collections.Names.find({ username: { $nin: users } }).toArray(callback);
+            },
+            function (unregisteredStudents, callback) {
+                Collections.Presentations.find({}).toArray(function (err, presentations) {
+                    // err should be null if there isn't an error
+                    callback(err, unregisteredStudents, presentations);
+                });
+            },
+            function (unregisteredStudents, presentations, callback) {
+                for (var i = unregisteredStudents.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = unregisteredStudents[i];
+                    unregisteredStudents[i] = unregisteredStudents[j];
+                    unregisteredStudents[j] = temp;
+                }
+
+                // Register each student
+                var presentationIndex = 0;
+                async.eachSeries(unregisteredStudents, function (unregisteredStudent, callback2) {
+                    var username = unregisteredStudent.username;
+                    var email = unregisteredStudent.email;
+                    var user = new Student(username, email);
+                    user.RegisteredForSessions = true;
+                    async.eachSeries([1, 2, 3, 4], function (sessionNumber, callback3) {
+                        async.waterfall([
+                            function (callback4) {
+                                Collections.Presentations.find({ $where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber }).toArray(callback4);
+                            },
+                            function (openPresentations, callback4) {
+                                console.log(openPresentations.length);
+                                var presentationToEnter = openPresentations[Math.floor(Math.random() * openPresentations.length)];
+                                user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
+                                Collections.Names.findOne({ "username": username }, function (err, name) {
+                                    callback4(err, presentationToEnter, name.name);
+                                });
+                            },
+                            function (presentationToEnter, name, callback4) {
+                                Collections.Presentations.update({ "sessionID": presentationToEnter.sessionID }, { $push: { attendees: name } }, { w: 1 }, callback4);
+                            }
+                        ], callback3);
+                    }, function (err) {
+                        if (err) {
+                            callback2(err);
+                            return;
+                        }
+                        var userData = user.exportUser();
+                        Collections.Users.insert({
+                            "username": username,
+                            "email": email,
+                            "code": "",
+                            "autoRegistered": true,
+                            "userInfo": user.exportUser()
+                        }, { w: 1 }, callback2);
+                    });
+                }, callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": err
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
             });
         });
     });
