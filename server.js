@@ -1513,6 +1513,57 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    app.get("/admin/schedule/:username", AdminAuth, function (request, response) {
+        var username = request.params.username;
+        var scheduleForJade = [];
+        for (var i = 0, len = Schedule.length; i < len; i++) {
+            var scheduleItem = {
+                title: Schedule[i].title,
+                start: getTime(Schedule[i].start),
+                end: getTime(Schedule[i].end)
+            };
+            scheduleForJade.push(scheduleItem);
+        }
+
+        async.waterfall([
+            function (callback) {
+                Collections.Users.findOne({ username: username }, callback);
+            },
+            function (user, callback) {
+                if (!user) {
+                    callback(new Error("Could not find requested student"));
+                    return;
+                }
+                async.map(user.userInfo.Sessions, function (sessionItemID, callbackMap) {
+                    Collections.Presentations.findOne({ "sessionID": sessionItemID }, callbackMap);
+                }, callback);
+            }
+        ], function (err, presentations) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error",
+                    rawError: err
+                });
+                return;
+            }
+            Collections.Names.findOne({ username: username }, function (err, userMetaData) {
+                response.render("admin/schedule", {
+                    title: "Schedule",
+                    renderSchedule: scheduleForJade,
+                    realSchedule: Schedule,
+                    presentations: presentations,
+                    user: userMetaData
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
+        });
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];

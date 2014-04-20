@@ -1593,6 +1593,57 @@ app.post("/admin/registrations/move", AdminAuth, function(request: express3.Requ
 	});
 });
 
+app.get("/admin/schedule/:username", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var username: string = request.params.username;
+	var scheduleForJade: any = [];
+	for (var i: number = 0, len: number = Schedule.length; i < len; i++) {
+		var scheduleItem: any = {
+			title: Schedule[i].title,
+			start: getTime(Schedule[i].start),
+			end: getTime(Schedule[i].end)
+		}
+		scheduleForJade.push(scheduleItem);
+	}
+
+	async.waterfall([
+		function(callback): void {
+			Collections.Users.findOne({username: username}, callback);
+		},
+		function(user, callback): void {
+			if (!user) {
+				callback(new Error("Could not find requested student"));
+				return;
+			}
+			async.map(user.userInfo.Sessions, function(sessionItemID: string, callbackMap: any): void {
+				Collections.Presentations.findOne({"sessionID": sessionItemID}, callbackMap);
+			}, callback);
+		}
+	], function(err: Error, presentations: Presentation[]): void {
+		if (err) {
+			console.error(err);
+			response.send({
+				status: "failure",
+				error: "The database encountered an error",
+				rawError: err
+			});
+			return;
+		}
+		Collections.Names.findOne({username: username}, function(err: Error, userMetaData: any) {
+			response.render("admin/schedule", {
+				title: "Schedule",
+				renderSchedule: scheduleForJade,
+				realSchedule: Schedule,
+				presentations: presentations,
+				user: userMetaData
+			}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
+	});
+});
+
 app.get("/admin/feedback", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];
