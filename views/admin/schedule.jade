@@ -1,0 +1,97 @@
+doctype html
+html
+	head(lang="en")
+		meta(charset="utf-8")
+		meta(http-equiv="X-UA-Compatible", content="IE=Edge")
+
+		title= title
+
+		link(href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" rel="stylesheet")
+		style.
+			@media print {
+				button {
+					display: none;
+				}
+			}
+			img {
+				display: block;
+				margin: 20px auto;
+			}
+			button {
+				position: absolute;
+				top: 5px;
+				left: 5px;
+			}
+			h4 {
+				margin: 5px 10px 5px 10px;
+			}
+			h4:first-of-type {
+				font-family: 'Ubuntu', sans-serif;
+				font-size: 22px;
+			}
+			h4:last-of-type {
+				font-family: 'Ubuntu', sans-serif;
+				font-weight: 300;
+			}
+			h4 > small {
+				font-weight: normal;
+				margin-left: 6px;
+				font-size: 16px;
+			}
+			h4 > small::before {
+				content: "<";
+			}
+			h4 > small::after {
+				content: ">";
+			}
+			hr {
+				border: 1px dashed rgba(0, 0, 0, 0.2);
+			}
+			tr td:first-of-type {
+				font-family: "Ubuntu Mono";
+				width: 155px;
+			}
+			tr td:last-of-type {
+				font-family: 'Raleway', sans-serif;
+				font-size: 95%;
+			}
+			table {
+				border: 1px solid #DDD;
+				width: 100%;
+				border-collapse: collapse;
+				border-spacing: 0;
+			}
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+			table td {
+				padding: 8px;
+				border: 1px solid #DDD;
+			}
+			table tr {
+				vertical-align: top;
+			}
+	body
+		button(onclick="window.print()") Print Schedule
+		img(src="/img/logo.svg")
+		h4= user.name
+			small= user.email
+		h4 April 23, 2014
+		hr
+		table
+			each scheduleBlock, index in renderSchedule
+				tr
+					td
+						= scheduleBlock.start
+						!= (scheduleBlock.start.length === 7) ? "&nbsp;" : ""
+						| &nbsp;-&nbsp;
+						!= scheduleBlock.end.length === 7 ? "&nbsp;" : ""
+						= scheduleBlock.end
+					if !realSchedule[index].sessionNumber
+						td= scheduleBlock.title
+					else
+						- var presentation = presentations[realSchedule[index].sessionNumber - 1];
+						td
+							| <b>#{presentation.title}</b> - #{presentation.presenter}
+							br
+							i= scheduleBlock.title

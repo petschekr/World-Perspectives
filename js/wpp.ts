@@ -672,4 +672,23 @@ $(document).ready(function(): void {
 			}
 		});
 	});
+	$(document).on("input", "#name-search", function(): void {
+		if ($("#name-search").val() === "") {
+			$("a.schedule-name").parent().show();
+			return;
+		}
+		$("a.schedule-name").parent().hide();
+		$("a.schedule-name").filter(function(): boolean {
+			var name1: string[] = $(this).text().toLowerCase().split(" ");
+			var name2: string[] = $("#name-search").val().toLowerCase().split(" ");
+			
+			for (var i: number = 0; i < name1.length; i++) {
+				if (name2.indexOf(name1[i]) !== -1) {
+					return true;
+				}
+			}
+			return false;
+			//return $(this).text().toLowerCase() === $("#name-search").val();
+		}).parent().show();
+	});
 });
