@@ -1593,6 +1593,32 @@ app.post("/admin/registrations/move", AdminAuth, function(request: express3.Requ
 	});
 });
 
+app.get("/admin/schedule", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var platform: string = getPlatform(request);
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	Collections.Names.find().toArray(function(err: Error, names: any[]) {
+		if (err) {
+			console.error(err);
+			response.send({
+				status: "failure",
+				error: "The database encountered an error",
+			});
+			return;
+		}
+		names.sort(function(a, b): number {
+			if (a.name.split(" ")[1] < b.name.split(" ")[1]) return -1;
+			if (a.name.split(" ")[1] > b.name.split(" ")[1]) return 1;
+			return 0;
+		});
+		response.render("admin/schedule_list", {title: "Schedules", mobileOS: platform, loggedIn: loggedIn, email: email, names: names}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	})
+});
+
 app.get("/admin/schedule/:username", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var username: string = request.params.username;
 	var scheduleForJade: any = [];

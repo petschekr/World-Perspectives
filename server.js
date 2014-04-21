@@ -1513,6 +1513,34 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    app.get("/admin/schedule", AdminAuth, function (request, response) {
+        var platform = getPlatform(request);
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        Collections.Names.find().toArray(function (err, names) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    status: "failure",
+                    error: "The database encountered an error"
+                });
+                return;
+            }
+            names.sort(function (a, b) {
+                if (a.name.split(" ")[1] < b.name.split(" ")[1])
+                    return -1;
+                if (a.name.split(" ")[1] > b.name.split(" ")[1])
+                    return 1;
+                return 0;
+            });
+            response.render("admin/schedule_list", { title: "Schedules", mobileOS: platform, loggedIn: loggedIn, email: email, names: names }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+
     app.get("/admin/schedule/:username", AdminAuth, function (request, response) {
         var username = request.params.username;
         var scheduleForJade = [];
