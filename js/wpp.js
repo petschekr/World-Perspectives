@@ -626,4 +626,23 @@ $(document).ready(function () {
             }
         });
     });
+    $(document).on("input", "#name-search", function () {
+        if ($("#name-search").val() === "") {
+            $("a.schedule-name").parent().show();
+            return;
+        }
+        $("a.schedule-name").parent().hide();
+        $("a.schedule-name").filter(function () {
+            var name1 = $(this).text().toLowerCase().split(" ");
+            var name2 = $("#name-search").val().toLowerCase().split(" ");
+
+            for (var i = 0; i < name1.length; i++) {
+                if (name2.indexOf(name1[i]) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+            //return $(this).text().toLowerCase() === $("#name-search").val();
+        }).parent().show();
+    });
 });
