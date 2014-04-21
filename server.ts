@@ -150,7 +150,7 @@ app.use(express.session({
 		path: "/",
 		httpOnly: true,
 		secure: true,
-		maxAge: 3600000 * 24 * 7 // 1 week
+		maxAge: 3600000 * 24 * 7 * 12 // 3 months
 	},
 	proxy: true,
 	store: new MongoStore({db: db})
