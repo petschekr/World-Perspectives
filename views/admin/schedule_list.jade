@@ -8,10 +8,13 @@ block header
 		h1.title= title
 
 block content
+	br
+	input#name-search(type="text", placeholder="Search for name")
+
 	ul.table-view
 		for name, index in names
 			li.table-view-cell
-				a.navigate-right(data-ignore="push", href="/admin/schedule/#{name.username}", target="_blank")= name.name
+				a.schedule-name.navigate-right(data-ignore="push", href="/admin/schedule/#{name.username}", target="_blank")= name.name
 
 block footer
 	br
