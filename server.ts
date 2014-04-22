@@ -1677,7 +1677,12 @@ app.get("/admin/schedule/:username", AdminAuth, function(request: express3.Reque
 });
 
 app.get("/admin/schedule/grade/:grade", AdminAuth, function(request: express3.Request, response: express3.Response): void {
-	var grade: number = parseInt(request.params.grade, 10);
+	var grade: number = 0;
+	var teachers: boolean = false;
+	if (request.params.grade === "faculty")
+		teachers = true;
+	else
+		grade = parseInt(request.params.grade, 10);
 
 	var scheduleForJade: any = [];
 	for (var i: number = 0, len: number = Schedule.length; i < len; i++) {
@@ -1689,7 +1694,11 @@ app.get("/admin/schedule/grade/:grade", AdminAuth, function(request: express3.Re
 		scheduleForJade.push(scheduleItem);
 	}
 
-	Collections.Names.find({"grade": grade}).toArray(function(err: Error, peopleInClass: any[]) {
+	if (teachers)
+		var searchQuery: any = {"teacher": true};
+	else
+		var searchQuery: any = {"grade": grade};
+	Collections.Names.find(searchQuery).toArray(function(err: Error, peopleInClass: any[]) {
 		if (!peopleInClass) {
 			response.send("Not valid class number");
 			return;
