@@ -12,6 +12,12 @@ html
 				button {
 					display: none;
 				}
+				.schedule {
+					page-break-after: always;
+				}
+				.schedule:last-of-type {
+					page-break-after: auto;
+				}
 			}
 			img {
 				display: block;
@@ -73,25 +79,53 @@ html
 			}
 	body
 		button(onclick="window.print()") Print Schedule
-		img(src="/img/logo.svg")
-		h4= user.name
-			small= user.email
-		h4 April 23, 2014
-		hr
-		table
-			each scheduleBlock, index in renderSchedule
-				tr
-					td
-						= scheduleBlock.start
-						!= (scheduleBlock.start.length === 7) ? "&nbsp;" : ""
-						| &nbsp;-&nbsp;
-						!= scheduleBlock.end.length === 7 ? "&nbsp;" : ""
-						= scheduleBlock.end
-					if !realSchedule[index].sessionNumber
-						td= scheduleBlock.title
-					else
-						- var presentation = presentations[realSchedule[index].sessionNumber - 1];
-						td
-							| <b>#{presentation.title}</b> - #{presentation.presenter}
-							br
-							i= scheduleBlock.title
+		if !multiple
+			.schedule
+				img(src="/img/logo.svg")
+				h4= user.name
+					small= user.email
+				h4 April 23, 2014
+				hr
+				table
+					each scheduleBlock, index in renderSchedule
+						tr
+							td
+								= scheduleBlock.start
+								!= (scheduleBlock.start.length === 7) ? "&nbsp;" : ""
+								| &nbsp;-&nbsp;
+								!= scheduleBlock.end.length === 7 ? "&nbsp;" : ""
+								= scheduleBlock.end
+							if !realSchedule[index].sessionNumber
+								td= scheduleBlock.title
+							else
+								- var presentation = presentations[realSchedule[index].sessionNumber - 1];
+								td
+									| <b>#{presentation.title}</b> - #{presentation.presenter}
+									br
+									i= scheduleBlock.title
+		if multiple
+			each user in users
+				if user.presentations.length !== 0
+					.schedule
+						img(src="/img/logo.svg")
+						h4= user.name
+							small= user.email
+						h4 April 23, 2014
+						hr
+						table
+							each scheduleBlock, index in renderSchedule
+								tr
+									td
+										= scheduleBlock.start
+										!= (scheduleBlock.start.length === 7) ? "&nbsp;" : ""
+										| &nbsp;-&nbsp;
+										!= scheduleBlock.end.length === 7 ? "&nbsp;" : ""
+										= scheduleBlock.end
+									if !realSchedule[index].sessionNumber
+										td= scheduleBlock.title
+									else
+										- var presentation = user.presentations[realSchedule[index].sessionNumber - 1];
+										td
+											| <b>#{presentation.title}</b> - #{presentation.presenter}
+											br
+											i= scheduleBlock.title

@@ -1598,6 +1598,74 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    app.get("/admin/schedule/grade/:grade", AdminAuth, function (request, response) {
+        var grade = parseInt(request.params.grade, 10);
+
+        var scheduleForJade = [];
+        for (var i = 0, len = Schedule.length; i < len; i++) {
+            var scheduleItem = {
+                title: Schedule[i].title,
+                start: getTime(Schedule[i].start),
+                end: getTime(Schedule[i].end)
+            };
+            scheduleForJade.push(scheduleItem);
+        }
+
+        Collections.Names.find({ "grade": grade }).toArray(function (err, peopleInClass) {
+            if (!peopleInClass) {
+                response.send("Not valid class number");
+                return;
+            }
+            peopleInClass.sort(function (a, b) {
+                if (a.name.split(" ")[1] < b.name.split(" ")[1])
+                    return -1;
+                if (a.name.split(" ")[1] > b.name.split(" ")[1])
+                    return 1;
+                return 0;
+            });
+            async.map(peopleInClass, function (userMetaData, callbackMap) {
+                async.waterfall([
+                    function (callback) {
+                        Collections.Users.findOne({ username: userMetaData.username }, callback);
+                    },
+                    function (user, callback) {
+                        if (!user) {
+                            callback(new Error("Could not find requested student"));
+                            return;
+                        }
+                        async.map(user.userInfo.Sessions, function (sessionItemID, callbackMap) {
+                            Collections.Presentations.findOne({ "sessionID": sessionItemID }, callbackMap);
+                        }, callback);
+                    }
+                ], function (err, presentations) {
+                    userMetaData.presentations = presentations;
+                    callbackMap(err, userMetaData);
+                });
+            }, function (err, results) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        status: "failure",
+                        error: "The database encountered an error",
+                        rawError: err
+                    });
+                    return;
+                }
+                response.render("admin/schedule", {
+                    title: "Schedule",
+                    renderSchedule: scheduleForJade,
+                    realSchedule: Schedule,
+                    users: results,
+                    multiple: true
+                }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
+            });
+        });
+    });
+
     app.get("/admin/feedback", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
