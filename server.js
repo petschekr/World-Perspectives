@@ -1599,7 +1599,12 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
     });
 
     app.get("/admin/schedule/grade/:grade", AdminAuth, function (request, response) {
-        var grade = parseInt(request.params.grade, 10);
+        var grade = 0;
+        var teachers = false;
+        if (request.params.grade === "faculty")
+            teachers = true;
+        else
+            grade = parseInt(request.params.grade, 10);
 
         var scheduleForJade = [];
         for (var i = 0, len = Schedule.length; i < len; i++) {
@@ -1611,7 +1616,11 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             scheduleForJade.push(scheduleItem);
         }
 
-        Collections.Names.find({ "grade": grade }).toArray(function (err, peopleInClass) {
+        if (teachers)
+            var searchQuery = { "teacher": true };
+        else
+            var searchQuery = { "grade": grade };
+        Collections.Names.find(searchQuery).toArray(function (err, peopleInClass) {
             if (!peopleInClass) {
                 response.send("Not valid class number");
                 return;
