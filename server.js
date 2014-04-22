@@ -1352,7 +1352,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     app.post("/admin/registrations/auto", AdminAuth, function (request, response) {
         async.waterfall([
             function (callback) {
-                Collections.Users.find({}, { username: 1, _id: 0 }).toArray(callback);
+                Collections.Users.find({ "userInfo.RegisteredForSessions": true }, { username: 1, _id: 0 }).toArray(callback);
             },
             function (users, callback) {
                 for (var i = 0; i < users.length; i++) {
@@ -1387,6 +1387,10 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                                 Collections.Presentations.find({ $where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber }).toArray(callback4);
                             },
                             function (openPresentations, callback4) {
+                                if (openPresentations.length === 0) {
+                                    callback4(new Error("Not enough room in session " + sessionNumber));
+                                    return;
+                                }
                                 var presentationToEnter = openPresentations[Math.floor(Math.random() * openPresentations.length)];
                                 user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
                                 Collections.Names.findOne({ "username": username }, function (err, name) {
@@ -1409,13 +1413,15 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                                 return;
                             }
                             userData.Teacher = userMetaData.teacher;
-                            Collections.Users.insert({
-                                "username": username,
-                                "email": email,
-                                "code": "",
-                                "autoRegistered": true,
-                                "userInfo": userData
-                            }, { w: 1 }, callback2);
+                            Collections.Users.remove({ username: username }, { w: 1 }, function () {
+                                Collections.Users.insert({
+                                    "username": username,
+                                    "email": email,
+                                    "code": "",
+                                    "autoRegistered": true,
+                                    "userInfo": userData
+                                }, { w: 1 }, callback2);
+                            });
                         });
                     });
                 }, callback);

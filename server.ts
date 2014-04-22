@@ -1432,7 +1432,7 @@ app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Reques
 app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	async.waterfall([
 		function(callback) {
-			Collections.Users.find({}, {username: 1, _id:0 }).toArray(callback);
+			Collections.Users.find({"userInfo.RegisteredForSessions": true}, {username: 1, _id:0 }).toArray(callback);
 		},
 		function(users: any[], callback) {
 			for (var i = 0; i < users.length; i++) {
@@ -1468,6 +1468,10 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 							Collections.Presentations.find({$where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber}).toArray(callback4);
 						},
 						function(openPresentations: Presentation[], callback4) {
+							if (openPresentations.length === 0) {
+								callback4(new Error("Not enough room in session " + sessionNumber));
+								return;
+							}
 							var presentationToEnter: Presentation = openPresentations[Math.floor(Math.random() * openPresentations.length)];
 							user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
 							Collections.Names.findOne({"username": username}, function(err: Error, name) {
@@ -1490,13 +1494,15 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 							return;
 						}
 						userData.Teacher = userMetaData.teacher;
-						Collections.Users.insert({
-							"username": username,
-							"email": email,
-							"code": "",
-							"autoRegistered": true,
-							"userInfo": userData
-						}, {w:1}, callback2);
+						Collections.Users.remove({username: username}, {w:1}, function(): void {
+							Collections.Users.insert({
+								"username": username,
+								"email": email,
+								"code": "",
+								"autoRegistered": true,
+								"userInfo": userData
+							}, {w:1}, callback2);
+						});
 					});
 				});
 			}, callback);
