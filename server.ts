@@ -1341,7 +1341,7 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 			Collections.Presentations.find({}, {sort: "presenter"}).toArray(callback);
 		},
 		function(callback) {
-			Collections.Users.find({}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
+			Collections.Users.find({"userInfo.RegisteredForSessions": true}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
 				if (err) {
 					callback(err);
 					return;

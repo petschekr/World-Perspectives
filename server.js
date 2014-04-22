@@ -1260,7 +1260,7 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                 Collections.Presentations.find({}, { sort: "presenter" }).toArray(callback);
             },
             function (callback) {
-                Collections.Users.find({}, { username: 1, _id: 0 }).toArray(function (err, users) {
+                Collections.Users.find({ "userInfo.RegisteredForSessions": true }, { username: 1, _id: 0 }).toArray(function (err, users) {
                     if (err) {
                         callback(err);
                         return;
