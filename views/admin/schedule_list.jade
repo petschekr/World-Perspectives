@@ -8,8 +8,17 @@ block header
 		h1.title= title
 
 block content
-	br
-	input#name-search(type="text", placeholder="Search for name")
+	ul.table-view
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/schedule/grade/9", target="_blank") 9th Grade
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/schedule/grade/10", target="_blank") 10th Grade
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/schedule/grade/11", target="_blank") 11th Grade
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/schedule/grade/12", target="_blank") 12th Grade
+
+	input#name-search(type="text", placeholder="Search for name", style="margin-top: 0;")
 
 	ul.table-view
 		for name, index in names

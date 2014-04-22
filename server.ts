@@ -1340,7 +1340,7 @@ app.get("/admin/registrations", AdminAuth, function(request: express3.Request, r
 			Collections.Presentations.find({}, {sort: "presenter"}).toArray(callback);
 		},
 		function(callback) {
-			Collections.Users.find({}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
+			Collections.Users.find({"userInfo.RegisteredForSessions": true}, {username: 1, _id:0 }).toArray(function(err: Error, users: any[]) {
 				if (err) {
 					callback(err);
 					return;
@@ -1431,7 +1431,7 @@ app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Reques
 app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	async.waterfall([
 		function(callback) {
-			Collections.Users.find({}, {username: 1, _id:0 }).toArray(callback);
+			Collections.Users.find({"userInfo.RegisteredForSessions": true}, {username: 1, _id:0 }).toArray(callback);
 		},
 		function(users: any[], callback) {
 			for (var i = 0; i < users.length; i++) {
@@ -1467,6 +1467,10 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 							Collections.Presentations.find({$where: "this.attendees.length < this.location.capacity", "sessionNumber": sessionNumber}).toArray(callback4);
 						},
 						function(openPresentations: Presentation[], callback4) {
+							if (openPresentations.length === 0) {
+								callback4(new Error("Not enough room in session " + sessionNumber));
+								return;
+							}
 							var presentationToEnter: Presentation = openPresentations[Math.floor(Math.random() * openPresentations.length)];
 							user.Sessions[sessionNumber - 1] = presentationToEnter.sessionID;
 							Collections.Names.findOne({"username": username}, function(err: Error, name) {
@@ -1489,13 +1493,15 @@ app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Requ
 							return;
 						}
 						userData.Teacher = userMetaData.teacher;
-						Collections.Users.insert({
-							"username": username,
-							"email": email,
-							"code": "",
-							"autoRegistered": true,
-							"userInfo": userData
-						}, {w:1}, callback2);
+						Collections.Users.remove({username: username}, {w:1}, function(): void {
+							Collections.Users.insert({
+								"username": username,
+								"email": email,
+								"code": "",
+								"autoRegistered": true,
+								"userInfo": userData
+							}, {w:1}, callback2);
+						});
 					});
 				});
 			}, callback);
@@ -1660,6 +1666,72 @@ app.get("/admin/schedule/:username", AdminAuth, function(request: express3.Reque
 				realSchedule: Schedule,
 				presentations: presentations,
 				user: userMetaData
+			}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
+		});
+	});
+});
+
+app.get("/admin/schedule/grade/:grade", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var grade: number = parseInt(request.params.grade, 10);
+
+	var scheduleForJade: any = [];
+	for (var i: number = 0, len: number = Schedule.length; i < len; i++) {
+		var scheduleItem: any = {
+			title: Schedule[i].title,
+			start: getTime(Schedule[i].start),
+			end: getTime(Schedule[i].end)
+		}
+		scheduleForJade.push(scheduleItem);
+	}
+
+	Collections.Names.find({"grade": grade}).toArray(function(err: Error, peopleInClass: any[]) {
+		if (!peopleInClass) {
+			response.send("Not valid class number");
+			return;
+		}
+		peopleInClass.sort(function(a, b): number {
+			if (a.name.split(" ")[1] < b.name.split(" ")[1]) return -1;
+			if (a.name.split(" ")[1] > b.name.split(" ")[1]) return 1;
+			return 0;
+		});
+		async.map(peopleInClass, function(userMetaData: any, callbackMap) {
+			async.waterfall([
+				function(callback): void {
+					Collections.Users.findOne({username: userMetaData.username}, callback);
+				},
+				function(user, callback): void {
+					if (!user) {
+						callback(new Error("Could not find requested student"));
+						return;
+					}
+					async.map(user.userInfo.Sessions, function(sessionItemID: string, callbackMap: any): void {
+						Collections.Presentations.findOne({"sessionID": sessionItemID}, callbackMap);
+					}, callback);
+				}
+			], function(err: Error, presentations: Presentation[]): void {
+				userMetaData.presentations = presentations;
+				callbackMap(err, userMetaData);
+			});
+		}, function(err: Error, results: any[]) {
+			if (err) {
+				console.error(err);
+				response.send({
+					status: "failure",
+					error: "The database encountered an error",
+					rawError: err
+				});
+				return;
+			}
+			response.render("admin/schedule", {
+				title: "Schedule",
+				renderSchedule: scheduleForJade,
+				realSchedule: Schedule,
+				users: results,
+				multiple: true
 			}, function(err: any, html: string): void {
 				if (err)
 					console.error(err);
