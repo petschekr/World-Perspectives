@@ -428,6 +428,16 @@ select {
 	line-height: 16px;
 }
 
+form {
+	margin: 10px;
+	margin-top: 15px;
+}
+form h4 {
+	font-weight: normal;
+}
+form h3 {
+	text-align: center;
+}
 
 p.medium-abstract {
 	display: none;
