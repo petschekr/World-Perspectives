@@ -221,7 +221,14 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     break;
                 }
             }
-            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+            var isPresenter = false;
+            if (loggedIn) {
+                var username = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+                if (username === presentation.presenterUsername || admin) {
+                    isPresenter = true;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);
@@ -319,7 +326,14 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                     break;
                 }
             }
-            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+            var isPresenter = false;
+            if (loggedIn) {
+                var username = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+                if (username === presentation.presenterUsername || admin) {
+                    isPresenter = true;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);

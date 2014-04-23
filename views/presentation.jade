@@ -40,7 +40,6 @@ block content
 			small #{startTime} - #{endTime}
 		h1.content-padded= presentation.title
 	.presentation-buttons
-
 		if presentation.pdfID
 			a.btn(href="https://s3.amazonaws.com/worldperspectivespdfs/#{presentation.pdfID}", data-ignore="push", target="_blank")
 				span.icon.icon-download
@@ -54,7 +53,11 @@ block content
 			a.btn(href="mailto:?to=&subject=Check%20out%20this%20presentation&body=")
 				span.icon.icon-share
 				| &nbsp;Share
-		button.btn.btn-primary
-			span.icon.icon-person
-			| &nbsp;Check In
+		if !isPresenter
+			button.btn.btn-primary
+				span.icon.icon-person
+				| &nbsp;Check In
+	if isPresenter
+		h5.content-padded(style="text-align: center;") Attendance Code
+		.code= presentation.attendanceCode
 	p.content-padded.abstract= presentation.abstract

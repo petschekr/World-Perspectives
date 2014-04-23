@@ -31,6 +31,7 @@ interface Presentation {
 	attendanceCode: string;
 	//presenter: Student;
 	presenter: string;
+	presenterUsername?: string;
 	title: string;
 	media: {mainVideo?: string; images?: string[]; videos?: string[]};
 	pdfID: string;
@@ -275,7 +276,14 @@ app.get("/explore/:id", function(request: express3.Request, response: express3.R
 				break;
 			}
 		}
-		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+		var isPresenter: boolean = false;
+		if (loggedIn) {
+			var username: string = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+			if (username === presentation.presenterUsername || admin) {
+				isPresenter = true;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
@@ -371,7 +379,14 @@ app.get("/schedule/:id", function(request: express3.Request, response: express3.
 				break;
 			}
 		}
-		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+		var isPresenter: boolean = false;
+		if (loggedIn) {
+			var username: string = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+			if (username === presentation.presenterUsername || admin) {
+				isPresenter = true;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
