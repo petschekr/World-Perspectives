@@ -544,6 +544,16 @@ $(document).ready(function () {
                 window.SwipeThrough.slide(index, 1); // 1 ms transition
             }
         }
+        if (window.location.pathname == "/feedback") {
+            if (localStorage["feedback"]) {
+                var savedResponses = localStorage.getItem("feedback");
+                savedResponses = JSON.parse(savedResponses);
+                for (var i = 0; i < savedResponses.length; i++) {
+                    console.log(i);
+                    $("form textarea").eq(i).val(savedResponses[i]);
+                }
+            }
+        }
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
@@ -644,5 +654,44 @@ $(document).ready(function () {
             return false;
             //return $(this).text().toLowerCase() === $("#name-search").val();
         }).parent().show();
+    });
+    $(document).on("keyup", "form textarea", function () {
+        var toSaveElements = $("form textarea");
+        var toSave = [];
+        for (var i = 0; i < toSaveElements.length; i++) {
+            toSave.push($(toSaveElements[i]).val());
+        }
+        localStorage.setItem("feedback", JSON.stringify(toSave));
+    });
+    $(document).on("touchend", "form .btn", function () {
+        $(this).attr("disabled", true).text("Submitting...");
+        var toSaveElements = $("form textarea");
+        var fields = [];
+        for (var i = 0; i < toSaveElements.length; i++) {
+            fields.push($(toSaveElements[i]).val());
+        }
+        $.ajax({
+            type: "POST",
+            url: "/feedback",
+            data: {
+                fields: JSON.stringify(fields)
+            },
+            success: function (res, status, xhr) {
+                $("form .btn").attr("disabled", false).text("Submit");
+                if (res.status == "success") {
+                    localStorage.removeItem("feedback");
+                    alert("Thank you for your feedback");
+                    $("form textarea").val("");
+                } else {
+                    console.error(res);
+                    alert("An error occurred while submitting your feedback: " + res.info);
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while submitting your feedback");
+            }
+        });
     });
 });
