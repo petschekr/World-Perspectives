@@ -545,11 +545,13 @@ $(document).ready(function () {
             }
         }
         if (window.location.pathname == "/feedback") {
-            var savedResponses = localStorage.getItem("feedback");
-            savedResponses = JSON.parse(savedResponses);
-            for (var i = 0; i < savedResponses.length; i++) {
-                console.log(i);
-                $("form textarea").eq(i).val(savedResponses[i]);
+            if (localStorage["feedback"]) {
+                var savedResponses = localStorage.getItem("feedback");
+                savedResponses = JSON.parse(savedResponses);
+                for (var i = 0; i < savedResponses.length; i++) {
+                    console.log(i);
+                    $("form textarea").eq(i).val(savedResponses[i]);
+                }
             }
         }
     }

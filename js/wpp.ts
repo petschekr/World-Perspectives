@@ -588,11 +588,13 @@ $(document).ready(function(): void {
 			}
 		}
 		if (window.location.pathname == "/feedback") {
-			var savedResponses = localStorage.getItem("feedback");
-			savedResponses = JSON.parse(savedResponses);
-			for (var i: number = 0; i < savedResponses.length; i++) {
-				console.log(i);
-				$("form textarea").eq(i).val(savedResponses[i]);
+			if (localStorage["feedback"]) {
+				var savedResponses = localStorage.getItem("feedback");
+				savedResponses = JSON.parse(savedResponses);
+				for (var i: number = 0; i < savedResponses.length; i++) {
+					console.log(i);
+					$("form textarea").eq(i).val(savedResponses[i]);
+				}
 			}
 		}
 	}
