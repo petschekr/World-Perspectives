@@ -62,7 +62,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations"),
         Pictures: db.collection("pictures"),
-        Names: db.collection("names")
+        Names: db.collection("names"),
+        Feedback: db.collection("feedback")
     };
 
     // Retrieve the schedule
@@ -445,6 +446,83 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             if (err)
                 console.error(err);
             response.send(html);
+        });
+    });
+    app.post("/feedback", function (request, response) {
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        if (!loggedIn) {
+            response.send({
+                "status": "failure",
+                "info": "You are not logged in"
+            });
+            return;
+        }
+        var fields = JSON.parse(request.body.fields);
+        for (var i = 0; i < fields.length; i++) {
+            try  {
+                fields[i] = fields[i].trim();
+            } catch (e) {
+            }
+        }
+        if (fields.indexOf("") != -1) {
+            response.send({
+                "status": "failure",
+                "info": "All fields must be filled out"
+            });
+            return;
+        }
+        var questionsAndAnswers = {
+            "health": fields[0],
+            "globalization": fields[1],
+            "science": fields[2],
+            "incentives": fields[3],
+            "positiveExperience": fields[4],
+            "connections": fields[5],
+            "improvements": fields[6]
+        };
+        async.waterfall([
+            function (callback) {
+                Collections.Users.findOne({ email: email }, function (err, user) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!user) {
+                        callback(new Error("Invalid user email"));
+                        return;
+                    }
+                    if (user.userInfo.SubmittedFeedback) {
+                        response.send({
+                            "status": "failure",
+                            "info": "You've already submitted feedback"
+                        });
+                        return;
+                    }
+                });
+            },
+            function (user, callback) {
+                Collections.Feedback.insert({
+                    username: user.username,
+                    feedback: questionsAndAnswers
+                }, { w: 1 }, callback);
+            },
+            function (callback) {
+                Collections.Users.update({ email: email }, { $set: { "userInfo.SubmittedFeedback": true } }, { w: 1 }, callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "A database error occured",
+                    "err": err
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
+            });
         });
     });
 
