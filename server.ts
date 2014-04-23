@@ -1428,6 +1428,33 @@ app.get("/admin/registrations/:id", AdminAuth, function(request: express3.Reques
 		});
 	});
 });
+// Print session lists
+app.get("/admin/registrations/print/:sessionNumber", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var sessionNumber: number = parseInt(request.params.sessionNumber, 10);
+	if (!(sessionNumber <= 4 && sessionNumber >= 1)) {
+		response.send("Invalid session");
+		return;
+	}
+	async.parallel([
+		function(callback) {
+			Collections.Presentations.find({"sessionNumber": sessionNumber}, {sort: "presenter"}).toArray(callback);
+		},
+		function(callback) {
+			Collections.Names.find().toArray(callback);
+		}
+	], function(err: Error, results: any[]) {
+		response.render("admin/attendees_print", {
+			title: "Session " + sessionNumber,
+			sessionNumber: sessionNumber,
+			presentations: results[0],
+			names: results[1]
+		}, function(err: any, html: string): void {
+			if (err)
+				console.error(err);
+			response.send(html);
+		});
+	});
+});
 // Auto register unregistered students
 app.post("/admin/registrations/auto", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	async.waterfall([

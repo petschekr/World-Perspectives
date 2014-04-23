@@ -1348,6 +1348,34 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    // Print session lists
+    app.get("/admin/registrations/print/:sessionNumber", AdminAuth, function (request, response) {
+        var sessionNumber = parseInt(request.params.sessionNumber, 10);
+        if (!(sessionNumber <= 4 && sessionNumber >= 1)) {
+            response.send("Invalid session");
+            return;
+        }
+        async.parallel([
+            function (callback) {
+                Collections.Presentations.find({ "sessionNumber": sessionNumber }, { sort: "presenter" }).toArray(callback);
+            },
+            function (callback) {
+                Collections.Names.find().toArray(callback);
+            }
+        ], function (err, results) {
+            response.render("admin/attendees_print", {
+                title: "Session " + sessionNumber,
+                sessionNumber: sessionNumber,
+                presentations: results[0],
+                names: results[1]
+            }, function (err, html) {
+                if (err)
+                    console.error(err);
+                response.send(html);
+            });
+        });
+    });
+
     // Auto register unregistered students
     app.post("/admin/registrations/auto", AdminAuth, function (request, response) {
         async.waterfall([

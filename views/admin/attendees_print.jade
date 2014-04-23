@@ -1,0 +1,112 @@
+doctype html
+html
+	head(lang="en")
+		meta(charset="utf-8")
+		meta(http-equiv="X-UA-Compatible", content="IE=Edge")
+
+		title= title
+
+		link(href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" rel="stylesheet")
+		style.
+			@media print {
+				button {
+					display: none;
+				}
+				.presentation {
+					page-break-after: always;
+				}
+				.presentation:last-of-type {
+					page-break-after: auto;
+				}
+			}
+			.presentation {
+				margin-top: 30px;
+			}
+			.presentation table:first-of-type {
+				margin-bottom: 15px;
+			}
+			img {
+				display: block;
+				margin: 20px auto;
+			}
+			button {
+				position: absolute;
+				top: 5px;
+				left: 5px;
+			}
+			th {
+				font-family: "Ubuntu", sans-serif;
+				font-size: 16px;
+				font-weight: bold;
+				text-align: left;
+			}
+			h4 {
+				margin: 5px 10px 5px 10px;
+				font-family: "Ubuntu", sans-serif;
+				font-size: 22px;
+				margin-left: 0;
+			}
+			h4 > small {
+				font-weight: normal;
+				/*margin-left: 6px;*/
+				font-size: 16px;
+			}
+			h4 > small::before {
+				content: " — ";
+			}
+			hr {
+				border: 1px dashed rgba(0, 0, 0, 0.2);
+			}
+			tr td {
+				font-family: 'Raleway', sans-serif;
+				font-size: 95%;
+			}
+			table {
+				border: 1px solid #DDD;
+				width: 100%;
+				border-collapse: collapse;
+				border-spacing: 0;
+			}
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+			table td, th {
+				padding: 5px;
+				border: 1px solid #DDD;
+			}
+			table tr {
+				vertical-align: top;
+			}
+	body
+		button(onclick="window.print()") Print List
+		//- h5 Session #{sessionNumber}
+		- var nameLookup = {};
+		- for (var i = 0, len = names.length; i < len; i++) {
+		- 	nameLookup[names[i].name] = names[i];
+		- }
+		each presentation in presentations
+			//- Sort the attendees by last name
+			- presentation.attendees.sort(function(a, b) {
+			- 	if (a.split(" ")[1] < b.split(" ")[1]) return -1;
+			- 	if (a.split(" ")[1] > b.split(" ")[1]) return 1;
+			- 	return 0;
+			- });
+			.presentation
+				h4= presentation.title
+					small= presentation.presenter
+				table
+					tr
+						th Faculty
+					each facultyMember in presentation.attendees
+						if nameLookup[facultyMember].teacher
+							tr
+								td= facultyMember
+				table
+					tr
+						th Students
+						th Grade
+					each student in presentation.attendees
+						if !nameLookup[student].teacher
+							tr
+								td= student
+								td= nameLookup[student].grade

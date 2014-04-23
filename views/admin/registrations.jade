@@ -44,6 +44,17 @@ block content
 			+session(3)
 		#session4.control-content(class=session4Active)
 			+session(4)
+
+	ul.table-view
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/registrations/print/1", target="_blank") Print Session 1
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/registrations/print/2", target="_blank") Print Session 2
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/registrations/print/3", target="_blank") Print Session 3
+		li.table-view-cell
+			a.schedule-name.navigate-right(data-ignore="push", href="/admin/registrations/print/4", target="_blank") Print Session 4
+
 	h4(style="text-align: center;") #{unregisteredStudents.length} students and teachers haven't signed up yet
 	- var disableAutoRegister = (unregisteredStudents.length <= 0);
 	button#auto-register.btn.btn-block.btn-primary(disabled=disableAutoRegister) Register them automatically
