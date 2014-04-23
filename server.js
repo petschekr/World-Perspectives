@@ -85,6 +85,11 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
     var app = express();
     var MongoStore = require("connect-mongo")(express);
 
+    // AWS S3
+    var AWS = require("aws-sdk");
+    AWS.config.loadFromPath("./aws.json");
+    var s3 = new AWS.S3();
+
     app.use(express.compress());
     app.use(express.bodyParser());
     app.use(express.cookieParser());
@@ -906,8 +911,6 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         Collections.Presentations.findOne({ "sessionID": id }, function (err, presentation) {
             // Delete that presentation's media
             var media = [];
-            if (presentation.pdfID)
-                media.push(presentation.pdfID);
             media = media.concat(presentation.media.images);
             media = media.concat(presentation.media.videos);
 
@@ -1108,10 +1111,27 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
 
                 // Move the temp file
                 var sourceFile = fs.createReadStream(pdf.path);
-                var newFileName = "/media/" + id + path.extname(pdf.path);
-                var destFile = fs.createWriteStream(__dirname + newFileName);
-                sourceFile.pipe(destFile);
-                sourceFile.on("end", function () {
+
+                var s3Params = {
+                    Bucket: "worldperspectivespdfs",
+                    Key: id,
+                    ACL: "public-read",
+                    Body: sourceFile,
+                    ContentType: pdf.type
+                };
+                s3.putObject(s3Params, function (err, data) {
+                    if (err) {
+                        // Delete the temp files
+                        // Who cares if these return errors
+                        fs.unlink(pdf.path);
+                        console.error(err);
+                        response.send({
+                            "status": "error",
+                            "reason": err
+                        });
+                        return;
+                    }
+
                     // Delete the temp file
                     fs.unlink(pdf.path, function (err) {
                         if (err) {
@@ -1124,19 +1144,8 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
                         }
                         response.send({
                             "status": "success",
-                            "id": id + path.extname(pdf.path)
+                            "id": id
                         });
-                    });
-                });
-                sourceFile.on("error", function (err) {
-                    // Delete the temp files
-                    // Who cares if these return errors
-                    fs.unlink(pdf.path);
-                    fs.unlink(__dirname + newFileName);
-                    console.error(err);
-                    response.send({
-                        "status": "error",
-                        "reason": err
                     });
                 });
             }
