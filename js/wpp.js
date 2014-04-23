@@ -544,6 +544,14 @@ $(document).ready(function () {
                 window.SwipeThrough.slide(index, 1); // 1 ms transition
             }
         }
+        if (window.location.pathname == "/feedback") {
+            var savedResponses = localStorage.getItem("feedback");
+            savedResponses = JSON.parse(savedResponses);
+            for (var i = 0; i < savedResponses.length; i++) {
+                console.log(i);
+                $("form textarea").eq(i).val(savedResponses[i]);
+            }
+        }
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
@@ -644,5 +652,13 @@ $(document).ready(function () {
             return false;
             //return $(this).text().toLowerCase() === $("#name-search").val();
         }).parent().show();
+    });
+    $(document).on("keyup", "form textarea", function () {
+        var toSaveElements = $("form textarea");
+        var toSave = [];
+        for (var i = 0; i < toSaveElements.length; i++) {
+            toSave.push($(toSaveElements[i]).val());
+        }
+        localStorage.setItem("feedback", JSON.stringify(toSave));
     });
 });
