@@ -59,12 +59,13 @@ block content
 					li.table-view-divider Absent
 					if presentation.absent.length > 0
 						each attendee in presentation.absent
-							li.table-view-cell.attendance-absent(style="color: #dd524d;")= attendee
+							li.table-view-cell.attendance-absent= attendee
+								button.btn.btn-positive(data-name=attendee) Mark Present
 					else
-						li.table-view-cell: i No one
+						li.table-view-cell.no-one: i No one
 					li.table-view-divider Present
 					if presentation.present.length > 0
 						each attendee in presentation.present
 							li.table-view-cell.attendance-present= attendee
 					else
-						li.table-view-cell: i No one
+						li.table-view-cell.no-one: i No one

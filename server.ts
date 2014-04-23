@@ -1055,6 +1055,43 @@ app.get("/admin/attendance/:sessionNumber", AdminAuth, function(request: express
 		});
 	});
 });
+app.post("/admin/attendance/markpresent", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var name: string = request.body.name;
+	var sessionNumber: number = parseInt(request.body.sessionNumber, 10);
+	Collections.Names.findOne({"name": name}, function(err: Error, userMetaData) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": "The database encountered an error",
+				err: err
+			});
+			return;
+		}
+		if (!userMetaData) {
+			response.send({
+				"status": "failure",
+				"info": "Name not found"
+			});
+			return;
+		}
+		Collections.Users.update({username: userMetaData.username, "userInfo.Attendance.sessionNumber": sessionNumber}, {$set: {"userInfo.Attendance.$.present": true}}, {w:1}, function(err: Error) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": "The database encountered an error",
+					"err": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success"
+			});
+		});
+	});
+});
+
 app.get("/admin/presentations", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

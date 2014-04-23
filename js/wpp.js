@@ -747,4 +747,36 @@ $(document).ready(function () {
             return false;
         }).parent().parent().show();
     });
+    $(document).on("touchend", ".attendance-absent button", function () {
+        var name = $(this).data("name");
+        var length = window.location.pathname.split("/").length;
+        var sessionNumber = window.location.pathname.split("/")[length - 1];
+        $.ajax({
+            type: "POST",
+            url: "/admin/attendance/markpresent",
+            data: {
+                name: name,
+                sessionNumber: sessionNumber
+            },
+            success: function (res, status, xhr) {
+                if (res.status == "success") {
+                    $("button[data-name='" + name + "']").parent().parent().find(".no-one").last().remove();
+                    $("button[data-name='" + name + "']").parent().parent().append('<li class="table-view-cell attendance-present">' + name + "</li>");
+                    $("button[data-name='" + name + "']").parent().remove();
+                } else {
+                    console.error(res);
+                    if (res.err) {
+                        alert("An error occurred while marking that student as present: " + res.info);
+                    } else {
+                        alert(res.info);
+                    }
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while marking that student as present");
+            }
+        });
+    });
 });

@@ -1000,6 +1000,43 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
             });
         });
     });
+    app.post("/admin/attendance/markpresent", AdminAuth, function (request, response) {
+        var name = request.body.name;
+        var sessionNumber = parseInt(request.body.sessionNumber, 10);
+        Collections.Names.findOne({ "name": name }, function (err, userMetaData) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "The database encountered an error",
+                    err: err
+                });
+                return;
+            }
+            if (!userMetaData) {
+                response.send({
+                    "status": "failure",
+                    "info": "Name not found"
+                });
+                return;
+            }
+            Collections.Users.update({ username: userMetaData.username, "userInfo.Attendance.sessionNumber": sessionNumber }, { $set: { "userInfo.Attendance.$.present": true } }, { w: 1 }, function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "info": "The database encountered an error",
+                        "err": err
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success"
+                });
+            });
+        });
+    });
+
     app.get("/admin/presentations", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];
