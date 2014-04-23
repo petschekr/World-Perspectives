@@ -62,7 +62,8 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         Schedule: db.collection("schedule"),
         Presentations: db.collection("presentations"),
         Pictures: db.collection("pictures"),
-        Names: db.collection("names")
+        Names: db.collection("names"),
+        Feedback: db.collection("feedback")
     };
 
     // Retrieve the schedule
@@ -234,7 +235,14 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                     break;
                 }
             }
-            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+            var isPresenter = false;
+            if (loggedIn) {
+                var username = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+                if (username === presentation.presenterUsername || admin) {
+                    isPresenter = true;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);
@@ -332,10 +340,65 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                     break;
                 }
             }
-            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime }, function (err, html) {
+            var isPresenter = false;
+            if (loggedIn) {
+                var username = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+                if (username === presentation.presenterUsername || admin) {
+                    isPresenter = true;
+                }
+            }
+            response.render("presentation", { title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter }, function (err, html) {
                 if (err)
                     console.error(err);
                 response.send(html);
+            });
+        });
+    });
+
+    app.post("/checkin", function (request, response) {
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        if (!loggedIn) {
+            response.send({
+                "status": "failure",
+                "info": "You must be logged in to check in"
+            });
+            return;
+        }
+
+        var code = request.body.code;
+        var id = request.body.id;
+
+        Collections.Presentations.findOne({ "sessionID": id, "attendanceCode": code }, function (err, presentation) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "The database encountered an error",
+                    "err": err
+                });
+                return;
+            }
+            if (!presentation) {
+                response.send({
+                    "status": "failure",
+                    "info": "Invalid code"
+                });
+                return;
+            }
+            Collections.Users.update({ "email": email, "userInfo.Attendance.sessionNumber": presentation.sessionNumber }, { $set: { "userInfo.Attendance.$.present": true } }, { w: 1 }, function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "info": "The database encountered an error",
+                        "err": err
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success"
+                });
             });
         });
     });
@@ -443,6 +506,83 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             if (err)
                 console.error(err);
             response.send(html);
+        });
+    });
+    app.post("/feedback", function (request, response) {
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        if (!loggedIn) {
+            response.send({
+                "status": "failure",
+                "info": "You are not logged in"
+            });
+            return;
+        }
+        var fields = JSON.parse(request.body.fields);
+        for (var i = 0; i < fields.length; i++) {
+            try  {
+                fields[i] = fields[i].trim();
+            } catch (e) {
+            }
+        }
+        if (fields.indexOf("") != -1) {
+            response.send({
+                "status": "failure",
+                "info": "All fields must be filled out"
+            });
+            return;
+        }
+        var questionsAndAnswers = {
+            "health": fields[0],
+            "globalization": fields[1],
+            "science": fields[2],
+            "incentives": fields[3],
+            "positiveExperience": fields[4],
+            "connections": fields[5],
+            "improvements": fields[6]
+        };
+        async.waterfall([
+            function (callback) {
+                Collections.Users.findOne({ email: email }, function (err, user) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    if (!user) {
+                        callback(new Error("Invalid user email"));
+                        return;
+                    }
+                    if (user.userInfo.SubmittedFeedback) {
+                        response.send({
+                            "status": "failure",
+                            "info": "You've already submitted feedback"
+                        });
+                        return;
+                    }
+                });
+            },
+            function (user, callback) {
+                Collections.Feedback.insert({
+                    username: user.username,
+                    feedback: questionsAndAnswers
+                }, { w: 1 }, callback);
+            },
+            function (callback) {
+                Collections.Users.update({ email: email }, { $set: { "userInfo.SubmittedFeedback": true } }, { w: 1 }, callback);
+            }
+        ], function (err) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "A database error occured",
+                    "err": err
+                });
+                return;
+            }
+            response.send({
+                "status": "success"
+            });
         });
     });
 
@@ -737,42 +877,42 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
         var loggedIn = !!request.session["email"];
         var email = request.session["email"];
 
-        var userStream = Collections.Users.find({ "Admin": { $ne: true } }).stream();
+        var userStream = Collections.Users.find({ "userInfo.Admin": false, "userInfo.Presenter": false }).stream();
         var attendance = {
             "1": {
-                "present": 0,
-                "absent": 0
+                "present": [],
+                "absent": []
             },
             "2": {
-                "present": 0,
-                "absent": 0
+                "present": [],
+                "absent": []
             },
             "3": {
-                "present": 0,
-                "absent": 0
+                "present": [],
+                "absent": []
             },
             "4": {
-                "present": 0,
-                "absent": 0
+                "present": [],
+                "absent": []
             }
         };
         userStream.on("data", function (user) {
             if (user.userInfo.Attendance[0].present)
-                attendance[1].present++;
+                attendance[1].present.push(user.username);
             else
-                attendance[1].absent++;
+                attendance[1].absent.push(user.username);
             if (user.userInfo.Attendance[1].present)
-                attendance[2].present++;
+                attendance[2].present.push(user.username);
             else
-                attendance[2].absent++;
+                attendance[2].absent.push(user.username);
             if (user.userInfo.Attendance[2].present)
-                attendance[3].present++;
+                attendance[3].present.push(user.username);
             else
-                attendance[3].absent++;
+                attendance[3].absent.push(user.username);
             if (user.userInfo.Attendance[3].present)
-                attendance[4].present++;
+                attendance[4].present.push(user.username);
             else
-                attendance[4].absent++;
+                attendance[4].absent.push(user.username);
         });
         userStream.on("end", function () {
             response.render("admin/attendance", { title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email, attendance: attendance }, function (err, html) {
@@ -791,25 +931,112 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
             response.redirect("/admin/attendance");
             return;
         }
-        var userStream = Collections.Users.find({ "Admin": { $ne: true } }).stream();
-        var attendance = {
-            present: [],
-            absent: []
-        };
-        userStream.on("data", function (user) {
-            if (user.userInfo.Attendance[sessionNumber - 1].present)
-                attendance.present.push(user.username);
-            else
-                attendance.absent.push(user.username);
-        });
-        userStream.on("end", function () {
-            response.render("admin/attendance", { title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendance }, function (err, html) {
-                if (err)
+
+        // List every presentation in that session with a list of absent people and present people
+        // Presentations -> Attendees -> db.names -> db.users
+        var attendance = {};
+        Collections.Presentations.find({ sessionNumber: sessionNumber }).toArray(function (err, presentations) {
+            async.each(presentations, function (presentation, callback) {
+                Collections.Names.find({ "name": { $in: presentation.attendees } }).toArray(function (err, attendees) {
+                    async.each(attendees, function (attendee, callback2) {
+                        Collections.Users.findOne({ username: attendee.username }, function (err, user) {
+                            if (!user) {
+                                callback2(err);
+                            }
+                            if (!attendance[presentation.sessionID])
+                                attendance[presentation.sessionID] = { present: [], absent: [], presentation: presentation };
+                            if (user.userInfo.Attendance[sessionNumber - 1].present)
+                                attendance[presentation.sessionID].present.push(attendee.name);
+                            else
+                                attendance[presentation.sessionID].absent.push(attendee.name);
+                            callback2(err);
+                        });
+                    }, function (err) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        attendance[presentation.sessionID].present.sort(function (a, b) {
+                            if (a.split(" ")[1] < b.split(" ")[1])
+                                return -1;
+                            if (a.split(" ")[1] > b.split(" ")[1])
+                                return 1;
+                            return 0;
+                        });
+                        attendance[presentation.sessionID].absent.sort(function (a, b) {
+                            if (a.split(" ")[1] < b.split(" ")[1])
+                                return -1;
+                            if (a.split(" ")[1] > b.split(" ")[1])
+                                return 1;
+                            return 0;
+                        });
+                        callback();
+                    });
+                });
+            }, function (err) {
+                if (err) {
                     console.error(err);
-                response.send(html);
+                    response.send("An error occured");
+                    return;
+                }
+
+                // Organize by presentation title
+                var attendanceArray = [];
+                for (var sessionID in attendance) {
+                    attendanceArray.push(attendance[sessionID]);
+                }
+                attendanceArray.sort(function (a, b) {
+                    if (a.presentation.presenter.split(" ")[1] < b.presentation.presenter.split(" ")[1])
+                        return -1;
+                    if (a.presentation.presenter.split(" ")[1] > b.presentation.presenter.split(" ")[1])
+                        return 1;
+                    return 0;
+                });
+                response.render("admin/attendance", { title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendanceArray }, function (err, html) {
+                    if (err)
+                        console.error(err);
+                    response.send(html);
+                });
             });
         });
     });
+    app.post("/admin/attendance/markpresent", AdminAuth, function (request, response) {
+        var name = request.body.name;
+        var sessionNumber = parseInt(request.body.sessionNumber, 10);
+        Collections.Names.findOne({ "name": name }, function (err, userMetaData) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "The database encountered an error",
+                    err: err
+                });
+                return;
+            }
+            if (!userMetaData) {
+                response.send({
+                    "status": "failure",
+                    "info": "Name not found"
+                });
+                return;
+            }
+            Collections.Users.update({ username: userMetaData.username, "userInfo.Attendance.sessionNumber": sessionNumber }, { $set: { "userInfo.Attendance.$.present": true } }, { w: 1 }, function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "info": "The database encountered an error",
+                        "err": err
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success"
+                });
+            });
+        });
+    });
+
     app.get("/admin/presentations", AdminAuth, function (request, response) {
         var platform = getPlatform(request);
         var loggedIn = !!request.session["email"];

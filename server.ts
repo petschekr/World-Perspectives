@@ -31,6 +31,7 @@ interface Presentation {
 	attendanceCode: string;
 	//presenter: Student;
 	presenter: string;
+	presenterUsername?: string;
 	title: string;
 	media: {mainVideo?: string; images?: string[]; videos?: string[]};
 	pdfID: string;
@@ -112,12 +113,14 @@ var Collections: {
 	Presentations: mongodb.Collection;
 	Pictures: mongodb.Collection;
 	Names: mongodb.Collection;
+	Feedback: mongodb.Collection;
 } = {
 	Users: db.collection("users"),
 	Schedule: db.collection("schedule"),
 	Presentations: db.collection("presentations"),
 	Pictures: db.collection("pictures"),
-	Names: db.collection("names")
+	Names: db.collection("names"),
+	Feedback: db.collection("feedback")
 };
 // Retrieve the schedule
 var Schedule: ScheduleItem[] = [];
@@ -286,7 +289,14 @@ app.get("/explore/:id", function(request: express3.Request, response: express3.R
 				break;
 			}
 		}
-		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+		var isPresenter: boolean = false;
+		if (loggedIn) {
+			var username: string = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+			if (username === presentation.presenterUsername || admin) {
+				isPresenter = true;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
@@ -382,10 +392,65 @@ app.get("/schedule/:id", function(request: express3.Request, response: express3.
 				break;
 			}
 		}
-		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime}, function(err: any, html: string): void {
+		var isPresenter: boolean = false;
+		if (loggedIn) {
+			var username: string = email.match(/^([a-z]{3,}\d?)(@gfacademy.org)?$/i)[1];
+			if (username === presentation.presenterUsername || admin) {
+				isPresenter = true;
+			}
+		}
+		response.render("presentation", {title: "View Presentation", mobileOS: platform, loggedIn: loggedIn, email: email, admin: admin, fromAdmin: false, fromSchedule: true, presentation: presentation, startTime: startTime, endTime: endTime, isPresenter: isPresenter}, function(err: any, html: string): void {
 			if (err)
 				console.error(err);
 			response.send(html);
+		});
+	});
+});
+
+app.post("/checkin", function(request: express3.Request, response: express3.Response): void {
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	if (!loggedIn) {
+		response.send({
+			"status": "failure",
+			"info": "You must be logged in to check in"
+		});
+		return;
+	}
+
+	var code: string =  request.body.code;
+	var id: string = request.body.id;
+
+	Collections.Presentations.findOne({"sessionID": id, "attendanceCode": code}, function(err: Error, presentation: Presentation) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": "The database encountered an error",
+				"err": err
+			});
+			return;
+		}
+		if (!presentation) {
+			response.send({
+				"status": "failure",
+				"info": "Invalid code"
+			});
+			return;
+		}
+		Collections.Users.update({"email": email, "userInfo.Attendance.sessionNumber": presentation.sessionNumber}, {$set: {"userInfo.Attendance.$.present": true}}, {w:1}, function(err: Error) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": "The database encountered an error",
+					"err": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success"
+			});
 		});
 	});
 });
@@ -499,7 +564,84 @@ app.get("/feedback", function(request: express3.Request, response: express3.Resp
 			console.error(err);
 		response.send(html);
 	});
-});	
+});
+app.post("/feedback", function(request: express3.Request, response: express3.Response): void {
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	if (!loggedIn) {
+		response.send({
+			"status": "failure",
+			"info": "You are not logged in"
+		});
+		return;
+	}
+	var fields: string[] = JSON.parse(request.body.fields);
+	for (var i: number = 0; i < fields.length; i++) {
+		try {
+			fields[i] = fields[i].trim();
+		}
+		catch (e) {}
+	}
+	if (fields.indexOf("") != -1) {
+		response.send({
+			"status": "failure",
+			"info": "All fields must be filled out"
+		});
+		return;
+	}
+	var questionsAndAnswers = {
+		"health": fields[0],
+		"globalization": fields[1],
+		"science": fields[2],
+		"incentives": fields[3],
+		"positiveExperience": fields[4],
+		"connections": fields[5],
+		"improvements": fields[6]
+	};
+	async.waterfall([
+		function(callback) {
+			Collections.Users.findOne({email: email}, function(err: Error, user: any) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!user) {
+					callback(new Error("Invalid user email"));
+					return;
+				}
+				if (user.userInfo.SubmittedFeedback) {
+					response.send({
+						"status": "failure",
+						"info": "You've already submitted feedback"
+					});
+					return;
+				}
+			});
+		},
+		function(user: any, callback) {
+			Collections.Feedback.insert({
+				username: user.username,
+				feedback: questionsAndAnswers
+			}, {w:1}, callback);
+		},
+		function(callback) {
+			Collections.Users.update({email: email}, {$set: {"userInfo.SubmittedFeedback": true}}, {w:1}, callback);
+		}
+	], function(err: Error) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": "A database error occured",
+				"err": err
+			});
+			return;
+		}
+		response.send({
+			"status": "success"
+		});
+	});
+});
 
 // Register for sessions
 app.get("/register", function(request: express3.Request, response: express3.Response): void {
@@ -796,42 +938,42 @@ app.get("/admin/attendance", AdminAuth, function(request: express3.Request, resp
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 
-	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
+	var userStream = Collections.Users.find({"userInfo.Admin": false, "userInfo.Presenter": false}).stream(); // Only get normal users
 	var attendance = {
 		"1": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"2": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"3": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"4": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		}
 	}
 	userStream.on("data", function(user) {
 		if (user.userInfo.Attendance[0].present)
-			attendance[1].present++;
+			attendance[1].present.push(user.username);
 		else
-			attendance[1].absent++;
+			attendance[1].absent.push(user.username);
 		if (user.userInfo.Attendance[1].present)
-			attendance[2].present++;
+			attendance[2].present.push(user.username);
 		else
-			attendance[2].absent++;
+			attendance[2].absent.push(user.username);
 		if (user.userInfo.Attendance[2].present)
-			attendance[3].present++;
+			attendance[3].present.push(user.username);
 		else
-			attendance[3].absent++;
+			attendance[3].absent.push(user.username);
 		if (user.userInfo.Attendance[3].present)
-			attendance[4].present++;
+			attendance[4].present.push(user.username);
 		else
-			attendance[4].absent++;
+			attendance[4].absent.push(user.username);
 	});
 	userStream.on("end", function(): void {
 		response.render("admin/attendance", {title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email, attendance: attendance}, function(err: any, html: string): void {
@@ -850,28 +992,105 @@ app.get("/admin/attendance/:sessionNumber", AdminAuth, function(request: express
 		response.redirect("/admin/attendance");
 		return;
 	}
-	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
-	var attendance: {
-		present: string[];
-		absent: string[];
-	} = {
-		present: [],
-		absent: []
-	};
-	userStream.on("data", function(user) {
-		if (user.userInfo.Attendance[sessionNumber - 1].present)
-			attendance.present.push(user.username);
-		else
-			attendance.absent.push(user.username);
-	});
-	userStream.on("end", function(): void {
-		response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendance}, function(err: any, html: string): void {
-			if (err)
+
+	// List every presentation in that session with a list of absent people and present people
+	// Presentations -> Attendees -> db.names -> db.users
+	var attendance: any = {};
+	Collections.Presentations.find({sessionNumber: sessionNumber}).toArray(function(err: Error, presentations: Presentation[]) {
+		async.each(presentations, function(presentation: Presentation, callback) {
+			Collections.Names.find({"name": {$in: presentation.attendees}}).toArray(function(err: Error, attendees: any[]) {
+				async.each(attendees, function(attendee, callback2) {
+					Collections.Users.findOne({username: attendee.username}, function(err: Error, user) {
+						if (!user) {
+							callback2(err);
+						}
+						if (!attendance[presentation.sessionID])
+							attendance[presentation.sessionID] = {present: [], absent: [], presentation: presentation};
+						if (user.userInfo.Attendance[sessionNumber - 1].present)
+							attendance[presentation.sessionID].present.push(attendee.name);
+						else
+							attendance[presentation.sessionID].absent.push(attendee.name);
+						callback2(err);
+					});
+				}, function(err: Error) {
+					if (err) {
+						callback(err);
+						return;
+					}
+					attendance[presentation.sessionID].present.sort(function(a, b): number {
+						if (a.split(" ")[1] < b.split(" ")[1]) return -1;
+						if (a.split(" ")[1] > b.split(" ")[1]) return 1;
+						return 0;
+					});
+					attendance[presentation.sessionID].absent.sort(function(a, b): number {
+						if (a.split(" ")[1] < b.split(" ")[1]) return -1;
+						if (a.split(" ")[1] > b.split(" ")[1]) return 1;
+						return 0;
+					});
+					callback();
+				});
+			});
+		}, function(err: Error) {
+			if (err) {
 				console.error(err);
-			response.send(html);
+				response.send("An error occured");
+				return;
+			}
+			// Organize by presentation title
+			var attendanceArray: any[] = [];
+			for (var sessionID in attendance) {
+				attendanceArray.push(attendance[sessionID]);
+			}
+			attendanceArray.sort(function(a, b): number {
+				if (a.presentation.presenter.split(" ")[1] < b.presentation.presenter.split(" ")[1]) return -1;
+				if (a.presentation.presenter.split(" ")[1] > b.presentation.presenter.split(" ")[1]) return 1;
+				return 0;
+			});
+			response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendanceArray}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
 		});
 	});
 });
+app.post("/admin/attendance/markpresent", AdminAuth, function(request: express3.Request, response: express3.Response): void {
+	var name: string = request.body.name;
+	var sessionNumber: number = parseInt(request.body.sessionNumber, 10);
+	Collections.Names.findOne({"name": name}, function(err: Error, userMetaData) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": "The database encountered an error",
+				err: err
+			});
+			return;
+		}
+		if (!userMetaData) {
+			response.send({
+				"status": "failure",
+				"info": "Name not found"
+			});
+			return;
+		}
+		Collections.Users.update({username: userMetaData.username, "userInfo.Attendance.sessionNumber": sessionNumber}, {$set: {"userInfo.Attendance.$.present": true}}, {w:1}, function(err: Error) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": "The database encountered an error",
+					"err": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success"
+			});
+		});
+	});
+});
+
 app.get("/admin/presentations", AdminAuth, function(request: express3.Request, response: express3.Response): void {
 	var platform: string = getPlatform(request);
 	var loggedIn: boolean = !!request.session["email"];

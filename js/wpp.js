@@ -544,6 +544,16 @@ $(document).ready(function () {
                 window.SwipeThrough.slide(index, 1); // 1 ms transition
             }
         }
+        if (window.location.pathname == "/feedback") {
+            if (localStorage["feedback"]) {
+                var savedResponses = localStorage.getItem("feedback");
+                savedResponses = JSON.parse(savedResponses);
+                for (var i = 0; i < savedResponses.length; i++) {
+                    console.log(i);
+                    $("form textarea").eq(i).val(savedResponses[i]);
+                }
+            }
+        }
     }
     window.addEventListener("push", pageLoad);
     pageLoad();
@@ -626,7 +636,7 @@ $(document).ready(function () {
             }
         });
     });
-    $(document).on("input", "#name-search", function () {
+    $(document).on("keyup", "#name-search", function () {
         if ($("#name-search").val() === "") {
             $("a.schedule-name").parent().show();
             return;
@@ -644,5 +654,129 @@ $(document).ready(function () {
             return false;
             //return $(this).text().toLowerCase() === $("#name-search").val();
         }).parent().show();
+    });
+    $(document).on("keyup", "form textarea", function () {
+        var toSaveElements = $("form textarea");
+        var toSave = [];
+        for (var i = 0; i < toSaveElements.length; i++) {
+            toSave.push($(toSaveElements[i]).val());
+        }
+        localStorage.setItem("feedback", JSON.stringify(toSave));
+    });
+    $(document).on("touchend", "form .btn", function () {
+        $(this).attr("disabled", true).text("Submitting...");
+        var toSaveElements = $("form textarea");
+        var fields = [];
+        for (var i = 0; i < toSaveElements.length; i++) {
+            fields.push($(toSaveElements[i]).val());
+        }
+        $.ajax({
+            type: "POST",
+            url: "/feedback",
+            data: {
+                fields: JSON.stringify(fields)
+            },
+            success: function (res, status, xhr) {
+                $("form .btn").attr("disabled", false).text("Submit");
+                if (res.status == "success") {
+                    localStorage.removeItem("feedback");
+                    alert("Thank you for your feedback");
+                    $("form textarea").val("");
+                } else {
+                    console.error(res);
+                    alert("An error occurred while submitting your feedback: " + res.info);
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while submitting your feedback");
+            }
+        });
+    });
+    $(document).on("touchend", "#checkin button", function () {
+        $(this).attr("disabled", true).text("Submitting...");
+
+        var code = $("#checkin input").val().trim();
+        var length = window.location.pathname.split("/").length;
+        var id = window.location.pathname.split("/")[length - 1];
+        $.ajax({
+            type: "POST",
+            url: "/checkin",
+            data: {
+                code: code,
+                id: id
+            },
+            success: function (res, status, xhr) {
+                $("#checkin button").attr("disabled", false).text("Check In");
+                if (res.status == "success") {
+                    $("#checkin-trigger").attr("disabled", true);
+                    $("#checkin input").val("");
+                    $("#checkin").removeClass("active");
+                } else {
+                    console.error(res);
+                    if (res.err) {
+                        alert("An error occurred while checking you in: " + res.info);
+                    } else {
+                        alert(res.info);
+                    }
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while checking you in");
+            }
+        });
+    });
+    $(document).on("keyup", "#attendance-search", function () {
+        if ($("#attendance-search").val() === "") {
+            $(".presentation").show();
+            return;
+        }
+        $(".presentation").hide();
+        $("h4 small").filter(function () {
+            var name1 = $(this).text().toLowerCase().split(" ");
+            var name2 = $("#attendance-search").val().toLowerCase().split(" ");
+
+            for (var i = 0; i < name1.length; i++) {
+                if (name2.indexOf(name1[i]) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        }).parent().parent().show();
+    });
+    $(document).on("touchend", ".attendance-absent button", function () {
+        var name = $(this).data("name");
+        var length = window.location.pathname.split("/").length;
+        var sessionNumber = window.location.pathname.split("/")[length - 1];
+        $.ajax({
+            type: "POST",
+            url: "/admin/attendance/markpresent",
+            data: {
+                name: name,
+                sessionNumber: sessionNumber
+            },
+            success: function (res, status, xhr) {
+                if (res.status == "success") {
+                    $("button[data-name='" + name + "']").parent().parent().find(".no-one").last().remove();
+                    $("button[data-name='" + name + "']").parent().parent().append('<li class="table-view-cell attendance-present">' + name + "</li>");
+                    $("button[data-name='" + name + "']").parent().remove();
+                } else {
+                    console.error(res);
+                    if (res.err) {
+                        alert("An error occurred while marking that student as present: " + res.info);
+                    } else {
+                        alert(res.info);
+                    }
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while marking that student as present");
+            }
+        });
     });
 });

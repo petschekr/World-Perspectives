@@ -7,4 +7,26 @@ block tabs
 	+tab("Feedback", "#", "icon-compose", true)
 
 block content
-	h1.content-padded(style="text-align: center;") Coming soon
+	if loggedIn
+		form
+			h3 Presentation Feedback
+			h4 <b>Global Health in Local Context</b> – Is science alone sufficient enough to solve the health issues of the 21st century?
+			textarea(rows="3", placeholder="Please write here...")
+			h4 <b>Globalization and its Discontents</b> – Based on the presentations that you attended during this session, how has globalization affected the social structures, political systems, or the environment?
+			textarea(rows="3", placeholder="Please write here...")
+			h4 <b>Science, Technology, and Change</b> – What is the relationship between scientific and technological innovation? What limitations, if any, are there?
+			textarea(rows="3", placeholder="Please write here...")
+			h4 <b>The Power of Incentives in Decision-Making</b> – What role do incentives play in in explaining larger global phenomena?
+			textarea(rows="3", placeholder="Please write here...")
+
+			h3 General Feedback
+			h4 What was your most positive experience today?
+			textarea(rows="3", placeholder="Please write here...")
+			h4 What connections can you make between any of the presentations you attended today and your coursework at GFA?
+			textarea(rows="3", placeholder="Please write here...")
+			h4 What improvements would you make to the day?
+			textarea(rows="3", placeholder="Please write here...")
+
+			a.btn.btn-block.btn-primary(href="#") Submit
+	else
+		p.content-padded You must log in before submitting feedback

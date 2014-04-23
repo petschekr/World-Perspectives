@@ -428,6 +428,44 @@ select {
 	line-height: 16px;
 }
 
+form {
+	margin: 10px;
+	margin-top: 15px;
+}
+form h4 {
+	font-weight: normal;
+}
+form h3 {
+	text-align: center;
+}
+
+.attendance small span {
+	font-weight: bold;
+}
+.attendance small span:first-of-type {
+	color: #4CD964;
+}
+.attendance small span:last-of-type {
+	color: #DD524D;
+}
+h4 > small {
+	font-weight: normal;
+	font-size: 16px;
+}
+h4 > small::before {
+	content: " — ";
+}
+.attendance-detail .table-view-cell {
+	padding: 5px 65px 5px 15px;
+}
+.attendance-detail .table-view-cell > button {
+	width: initial;
+	padding: 5px 8px;
+}
+.attendance-absent {
+	color: #dd524d;
+}
+
 
 p.medium-abstract {
 	display: none;
