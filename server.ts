@@ -139,6 +139,11 @@ var gm = require("gm");
 var app: express3.Application = express();
 var MongoStore = require("connect-mongo")(express);
 
+// AWS S3
+var AWS: any = require("aws-sdk"); 
+AWS.config.loadFromPath("./aws.json");
+var s3: any = new AWS.S3();
+
 app.use(express.compress());
 app.use(express.bodyParser());
 app.use(express.cookieParser());
@@ -978,8 +983,6 @@ app.delete("/admin/presentations/edit/:id", AdminAuth, function(request: express
 	Collections.Presentations.findOne({"sessionID": id}, function(err: any, presentation: Presentation): void {
 		// Delete that presentation's media
 		var media: string[] = [];
-		if (presentation.pdfID)
-			media.push(presentation.pdfID);
 		media = media.concat(presentation.media.images);
 		media = media.concat(presentation.media.videos);
 		// Turn the array of IDs into an array of paths
@@ -1189,10 +1192,26 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 			var id: string = crypto.randomBytes(16).toString("hex");
 			// Move the temp file
 			var sourceFile = fs.createReadStream(pdf.path);
-			var newFileName: string = "/media/" + id + path.extname(pdf.path);
-			var destFile = fs.createWriteStream(__dirname + newFileName);
-			sourceFile.pipe(destFile);
-			sourceFile.on("end", function(): void {
+
+			var s3Params: any = {
+				Bucket: "worldperspectivespdfs", // required
+				Key: id, // required
+				ACL: "public-read",
+				Body: sourceFile,
+				ContentType: pdf.type
+			};
+			s3.putObject(s3Params, function(err: Error, data: any) {
+				if (err) {
+					// Delete the temp files
+					// Who cares if these return errors
+					fs.unlink(pdf.path);
+					console.error(err);
+					response.send({
+						"status": "error",
+						"reason": err
+					});
+					return;
+				}
 				// Delete the temp file
 				fs.unlink(pdf.path, function(err: Error): void {
 					if (err) {
@@ -1205,19 +1224,8 @@ app.post("/admin/presentations/media", AdminAuth, function(request: express3.Req
 					}
 					response.send({
 						"status": "success",
-						"id": id + path.extname(pdf.path)
+						"id": id
 					});
-				});
-			});
-			sourceFile.on("error", function(err: Error): void {
-				// Delete the temp files
-				// Who cares if these return errors
-				fs.unlink(pdf.path);
-				fs.unlink(__dirname + newFileName);
-				console.error(err);
-				response.send({
-					"status": "error",
-					"reason": err
 				});
 			});
 		}

@@ -42,7 +42,7 @@ block content
 	.presentation-buttons
 
 		if presentation.pdfID
-			a.btn(href="/media/#{presentation.pdfID}", data-ignore="push", target="_blank")
+			a.btn(href="https://s3.amazonaws.com/worldperspectivespdfs/#{presentation.pdfID}", data-ignore="push", target="_blank")
 				span.icon.icon-download
 				| &nbsp;PDF
 		else
