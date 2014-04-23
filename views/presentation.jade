@@ -54,7 +54,7 @@ block content
 				span.icon.icon-share
 				| &nbsp;Share
 		if !isPresenter
-			button.btn.btn-primary
+			a#checkin-trigger.btn.btn-primary(href="#checkin")
 				span.icon.icon-person
 				| &nbsp;Check In
 	if isPresenter

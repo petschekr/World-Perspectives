@@ -341,6 +341,54 @@ MongoClient.connect("mongodb://localhost:27017/wpp", function (err, db) {
         });
     });
 
+    app.post("/checkin", function (request, response) {
+        var loggedIn = !!request.session["email"];
+        var email = request.session["email"];
+        if (!loggedIn) {
+            response.send({
+                "status": "failure",
+                "info": "You must be logged in to check in"
+            });
+            return;
+        }
+
+        var code = request.body.code;
+        var id = request.body.id;
+
+        Collections.Presentations.findOne({ "sessionID": id, "attendanceCode": code }, function (err, presentation) {
+            if (err) {
+                console.error(err);
+                response.send({
+                    "status": "failure",
+                    "info": "The database encountered an error",
+                    "err": err
+                });
+                return;
+            }
+            if (!presentation) {
+                response.send({
+                    "status": "failure",
+                    "info": "Invalid code"
+                });
+                return;
+            }
+            Collections.Users.update({ "email": email, "userInfo.Attendance.sessionNumber": presentation.sessionNumber }, { $set: { "userInfo.Attendance.$.present": true } }, { w: 1 }, function (err) {
+                if (err) {
+                    console.error(err);
+                    response.send({
+                        "status": "failure",
+                        "info": "The database encountered an error",
+                        "err": err
+                    });
+                    return;
+                }
+                response.send({
+                    "status": "success"
+                });
+            });
+        });
+    });
+
     app.get("/login", function (request, response) {
         var code = request.query.code;
         var username = request.query.username;

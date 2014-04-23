@@ -694,4 +694,39 @@ $(document).ready(function () {
             }
         });
     });
+    $(document).on("touchend", "#checkin button", function () {
+        $(this).attr("disabled", true).text("Submitting...");
+
+        var code = $("#checkin input").val().trim();
+        var length = window.location.pathname.split("/").length;
+        var id = window.location.pathname.split("/")[length - 1];
+        $.ajax({
+            type: "POST",
+            url: "/checkin",
+            data: {
+                code: code,
+                id: id
+            },
+            success: function (res, status, xhr) {
+                $("#checkin button").attr("disabled", false).text("Check In");
+                if (res.status == "success") {
+                    $("#checkin-trigger").attr("disabled", true);
+                    $("#checkin input").val("");
+                    $("#checkin").removeClass("active");
+                } else {
+                    console.error(res);
+                    if (res.err) {
+                        alert("An error occurred while checking you in: " + res.info);
+                    } else {
+                        alert(res.info);
+                    }
+                }
+            },
+            error: function (xhr, status, err) {
+                $("#move-btn").text("Move");
+                console.error(err);
+                alert("An error occurred while checking you in");
+            }
+        });
+    });
 });

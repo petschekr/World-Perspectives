@@ -394,6 +394,54 @@ app.get("/schedule/:id", function(request: express3.Request, response: express3.
 	});
 });
 
+app.post("/checkin", function(request: express3.Request, response: express3.Response): void {
+	var loggedIn: boolean = !!request.session["email"];
+	var email: string = request.session["email"];
+	if (!loggedIn) {
+		response.send({
+			"status": "failure",
+			"info": "You must be logged in to check in"
+		});
+		return;
+	}
+
+	var code: string =  request.body.code;
+	var id: string = request.body.id;
+
+	Collections.Presentations.findOne({"sessionID": id, "attendanceCode": code}, function(err: Error, presentation: Presentation) {
+		if (err) {
+			console.error(err);
+			response.send({
+				"status": "failure",
+				"info": "The database encountered an error",
+				"err": err
+			});
+			return;
+		}
+		if (!presentation) {
+			response.send({
+				"status": "failure",
+				"info": "Invalid code"
+			});
+			return;
+		}
+		Collections.Users.update({"email": email, "userInfo.Attendance.sessionNumber": presentation.sessionNumber}, {$set: {"userInfo.Attendance.$.present": true}}, {w:1}, function(err: Error) {
+			if (err) {
+				console.error(err);
+				response.send({
+					"status": "failure",
+					"info": "The database encountered an error",
+					"err": err
+				});
+				return;
+			}
+			response.send({
+				"status": "success"
+			});
+		});
+	});
+});
+
 app.get("/login", function(request: express3.Request, response: express3.Response): void {
 	var code = request.query.code;
 	var username = request.query.username;
