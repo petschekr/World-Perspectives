@@ -939,42 +939,42 @@ app.get("/admin/attendance", AdminAuth, function(request: express3.Request, resp
 	var loggedIn: boolean = !!request.session["email"];
 	var email: string = request.session["email"];
 
-	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
+	var userStream = Collections.Users.find({"userInfo.Admin": false, "userInfo.Presenter": false}).stream(); // Only get normal users
 	var attendance = {
 		"1": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"2": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"3": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		},
 		"4": {
-			"present": 0,
-			"absent": 0
+			"present": [],
+			"absent": []
 		}
 	}
 	userStream.on("data", function(user) {
 		if (user.userInfo.Attendance[0].present)
-			attendance[1].present++;
+			attendance[1].present.push(user.username);
 		else
-			attendance[1].absent++;
+			attendance[1].absent.push(user.username);
 		if (user.userInfo.Attendance[1].present)
-			attendance[2].present++;
+			attendance[2].present.push(user.username);
 		else
-			attendance[2].absent++;
+			attendance[2].absent.push(user.username);
 		if (user.userInfo.Attendance[2].present)
-			attendance[3].present++;
+			attendance[3].present.push(user.username);
 		else
-			attendance[3].absent++;
+			attendance[3].absent.push(user.username);
 		if (user.userInfo.Attendance[3].present)
-			attendance[4].present++;
+			attendance[4].present.push(user.username);
 		else
-			attendance[4].absent++;
+			attendance[4].absent.push(user.username);
 	});
 	userStream.on("end", function(): void {
 		response.render("admin/attendance", {title: "Attendance", mobileOS: platform, loggedIn: loggedIn, email: email, attendance: attendance}, function(err: any, html: string): void {
@@ -993,25 +993,65 @@ app.get("/admin/attendance/:sessionNumber", AdminAuth, function(request: express
 		response.redirect("/admin/attendance");
 		return;
 	}
-	var userStream = Collections.Users.find({"Admin": {$ne: true}}).stream(); // Only get normal users
-	var attendance: {
-		present: string[];
-		absent: string[];
-	} = {
-		present: [],
-		absent: []
-	};
-	userStream.on("data", function(user) {
-		if (user.userInfo.Attendance[sessionNumber - 1].present)
-			attendance.present.push(user.username);
-		else
-			attendance.absent.push(user.username);
-	});
-	userStream.on("end", function(): void {
-		response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendance}, function(err: any, html: string): void {
-			if (err)
+
+	// List every presentation in that session with a list of absent people and present people
+	// Presentations -> Attendees -> db.names -> db.users
+	var attendance: any = {};
+	Collections.Presentations.find({sessionNumber: sessionNumber}).toArray(function(err: Error, presentations: Presentation[]) {
+		async.each(presentations, function(presentation: Presentation, callback) {
+			Collections.Names.find({"name": {$in: presentation.attendees}}).toArray(function(err: Error, attendees: any[]) {
+				async.each(attendees, function(attendee, callback2) {
+					Collections.Users.findOne({username: attendee.username}, function(err: Error, user) {
+						if (!user) {
+							callback2(err);
+						}
+						if (!attendance[presentation.sessionID])
+							attendance[presentation.sessionID] = {present: [], absent: [], presentation: presentation};
+						if (user.userInfo.Attendance[sessionNumber - 1].present)
+							attendance[presentation.sessionID].present.push(attendee.name);
+						else
+							attendance[presentation.sessionID].absent.push(attendee.name);
+						callback2(err);
+					});
+				}, function(err: Error) {
+					if (err) {
+						callback(err);
+						return;
+					}
+					attendance[presentation.sessionID].present.sort(function(a, b): number {
+						if (a.split(" ")[1] < b.split(" ")[1]) return -1;
+						if (a.split(" ")[1] > b.split(" ")[1]) return 1;
+						return 0;
+					});
+					attendance[presentation.sessionID].absent.sort(function(a, b): number {
+						if (a.split(" ")[1] < b.split(" ")[1]) return -1;
+						if (a.split(" ")[1] > b.split(" ")[1]) return 1;
+						return 0;
+					});
+					callback();
+				});
+			});
+		}, function(err: Error) {
+			if (err) {
 				console.error(err);
-			response.send(html);
+				response.send("An error occured");
+				return;
+			}
+			// Organize by presentation title
+			var attendanceArray: any[] = [];
+			for (var sessionID in attendance) {
+				attendanceArray.push(attendance[sessionID]);
+			}
+			attendanceArray.sort(function(a, b): number {
+				if (a.presentation.presenter.split(" ")[1] < b.presentation.presenter.split(" ")[1]) return -1;
+				if (a.presentation.presenter.split(" ")[1] > b.presentation.presenter.split(" ")[1]) return 1;
+				return 0;
+			});
+			response.render("admin/attendance", {title: "Attendance Session " + sessionNumber, mobileOS: platform, loggedIn: loggedIn, email: email, sessionNumber: sessionNumber, attendance: attendanceArray}, function(err: any, html: string): void {
+				if (err)
+					console.error(err);
+				response.send(html);
+			});
 		});
 	});
 });

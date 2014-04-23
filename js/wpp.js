@@ -636,7 +636,7 @@ $(document).ready(function () {
             }
         });
     });
-    $(document).on("input", "#name-search", function () {
+    $(document).on("keyup", "#name-search", function () {
         if ($("#name-search").val() === "") {
             $("a.schedule-name").parent().show();
             return;
@@ -728,5 +728,23 @@ $(document).ready(function () {
                 alert("An error occurred while checking you in");
             }
         });
+    });
+    $(document).on("keyup", "#attendance-search", function () {
+        if ($("#attendance-search").val() === "") {
+            $(".presentation").show();
+            return;
+        }
+        $(".presentation").hide();
+        $("h4 small").filter(function () {
+            var name1 = $(this).text().toLowerCase().split(" ");
+            var name2 = $("#attendance-search").val().toLowerCase().split(" ");
+
+            for (var i = 0; i < name1.length; i++) {
+                if (name2.indexOf(name1[i]) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        }).parent().parent().show();
     });
 });

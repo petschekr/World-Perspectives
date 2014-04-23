@@ -17,40 +17,54 @@ block content
 		ul.table-view.attendance
 			li.table-view-cell
 				a.navigate-right(href="/admin/attendance/1", data-transition="slide-in")
-					span.badge.badge-positive= attendance[1].present
-					span.badge.badge-negative= attendance[1].absent
 					| Session 1 Attendance
+					small &nbsp;(
+						span= attendance[1].present.length
+						| &nbsp;/&nbsp;
+						span= attendance[1].absent.length
+						| )
 			li.table-view-cell
 				a.navigate-right(href="/admin/attendance/2", data-transition="slide-in")
-					span.badge.badge-positive= attendance[2].present
-					span.badge.badge-negative= attendance[2].absent
 					| Session 2 Attendance
+					small &nbsp;(
+						span= attendance[2].present.length
+						| &nbsp;/&nbsp;
+						span= attendance[2].absent.length
+						| )
 			li.table-view-cell
 				a.navigate-right(href="/admin/attendance/3", data-transition="slide-in")
-					span.badge.badge-positive= attendance[3].present
-					span.badge.badge-negative= attendance[3].absent
 					| Session 3 Attendance
+					small &nbsp;(
+						span= attendance[3].present.length
+						| &nbsp;/&nbsp;
+						span= attendance[3].absent.length
+						| )
 			li.table-view-cell
 				a.navigate-right(href="/admin/attendance/4", data-transition="slide-in")
-					span.badge.badge-positive= attendance[4].present
-					span.badge.badge-negative= attendance[4].absent
 					| Session 4 Attendance
+					small &nbsp;(
+						span= attendance[4].present.length
+						| &nbsp;/&nbsp;
+						span= attendance[4].absent.length
+						| )
 	else
-		h5.content-padded
-			strong Presentation 1 - Ryan Petschek
-		ul.table-view
-			li.table-view-divider Absent
-			li.table-view-cell(style="color: #dd524d;") Student 1
-			li.table-view-cell(style="color: #dd524d;") Student 2
-			li.table-view-divider Present
-			li.table-view-cell Student 1
-			li.table-view-cell Student 2
-		h5.content-padded
-			strong Presentation 2 - Jules Becker
-		ul.table-view
-			li.table-view-divider Absent
-			li.table-view-cell(style="color: #dd524d;") Student 1
-			li.table-view-cell(style="color: #dd524d;") Student 2
-			li.table-view-divider Present
-			li.table-view-cell Student 1
-			li.table-view-cell Student 2
+		br
+		input#attendance-search(type="text", placeholder="Search by presenter name")
+		br
+		each presentation in attendance
+			.presentation
+				h4.content-padded= presentation.presentation.title
+					small= presentation.presentation.presenter
+				ul.table-view.attendance-detail
+					li.table-view-divider Absent
+					if presentation.absent.length > 0
+						each attendee in presentation.absent
+							li.table-view-cell.attendance-absent(style="color: #dd524d;")= attendee
+					else
+						li.table-view-cell: i No one
+					li.table-view-divider Present
+					if presentation.present.length > 0
+						each attendee in presentation.present
+							li.table-view-cell.attendance-present= attendee
+					else
+						li.table-view-cell: i No one

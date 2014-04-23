@@ -439,6 +439,27 @@ form h3 {
 	text-align: center;
 }
 
+.attendance small span {
+	font-weight: bold;
+}
+.attendance small span:first-of-type {
+	color: #4CD964;
+}
+.attendance small span:last-of-type {
+	color: #DD524D;
+}
+h4 > small {
+	font-weight: normal;
+	font-size: 16px;
+}
+h4 > small::before {
+	content: " — ";
+}
+.attendance-detail .table-view-cell {
+	padding: 5px 65px 5px 15px;
+}
+
+
 p.medium-abstract {
 	display: none;
 }
