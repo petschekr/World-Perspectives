@@ -616,13 +616,16 @@ app.post("/feedback", function(request: express3.Request, response: express3.Res
 					});
 					return;
 				}
+				callback(null, user);
 			});
 		},
 		function(user: any, callback) {
 			Collections.Feedback.insert({
 				username: user.username,
 				feedback: questionsAndAnswers
-			}, {w:1}, callback);
+			}, {w:1}, function(): void {
+				callback();
+			});
 		},
 		function(callback) {
 			Collections.Users.update({email: email}, {$set: {"userInfo.SubmittedFeedback": true}}, {w:1}, callback);

@@ -559,13 +559,16 @@ MongoClient.connect("mongodb://nodejitsu:9aef9b4317035915c03da290251ad0ad@troup.
                         });
                         return;
                     }
+                    callback(null, user);
                 });
             },
             function (user, callback) {
                 Collections.Feedback.insert({
                     username: user.username,
                     feedback: questionsAndAnswers
-                }, { w: 1 }, callback);
+                }, { w: 1 }, function () {
+                    callback();
+                });
             },
             function (callback) {
                 Collections.Users.update({ email: email }, { $set: { "userInfo.SubmittedFeedback": true } }, { w: 1 }, callback);
