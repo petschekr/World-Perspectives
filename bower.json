@@ -1,0 +1,26 @@
+{
+  "name": "World-Perspectives",
+  "version": "3.0.0",
+  "homepage": "https://github.com/petschekr/World-Perspectives",
+  "authors": [
+    "Ryan Petschek <petschekr@gmail.com>"
+  ],
+  "description": "Web app for World Perspectives Symposium day at GFA",
+  "main": "server.js",
+  "moduleType": [
+    "globals",
+    "node"
+  ],
+  "license": "Copyright (C) 2015 Ryan Petschek",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.5.5"
+  }
+}
