@@ -17,33 +17,23 @@
 		<link rel="import" href="/bower_components/paper-button/paper-button.html" />
 		<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
 		<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+		<link rel="import" href="/components/content-panel.html" />
 	</head>
 	<body unresolved>
-		<div class="container" flex vertical>
-			<core-toolbar>
-				<!-- <paper-icon-button icon="menu"></paper-icon-button> -->
-				<span flex>Welcome</span>
-				<!-- <paper-icon-button icon="refresh"></paper-icon-button> -->
-				<paper-icon-button icon="more-vert"></paper-icon-button>
-				<!--<paper-shadow style="max-width: 10.5em;">
-					<paper-item>Item</paper-item>
-				</paper-shadow>-->
-			</core-toolbar>
-			<div class="content">
-				<img src="/img/logo.svg" alt="WPP" />
-				<h1>World Perspectives Symposium</h1>
-				<h2>April 22nd, 2015</h2>
-				<p>
-					Hi Ryan Petschek
-				</p>
-				<div horizontal layout>
-					<span flex></span>
-					<paper-button class="custom">
-						Next
-						<core-icon icon="arrow-forward"></core-icon>
-					</paper-button>
-				</div>
+		<content-panel headtitle="Welcome">
+			<img src="/img/logo.svg" alt="WPP" />
+			<h1>World Perspectives Symposium</h1>
+			<h2>April 22nd, 2015</h2>
+			<p>
+				Hi Ryan Petschek
+			</p>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button class="custom">
+					Next
+					<core-icon icon="arrow-forward"></core-icon>
+				</paper-button>
 			</div>
-		</div>
+		</content-panel>
 	</body>
 </html>

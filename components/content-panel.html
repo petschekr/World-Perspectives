@@ -1,0 +1,73 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-toolbar/core-toolbar.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/components/content-panel.html" />
+
+<polymer-element name="content-panel" attributes="headtitle">
+	<template>
+		<style>
+			core-toolbar {
+				background: #3ea346;
+				color: #f1f1f1;
+				fill: #f1f1f1;
+			}
+			.container {
+				margin-right: auto;
+				margin-left: auto;
+				margin-top: 64px;
+				max-height: 580px;
+				max-width: 512px;
+				box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+				border-radius: 2px;
+				background-color: white;
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+			.container > .content {
+				padding: 20px 16px;
+				text-align: center;
+			}
+			paper-button.custom > core-icon {
+				margin-left: 4px;
+			}
+			/* Style for elements passed to the <content> block */
+			polyfill-next-selector { content: "h1"; }
+			::content h1 {
+				font-size: 1.7em;
+				margin-bottom: 0;
+			}
+			polyfill-next-selector { content: "h2"; }
+			::content h2 {
+				margin-top: 5px;
+				font-size: 1.2em;
+			}
+			polyfill-next-selector { content: "p"; }
+			::content p {
+				font-size: 1.2em;	
+			}
+		</style>
+		<div class="container" flex vertical>
+			<core-toolbar>
+				<!-- <paper-icon-button icon="menu"></paper-icon-button> -->
+				<span flex>{{headtitle}}</span>
+				<!-- <paper-icon-button icon="refresh"></paper-icon-button> -->
+				<paper-icon-button icon="more-vert"></paper-icon-button>
+				<!--<paper-shadow style="max-width: 10.5em;">
+					<paper-item>Item</paper-item>
+				</paper-shadow>-->
+			</core-toolbar>
+			<div class="content">
+				<content></content>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			headtitle: "Untitled"
+		});
+	</script>
+</polymer-element>
