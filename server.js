@@ -4,6 +4,7 @@ var fs = require("fs");
 
 var moment = require("moment");
 var Promise = require("bluebird");
+fs = Promise.promisifyAll(fs);
 var r = require("rethinkdb");
 
 // Initialize the database connection
@@ -45,3 +46,30 @@ app.use(cookieParser(
 		"httpOnly": true
 	}
 ));
+app.use("/bower_components", serveStatic("bower_components"));
+app.use("/components", serveStatic("components"));
+app.use("/css", serveStatic("css"));
+app.use("/img", serveStatic("img"));
+
+app.route("/").get(function(request, response) {
+	fs.readFileAsync("signup.html", {"encoding": "utf8"})
+		.then(function(html) {
+			response.send(html);
+		});
+});
+
+// 404 page
+app.use(function(request, response, next) {
+	response.status(404).send("404 Not found!");
+});
+// Error handling
+app.use(function(err, request, response, next) {
+	console.error(err);
+	response.status(500);
+	response.send("An error occurred!");
+});
+
+var PORT = 80;
+app.listen(PORT, "0.0.0.0", function() {
+	console.log("Server listening on port " + PORT);
+});
