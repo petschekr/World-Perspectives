@@ -72,11 +72,37 @@
 					else if (this.attributes.forward) {
 						progressController.selected++;
 					}
-					if (progressController.selected < 0)
-						progressController.selected = 0;
-					if (progressController.selected >= numberOfPanels)
-						progressController.selected = numberOfPanels - 1;
+					checkBounds();
 				};
+			}
+			var transitioning = false;
+			document.addEventListener("keydown", function(e) {
+				if (transitioning)
+					return;
+				if (e.keyCode === 39) {
+					// Right key
+					progressController.selected++;
+					transitioning = checkBounds();
+				}
+				else if (e.keyCode === 37) {
+					// Left key
+					progressController.selected--;
+					transitioning = checkBounds();
+				}
+			});
+			progressController.addEventListener("core-animated-pages-transition-end", function() {
+				transitioning = false;
+			});
+			function checkBounds() {
+				if (progressController.selected < 0) {
+					progressController.selected = 0;
+					return false;
+				}
+				if (progressController.selected >= numberOfPanels) {
+					progressController.selected = numberOfPanels - 1;
+					return false;
+				}
+				return true;
 			}
 		</script>
 	</body>
