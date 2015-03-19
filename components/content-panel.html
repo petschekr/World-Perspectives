@@ -31,9 +31,6 @@
 				padding: 20px 16px;
 				text-align: center;
 			}
-			paper-button.custom > core-icon {
-				margin-left: 4px;
-			}
 			/* Style for elements passed to the <content> block */
 			polyfill-next-selector { content: "h1"; }
 			::content h1 {
@@ -48,6 +45,14 @@
 			polyfill-next-selector { content: "p"; }
 			::content p {
 				font-size: 1.2em;	
+			}
+			polyfill-next-selector { content: "paper-button.custom:last-child > core-icon"; }
+			::content paper-button.custom:last-child > core-icon {
+				margin-left: 4px;
+			}
+			polyfill-next-selector { content: "paper-button.custom:first-child > core-icon"; }
+			::content paper-button.custom:first-child > core-icon {
+				margin-right: 4px;
 			}
 		</style>
 		<div class="container" flex vertical>
