@@ -63,6 +63,7 @@
 		<script>
 			var progressController = document.querySelector("core-animated-pages");
 			var paperButtons = document.querySelectorAll("paper-button");
+			var numberOfPanels = document.querySelectorAll("content-panel").length;
 			for (var i = 0; i < paperButtons.length; i++) {
 				paperButtons[i].onclick = function() {
 					if (this.attributes.backward) {
@@ -71,6 +72,10 @@
 					else if (this.attributes.forward) {
 						progressController.selected++;
 					}
+					if (progressController.selected < 0)
+						progressController.selected = 0;
+					if (progressController.selected >= numberOfPanels)
+						progressController.selected = numberOfPanels - 1;
 				};
 			}
 		</script>
