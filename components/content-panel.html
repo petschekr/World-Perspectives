@@ -44,7 +44,11 @@
 			}
 			polyfill-next-selector { content: "p"; }
 			::content p {
-				font-size: 1.2em;	
+				font-size: 1.2em;
+			}
+			polyfill-next-selector { content: "p.no-margin"; }
+			::content p.no-margin {
+				margin-top: 0;
 			}
 			polyfill-next-selector { content: "paper-button.custom:last-child > core-icon"; }
 			::content paper-button.custom:last-child > core-icon {

@@ -17,23 +17,62 @@
 		<link rel="import" href="/bower_components/paper-button/paper-button.html" />
 		<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
 		<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+		<link rel="import" href="/bower_components/core-animated-pages/core-animated-pages.html" />
+		<!-- <link rel="import" href="/components/slide-animation.html" /> -->
+		<link rel="import" href="/bower_components/core-animated-pages/transitions/slide-from-right.html" />
 		<link rel="import" href="/components/content-panel.html" />
 	</head>
 	<body unresolved>
-		<content-panel headtitle="Welcome">
-			<img src="/img/logo.svg" alt="WPP" />
-			<h1>World Perspectives Symposium</h1>
-			<h2>April 22nd, 2015</h2>
-			<p>
-				Registering for Ryan Petschek
-			</p>
-			<div horizontal layout>
-				<span flex></span>
-				<paper-button class="custom">
-					Next
-					<core-icon icon="arrow-forward"></core-icon>
-				</paper-button>
-			</div>
-		</content-panel>
+		<core-animated-pages transitions="slide-from-right">
+			<content-panel headtitle="Welcome">
+				<img src="/img/logo.svg" alt="WPP" />
+				<h1>World Perspectives Symposium</h1>
+				<h2>April 22nd, 2015</h2>
+				<p>
+					Registering for: Ryan Petschek
+				</p>
+				<footer>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button class="custom" forward>
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Panel selection">
+				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
+				<p><strong>Please pick your first choice</strong></p>
+				
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward>
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward>
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+		</core-animated-pages>
+		<script>
+			var progressController = document.querySelector("core-animated-pages");
+			var paperButtons = document.querySelectorAll("paper-button");
+			for (var i = 0; i < paperButtons.length; i++) {
+				paperButtons[i].onclick = function() {
+					if (this.attributes.backward) {
+						progressController.selected--;
+					}
+					else if (this.attributes.forward) {
+						progressController.selected++;
+					}
+				};
+			}
+		</script>
 	</body>
 </html>
