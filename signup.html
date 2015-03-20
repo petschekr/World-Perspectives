@@ -20,6 +20,7 @@
 		<link rel="import" href="/bower_components/core-animated-pages/core-animated-pages.html" />
 		<!-- <link rel="import" href="/components/slide-animation.html" /> -->
 		<link rel="import" href="/bower_components/core-animated-pages/transitions/slide-from-right.html" />
+		<link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
 		<link rel="import" href="/components/content-panel.html" />
 	</head>
 	<body unresolved>
@@ -60,8 +61,10 @@
 				</footer>
 			</content-panel>
 		</core-animated-pages>
+		<paper-progress></paper-progress>
 		<script>
 			var progressController = document.querySelector("core-animated-pages");
+			var progressDisplay = document.querySelector("paper-progress");
 			var paperButtons = document.querySelectorAll("paper-button");
 			var numberOfPanels = document.querySelectorAll("content-panel").length;
 			for (var i = 0; i < paperButtons.length; i++) {
@@ -92,6 +95,9 @@
 			});
 			progressController.addEventListener("core-animated-pages-transition-end", function() {
 				transitioning = false;
+			});
+			progressController.addEventListener("core-animated-pages-transition-prepare", function() {
+				progressDisplay.value = (progressController.selected / (numberOfPanels - 1)) * 100;
 			});
 			function checkBounds() {
 				if (progressController.selected < 0) {

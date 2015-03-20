@@ -9,3 +9,14 @@ body {
 * {
 	outline: none !important;
 }
+paper-progress {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	height: 5px;
+}
+paper-progress::shadow #activeProgress {
+	background-color: #3ea346;
+	transition: transform 1s;
+	-webkit-transition: transform 1s;
+}
