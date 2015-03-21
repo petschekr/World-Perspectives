@@ -1,0 +1,104 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
+
+<polymer-element name="session-list" attributes="url index panel">
+	<template>
+		<style>
+			paper-item h2 > span {
+				color: #aaa;
+				width: 24px;
+				display: inline-block;
+				text-align: center;
+			}
+			paper-item h2 {
+				margin: 0;
+				text-align: left;
+				font-size: 1.4em;
+			}
+		</style>
+		<core-ajax id="ajax" auto url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
+		<div id="itemcontainer">
+			<template repeat="{{session in sessions}}">
+				<paper-item on-tap="{{showDetails}}" id="{{'id' + session.id}}">
+					<h2>
+						<span>–</span>
+						{{session.name}}
+					</h2>
+				</paper-item>
+			</template>
+		</div>
+		<paper-action-dialog id="details" backdrop layered="true" transition="core-transition-center">
+			<h1 style="font-size: 2em;">{{selectedSession.name}}</h1>
+			<p>{{selectedSession.description}}</p>
+			<paper-button affirmative type="cancel" on-tap="{{dialogButtonHandler}}">
+				Cancel
+			</paper-button>
+			<paper-button affirmative autofocus type="select" on-tap="{{dialogButtonHandler}}" style="color: #4285f4;">
+				Select
+			</paper-button>
+		</paper-action-dialog>
+	</template>
+	<script>
+		Polymer({
+			index: "0",
+			panel: false,
+			created: function() {
+				this.sessions = [];
+				this.sessionsLookup = {};
+				this.selectedSession = null;
+				this.previousSelectedSession = null;
+				this.forwardButton = null;
+				this.checkmark = '<core-icon icon="check"></core-icon>';
+				this.dash = "–";
+			},
+			loaded: function() {
+				// Make a copy of the loaded data
+				this.sessions = this.$.ajax.response.slice(0);
+				for (var i = 0, len = this.sessions.length; i < len; i++) {
+					this.sessionsLookup[this.sessions[i].id] = this.sessions[i];
+				}
+				var buttons = document.querySelectorAll("paper-button");
+				for (var i = 0, len = buttons.length; i < len; i++) {
+					if (buttons[i].id === this.index + "-forward") {
+						this.forwardButton = buttons[i];
+						break;
+					}
+				}
+			},
+			showDetails: function(e) {
+				var targetID = e.currentTarget.id;
+				this.previousSelectedSession = this.selectedSession;
+				this.selectedSession = this.sessionsLookup[targetID.slice(2)]; // .slice() to removed "id" at the beginning of the id
+				this.async(function() {
+					this.$.details.open();
+				});
+			},
+			dialogButtonHandler: function(e) {
+				var initiatorAction = e.currentTarget.attributes.type.value;
+				this.$.details.close();
+				var uponDialogClose = function() {
+					document.removeEventListener("core-overlay-close-completed", uponDialogClose);
+					if (initiatorAction === "select") {
+						// Unselect the previous choice
+						if (this.previousSelectedSession) {
+							this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " h2 span").innerHTML = this.dash;
+						}
+						// Turn the item's dash into a checkmark
+						this.$.itemcontainer.querySelector("#id" + this.selectedSession.id + " h2 span").innerHTML = this.checkmark;
+						// Proceed
+						this.forwardButton.removeAttribute("disabled");
+						// Dirty hack for visual glitch in Google Chrome
+						setTimeout((function() {
+							this.forwardButton.click();
+						}).bind(this), 1);
+					}
+				}
+				uponDialogClose = uponDialogClose.bind(this);
+				document.addEventListener("core-overlay-close-completed", uponDialogClose);	
+			}
+		});
+	</script>
+</polymer-element>

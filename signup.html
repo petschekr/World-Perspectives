@@ -22,6 +22,7 @@
 		<link rel="import" href="/bower_components/core-animated-pages/transitions/slide-from-right.html" />
 		<link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
 		<link rel="import" href="/components/content-panel.html" />
+		<link rel="import" href="/components/session-list.html" />
 	</head>
 	<body unresolved>
 		<core-animated-pages transitions="slide-from-right">
@@ -35,25 +36,43 @@
 				<footer>
 					<div horizontal layout>
 						<span flex></span>
-						<paper-button class="custom" forward>
+						<paper-button class="custom" forward id="0-forward">
 							Next
 							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
 					</div>
 				</footer>
 			</content-panel>
-			<content-panel headtitle="Panel selection">
+			<content-panel headtitle="Panel Selection">
 				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
 				<p><strong>Please pick your first choice</strong></p>
-				
+				<session-list url="/sessions/panels" index="1" panel="true"></session-list>
 				<footer>
 					<div horizontal layout>
-						<paper-button class="custom" backward>
+						<paper-button class="custom" backward id="1-backward">
 							<core-icon icon="arrow-back"></core-icon>
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward>
+						<paper-button class="custom" forward disabled id="1-forward">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Global Studies Session Selection">
+				<p class="no-margin">This is a session with a single presenter on a specific global issue</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<!-- <session-list url="/sessions/panels" index="2"></session-list> -->
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="2-backward">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="2-forward">
 							Next
 							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
@@ -84,8 +103,15 @@
 					return;
 				if (e.keyCode === 39) {
 					// Right key
-					progressController.selected++;
-					transitioning = checkBounds();
+					// Check if progression is allowed
+					var buttons = document.querySelectorAll("paper-button");
+					for (var i = 0, len = buttons.length; i < len; i++) {
+						if (buttons[i].id === progressController.selected + "-forward" && !buttons[i].disabled) {
+							progressController.selected++;
+							transitioning = checkBounds();
+							break;
+						}
+					}
 				}
 				else if (e.keyCode === 37) {
 					// Left key

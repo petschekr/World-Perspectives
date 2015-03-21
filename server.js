@@ -57,6 +57,11 @@ app.route("/").get(function(request, response) {
 			response.send(html);
 		});
 });
+app.route("/sessions/panels").get(function(request, response) {
+	r.table("panels").orderBy("name").run(DBConnection).then(function(data) {
+		response.send(data);
+	});
+});
 
 // 404 page
 app.use(function(request, response, next) {
