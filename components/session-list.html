@@ -3,6 +3,7 @@
 <link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
+<script src="/bower_components/moment/moment.js"></script>
 
 <polymer-element name="session-list" attributes="url index panel">
 	<template>
@@ -31,8 +32,33 @@
 			</template>
 		</div>
 		<paper-action-dialog id="details" backdrop layered="true" transition="core-transition-center">
-			<h1 style="font-size: 2em;">{{selectedSession.name}}</h1>
-			<p>{{selectedSession.description}}</p>
+			<h1 style="font-size: 2em;">
+				{{selectedSession.name}}
+				<small style="float: right; position: relative; top: 9px; opacity: 0.65; margin-left: 10px; font-size: 60%;">{{selectedSession.time.startFormat}} to {{selectedSession.time.endFormat}} — {{selectedSession.location}} ({{selectedSession.capacity.taken}}/{{selectedSession.capacity.total}})</small>
+			</h1>
+			<p style="font-size: 1.1em;">{{selectedSession.description}}</p>
+			<p>
+				<!-- For panels -->
+				<template if="{{panel}}">
+					<b>Panelists:</b>
+					<template repeat="{{panelist, index in selectedSession.panelists}}">
+						<template if="{{index != selectedSession.panelists.length - 1}}">
+							{{panelist}},
+						</template>
+						<template if="{{index == selectedSession.panelists.length - 1}}">
+							{{panelist}}
+						</template>
+					</template>
+					<br />
+					<b>Moderator:</b>
+					{{selectedSession.moderator}}
+				</template>
+				<!-- For regular sessions -->
+				<template if="{{!panel}}">
+					<b>Presenter:</b>
+					{{selectedSession.presenter}}
+				</template>
+			</p>
 			<paper-button affirmative type="cancel" on-tap="{{dialogButtonHandler}}">
 				Cancel
 			</paper-button>
@@ -72,6 +98,9 @@
 				var targetID = e.currentTarget.id;
 				this.previousSelectedSession = this.selectedSession;
 				this.selectedSession = this.sessionsLookup[targetID.slice(2)]; // .slice() to removed "id" at the beginning of the id
+				// Format the times
+				this.selectedSession.time.startFormat = moment(new Date(this.selectedSession.time.start)).format("h:mm A");
+				this.selectedSession.time.endFormat = moment(new Date(this.selectedSession.time.end)).format("h:mm A");
 				this.async(function() {
 					this.$.details.open();
 				});
