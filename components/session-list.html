@@ -41,24 +41,26 @@
 			paper-item h2 > span {
 				color: #aaa;
 				width: 24px;
-				display: block;
+				display: table;
 				text-align: center;
 				float: left;
 				margin-right: 5px;
-				height: 1.3em;
 			}
 			paper-item h2 {
 				margin: 0;
 				text-align: left;
 				font-size: 1.4em;
 			}
+			paper-item {
+				padding-right: 40px;
+			}
 		</style>
 		<core-ajax id="ajax" auto url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
 		<div id="itemcontainer">
 			<template repeat="{{session in sessions}}">
 				<paper-item on-tap="{{showDetails}}" id="{{'id' + session.id}}">
-					<h2>
-						<span>–</span>
+					<h2 layout horizontal>
+						<span flex self-stretch>–</span>
 						{{session.name}}
 					</h2>
 				</paper-item>
