@@ -151,6 +151,12 @@
 						}
 						// Turn the item's dash into a checkmark
 						this.$.itemcontainer.querySelector("#id" + this.selectedSession.id + " h2 span").innerHTML = this.checkmark;
+						// Dim the other items
+						var titles = this.$.itemcontainer.querySelectorAll("h2");
+						for (var i = 0; i < titles.length; i++) {
+							titles[i].style.opacity = "0.5";
+						}
+						this.$.itemcontainer.querySelector("#id" + this.selectedSession.id + " h2").style.opacity = "1";
 						// Proceed
 						this.forwardButton.removeAttribute("disabled");
 						// Dirty hack for visual glitch in Google Chrome
