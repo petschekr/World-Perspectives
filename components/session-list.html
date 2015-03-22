@@ -5,6 +5,36 @@
 <link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
 <script src="/bower_components/moment/moment.js"></script>
 
+<style>
+	body /deep/ paper-action-dialog h1 {
+		font-size: 2em;
+	}
+	body /deep/ paper-action-dialog h1 small {
+		float: left;
+		opacity: 0.65;
+		font-size: 60%;
+		margin: 5px 0;
+	}
+	body /deep/ paper-action-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+	/* For browsers that don't support shadow DOM */
+	paper-action-dialog h1 {
+		font-size: 2em;
+	}
+	paper-action-dialog h1 small {
+		float: left;
+		opacity: 0.65;
+		font-size: 60%;
+		margin: 5px 0;
+	}
+	paper-action-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+</style>
+
 <polymer-element name="session-list" attributes="url index panel">
 	<template>
 		<style>
@@ -35,11 +65,12 @@
 			</template>
 		</div>
 		<paper-action-dialog id="details" backdrop layered="true" transition="core-transition-center">
-			<h1 style="font-size: 2em;">
-				{{selectedSession.name}}
-				<small style="float: right; position: relative; top: 9px; opacity: 0.65; margin-left: 10px; font-size: 60%;">{{selectedSession.time.startFormat}} to {{selectedSession.time.endFormat}} — {{selectedSession.location}} ({{selectedSession.capacity.taken}}/{{selectedSession.capacity.total}})</small>
+			<h1>
+				<span>{{selectedSession.name}}</span>
+				<br />
+				<small>{{selectedSession.time.startFormat}} to {{selectedSession.time.endFormat}} — {{selectedSession.location}} ({{selectedSession.capacity.taken}}/{{selectedSession.capacity.total}})</small>
 			</h1>
-			<p style="font-size: 1.1em;">{{selectedSession.description}}</p>
+			<p class="lead">{{selectedSession.description}}</p>
 			<p>
 				<!-- For panels -->
 				<template if="{{panel}}">
