@@ -62,6 +62,11 @@ app.route("/sessions/panels").get(function(request, response) {
 		response.send(data);
 	});
 });
+app.route("/sessions/wpp").get(function(request, response) {
+	r.table("sessions").filter({"type": "wpp"}).orderBy("name").run(DBConnection).then(function(data) {
+		response.send(data);
+	});
+});
 
 // 404 page
 app.use(function(request, response, next) {
