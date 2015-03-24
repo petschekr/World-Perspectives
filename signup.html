@@ -80,6 +80,24 @@
 					</div>
 				</footer>
 			</content-panel>
+			<content-panel headtitle="Science Session Selection">
+				<p class="no-margin">This is a session with a single presenter on scientific research that the presenter has performed</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<session-list url="/sessions/science" index="3"></session-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="3-backward">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="3-forward">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
 		</core-animated-pages>
 		<paper-progress></paper-progress>
 		<script>

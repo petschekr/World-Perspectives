@@ -67,6 +67,11 @@ app.route("/sessions/wpp").get(function(request, response) {
 		response.send(data);
 	});
 });
+app.route("/sessions/science").get(function(request, response) {
+	r.table("sessions").filter({"type": "science"}).orderBy("name").run(DBConnection).then(function(data) {
+		response.send(data);
+	});
+});
 
 // 404 page
 app.use(function(request, response, next) {
