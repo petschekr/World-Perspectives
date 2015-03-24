@@ -108,9 +108,11 @@
 			for (var i = 0; i < paperButtons.length; i++) {
 				paperButtons[i].onclick = function() {
 					if (this.attributes.backward) {
+						window.scrollTo(0, 0);
 						progressController.selected--;
 					}
 					else if (this.attributes.forward) {
+						window.scrollTo(0, 0);
 						progressController.selected++;
 					}
 					checkBounds();
@@ -126,6 +128,7 @@
 					var buttons = document.querySelectorAll("paper-button");
 					for (var i = 0, len = buttons.length; i < len; i++) {
 						if (buttons[i].id === progressController.selected + "-forward" && !buttons[i].disabled) {
+							window.scrollTo(0, 0);
 							progressController.selected++;
 							transitioning = checkBounds();
 							break;
@@ -134,6 +137,7 @@
 				}
 				else if (e.keyCode === 37) {
 					// Left key
+					window.scrollTo(0, 0);
 					progressController.selected--;
 					transitioning = checkBounds();
 				}
