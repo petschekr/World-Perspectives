@@ -24,6 +24,7 @@
 		<link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
 		<link rel="import" href="/components/content-panel.html" />
 		<link rel="import" href="/components/session-list.html" />
+		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body unresolved>
 		<core-animated-pages transitions="slide-from-right">
@@ -159,6 +160,13 @@
 				}
 				return true;
 			}
+
+			// WebSocket connection to update session availability in real-time
+			var socket = io.connect("/");
+			socket.on("availability", function (data) {
+				console.log(data);
+				//socket.emit("my other event", { my: "data" });
+			});
 		</script>
 	</body>
 </html>
