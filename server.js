@@ -64,7 +64,7 @@ app.route("/register").get(function (request, response) {
 app.route("/register/:code").get(function (request, response) {
 	var code = request.params.code.toString();
 
-	fs.readFileAsync("signup.html", {"encoding": "utf8"})
+	fs.readFileAsync("register.html", {"encoding": "utf8"})
 		.then(function (html) {
 			response.send(html);
 		});
