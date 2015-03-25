@@ -7,13 +7,14 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
 		<!-- Polyfill support -->
-		<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+		<script src="/bower_components/webcomponentsjs/webcomponents.min.js"></script>
 
 		<link rel="stylesheet" href="/css/signup.css" />
 		<!-- <link rel="import" href="/bower_components/core-animated-pages/core-animated-pages.html" /> -->
 		<!-- <link rel="import" href="/components/schedule-chooser.html" /> -->
 		<link rel="import" href="/bower_components/core-toolbar/core-toolbar.html" />
 		<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+		<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
 		<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
 		<link rel="import" href="/bower_components/paper-button/paper-button.html" />
 		<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
@@ -27,13 +28,14 @@
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body unresolved>
+		<core-ajax id="info-ajax" url="{{infoURL}}" on-core-response="{{infoLoaded}}" handleAs="json"></core-ajax>
 		<core-animated-pages transitions="slide-from-right">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
 				<h1>World Perspectives Symposium</h1>
 				<h2>April 22nd, 2015</h2>
 				<p>
-					Registering for: Ryan Petschek
+					Registering for: <span id="name">Loading...</span>
 				</p>
 				<footer>
 					<div horizontal layout>
@@ -102,6 +104,19 @@
 		</core-animated-pages>
 		<paper-progress></paper-progress>
 		<script>
+			var user = {};
+			document.addEventListener("DOMContentLoaded", function() {
+				// Retrieve the user's information from #info-ajax
+				var infoAJAX = document.getElementById("info-ajax");
+				infoAJAX.url = "/info/" + window.location.pathname.split("/").pop();
+				infoAJAX.addEventListener("core-response", function() {
+					user = infoAJAX.response;
+					// Set the user's name in the panel
+					document.getElementById("name").textContent = user.name;
+				});
+				infoAJAX.go();
+			});
+
 			var progressController = document.querySelector("core-animated-pages");
 			var progressDisplay = document.querySelector("paper-progress");
 			var paperButtons = document.querySelectorAll("paper-button");

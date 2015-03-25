@@ -69,6 +69,15 @@ app.route("/register/:code").get(function (request, response) {
 			response.send(html);
 		});
 });
+// AJAX endpoints
+app.route("/info/:code").get(function (request, response) {
+	var code = request.params.code.toString();
+	response.json({
+		"code": code,
+		"name": "Ryan Petschek",
+		"email": "petschekr@gmail.com"
+	});
+});
 app.route("/sessions/panels").get(function (request, response) {
 	r.table("panels").orderBy("name").run(DBConnection).then(function (data) {
 		response.send(data);
