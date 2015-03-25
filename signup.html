@@ -28,7 +28,7 @@
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body unresolved>
-		<core-ajax id="info-ajax" url="{{infoURL}}" on-core-response="{{infoLoaded}}" handleAs="json"></core-ajax>
+		<core-ajax id="info-ajax" handleAs="json"></core-ajax>
 		<core-animated-pages transitions="slide-from-right">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
