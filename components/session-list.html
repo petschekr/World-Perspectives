@@ -46,6 +46,10 @@
 				font-size: 1.4em;
 				font-weight: bold;
 			}
+			paper-item span core-icon {
+				position: relative;
+  				top: -1px;
+			}
 			paper-item h2 {
 				margin: 0;
 				text-align: left;
@@ -61,7 +65,7 @@
 		<div id="itemcontainer">
 			<template repeat="{{session in sessions}}">
 				<paper-item on-tap="{{showDetails}}" id="{{'id' + session.id}}">
-					<span>–</span>
+					<span><core-icon icon="radio-button-off"></core-icon></span>
 					<h2>
 						{{session.name}}
 					</h2>
@@ -115,8 +119,8 @@
 				this.selectedSession = null;
 				this.previousSelectedSession = null;
 				this.forwardButton = null;
-				this.checkmark = '<core-icon icon="check"></core-icon>';
-				this.dash = "–";
+				this.checkmark = '<core-icon icon="radio-button-on"></core-icon>';
+				this.dash = '<core-icon icon="radio-button-off"></core-icon>';
 			},
 			loaded: function() {
 				// Make a copy of the loaded data
