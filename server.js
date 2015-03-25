@@ -72,10 +72,18 @@ app.route("/register/:code").get(function (request, response) {
 // AJAX endpoints
 app.route("/info/:code").get(function (request, response) {
 	var code = request.params.code.toString();
-	response.json({
-		"code": code,
-		"name": "Ryan Petschek",
-		"email": "petschekr@gmail.com"
+	r.table("attendees").filter({"code": code}).run(DBConnection).then(function (cursor) {
+		return cursor.next();
+	}).then(function (data) {
+		response.json({
+			"code": data.code,
+			"name": data.name,
+			"email": data.email
+		});
+	}).error(function() {
+		response.status(404).json({
+			"error": "No user with that registration code exists"
+		});
 	});
 });
 app.route("/sessions/panels").get(function (request, response) {
