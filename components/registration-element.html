@@ -1,0 +1,190 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<!-- <link rel="import" href="/bower_components/core-animated-pages/core-animated-pages.html" /> -->
+<!-- <link rel="import" href="/components/schedule-chooser.html" /> -->
+<link rel="import" href="/bower_components/core-toolbar/core-toolbar.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/core-a11y-keys/core-a11y-keys.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/core-animated-pages/core-animated-pages.html" />
+<!-- <link rel="import" href="/components/slide-animation.html" /> -->
+<link rel="import" href="/bower_components/core-animated-pages/transitions/slide-from-right.html" />
+<link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
+<link rel="import" href="/components/content-panel.html" />
+<link rel="import" href="/components/session-list.html" />
+<script src="/socket.io/socket.io.js"></script>
+
+<polymer-element name="registration-element">
+	<template>
+		<style>
+			paper-progress {
+				position: fixed;
+				bottom: 0;
+				width: 100%;
+				height: 5px;
+			}
+			paper-progress::shadow #activeProgress {
+				background-color: #3ea346;
+				-webkit-transition: transform 0.5s;
+				-moz-transition: transform 0.5s;
+				transition: transform 0.5s;
+			}
+			paper-progress #activeProgress {
+				background-color: #3ea346;
+				-webkit-transition: transform 0.5s;
+				-moz-transition: transform 0.5s;
+				transition: transform 0.5s;
+			}
+		</style>
+		<!-- Key handler for arrow key events -->
+		<core-a11y-keys target="{{rootDocument}}" keys="left pagedown" on-keys-pressed="{{goBackward}}"></core-a11y-keys>
+		<core-a11y-keys target="{{rootDocument}}" keys="right pageup" on-keys-pressed="{{goForward}}"></core-a11y-keys>
+		<!-- AJAX for loading the user's data -->
+		<core-ajax id="info-ajax" auto url="{{url}}" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
+		<core-animated-pages transitions="slide-from-right" id="progressController">
+			<content-panel headtitle="Welcome">
+				<img src="/img/logo.svg" alt="WPP" />
+				<h1>World Perspectives Symposium</h1>
+				<h2>April 22nd, 2015</h2>
+				<p>
+					Registering for: {{user.name}}</span>
+				</p>
+				<footer>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-0" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Panel Selection">
+				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<session-list url="/sessions/panels" index="1" panel="true"></session-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-1" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-1" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Global Studies Session Selection">
+				<p class="no-margin">This is a session with a single presenter on a specific global issue</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<session-list url="/sessions/wpp" index="2"></session-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-2" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-2" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Science Session Selection">
+				<p class="no-margin">This is a session with a single presenter on scientific research that the presenter has performed</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<session-list url="/sessions/science" index="3"></session-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-3" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-3" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+		</core-animated-pages>
+		<paper-progress id="progress"></paper-progress>
+	</template>
+	<script>
+		Polymer({
+			rootDocument: document,
+			url: "",
+			user: {
+				"name": "Loading..."
+			},
+			panelCount: 0,
+			ready: function() {
+				this.url = "/info/" + window.location.pathname.split("/").pop();
+				this.panelCount = this.$.progressController.getElementsByTagName("content-panel").length;
+				this.$.progressController.addEventListener("core-animated-pages-transition-end", (function() {
+					this.transitioning = false;
+				}).bind(this));
+				this.$.progressController.addEventListener("core-animated-pages-transition-prepare", (function() {
+					this.$.progress.value = (this.$.progressController.selected / (this.panelCount - 1)) * 100;
+				}).bind(this));
+				// WebSocket connection to update session availability in real-time
+				var socket = io.connect("/");
+				socket.on("availability", (function (data) {
+					console.log(data);
+					//socket.emit("my other event", { my: "data" });
+				}).bind(this));
+			},
+			userResponse: function() {
+				this.user = this.$["info-ajax"].response;
+			},
+			handleButton: function(e) {
+				var element = e.target || e.srcElement;
+				if (element.attributes.backward) {
+					this.goBackward();
+				}
+				else if (element.attributes.forward) {
+					this.goForward();	
+				}
+			},
+			// Progress functions
+			transitioning: false,
+			goBackward: function() {
+				if (this.transitioning)
+					return;
+				window.scrollTo(0, 0);
+				this.$.progressController.selected--;
+				this.transitioning = this.checkBounds();
+			},
+			goForward: function() {
+				if (this.transitioning)
+					return;
+				// Check if progression is allowed
+				if (!this.$["forward-" + this.$.progressController.selected].disabled) {
+					window.scrollTo(0, 0);
+					this.$.progressController.selected++;
+					this.transitioning = this.checkBounds();
+				}
+			},
+			checkBounds: function() {
+				if (this.$.progressController.selected < 0) {
+					this.$.progressController.selected = 0;
+					return false;
+				}
+				if (this.$.progressController.selected >= this.panelCount) {
+					this.$.progressController.selected = this.panelCount - 1;
+					return false;
+				}
+				return true;
+			}
+		});
+	</script>
+</polymer-element>
