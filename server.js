@@ -63,11 +63,18 @@ app.route("/register").get(function (request, response) {
 });
 app.route("/register/:code").get(function (request, response) {
 	var code = request.params.code.toString();
-
-	fs.readFileAsync("register.html", {"encoding": "utf8"})
-		.then(function (html) {
-			response.send(html);
-		});
+	// Check if the provided code is valid
+	r.table("attendees").filter({"code": code}).count().run(DBConnection)
+		.then(function (count) {
+			if (count !== 1) {
+				response.redirect("/register");
+				return;
+			}
+			fs.readFileAsync("register.html", {"encoding": "utf8"})
+				.then(function (html) {
+					response.send(html);
+				})
+		})
 });
 // AJAX endpoints
 app.route("/info/:code").get(function (request, response) {
