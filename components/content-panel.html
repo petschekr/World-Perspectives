@@ -10,7 +10,7 @@
 	<template>
 		<style>
 			core-toolbar {
-				background: {{color}};
+				background: #3ea346;
 				color: #f1f1f1;
 				fill: #f1f1f1;
 			}
@@ -61,7 +61,7 @@
 			}
 		</style>
 		<div class="container" flex vertical>
-			<core-toolbar>
+			<core-toolbar id="toolbar">
 				<span flex>{{headtitle}}</span>
 				<!-- <paper-icon-button icon="more-vert"></paper-icon-button> -->
 			</core-toolbar>
@@ -73,7 +73,10 @@
 	<script>
 		Polymer({
 			headtitle: "Untitled",
-			color: "#3ea346"
+			color: "#3ea346",
+			ready: function() {
+				this.$.toolbar.style.background = this.color;
+			}
 		});
 	</script>
 </polymer-element>
