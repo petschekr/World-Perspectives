@@ -4,6 +4,7 @@ var fs = require("fs");
 
 var moment = require("moment");
 var Promise = require("bluebird");
+//Promise.longStackTraces();
 fs = Promise.promisifyAll(fs);
 var r = require("rethinkdb");
 
@@ -32,9 +33,11 @@ var serveStatic = require("serve-static");
 var responseTime = require("response-time");
 var compress = require("compression");
 var cookieParser = require("cookie-parser");
+var bodyParser = require("body-parser");
 
 var app = express();
-var server = require("http").Server(app);
+var server = require("http").Server(app)
+var postParser = bodyParser.urlencoded({"extended": false});
 
 app.use(compress());
 app.use(responseTime());
@@ -83,6 +86,7 @@ app.route("/info/:code").get(function (request, response) {
 		return cursor.next();
 	}).then(function (data) {
 		response.json({
+			"id": data.id,
 			"code": data.code,
 			"name": data.name,
 			"email": data.email
@@ -93,11 +97,89 @@ app.route("/info/:code").get(function (request, response) {
 		});
 	});
 });
-app.route("/sessions/panels").get(function (request, response) {
-	r.table("panels").orderBy("name").run(DBConnection).then(function (data) {
-		response.send(data);
+app.route("/sessions/panels")
+	.get(function (request, response) {
+		r.table("panels").orderBy("name").run(DBConnection).then(function (data) {
+			response.send(data);
+		});
+	})
+	.post(postParser, function (request, response) {
+		// Register the user for their selected first choice
+		var userID = request.body.attendee.toString();
+		var sessionID = request.body.session.toString();
+		if (!userID || !sessionID) {
+			response.send({
+				"error": "Missing attendee ID or session ID"
+			});
+			return;
+		}
+		function CancelError (message) {
+			this.message = message;
+		}
+		CancelError.prototype = Object.create(Error.prototype);
+		var sessionTimeKey;
+		// Confirm that this user exists
+		r.table("attendees").filter({"code": userID}).run(DBConnection)
+			.then(function (user) {
+				if (!user) {
+					return Promise.reject(new CancelError("Invalid user ID"));
+				}
+				// Make sure that this is possible and increment the "taken field"
+				return r.table("panels").get(sessionID).run(DBConnection);
+			})
+			.then(function (panel) {
+				if (!panel) {
+					return Promise.reject(new CancelError("Invalid session ID"));
+				}
+				// Check if it has a valid time slot
+				switch (new Date(panel.time.start).valueOf()) {
+					case 1429707600000: // 9:00 AM - first session
+						sessionTimeKey = "first";
+						break;
+					case 1429710900000: // 9:55 AM - second session
+						sessionTimeKey = "second";
+						break;
+					case 1429716600000: // 11:30 AM - third session
+						sessionTimeKey = "third";
+						break;
+					case 1429719900000: // 12:25 PM - fourth session
+						sessionTimeKey = "fourth";
+						break;
+					case 1429723200000: // 1:20 PM - fifth session
+						sessionTimeKey = "fifth";
+						break;
+					default:
+						return Promise.reject(new CancelError("Invalid session time slot"));
+				}
+				if (panel.capacity.taken >= panel.capacity.total) {
+					// Too many people in this session
+					return Promise.reject(new CancelError("There are too many people in that panel. Please choose another."));
+				}
+				return r.table("panels").get(sessionID).update({
+					"capacity": {
+						"total": r.row("capacity")("total"),
+						"taken": r.row("capacity")("taken").add(1)
+					}
+				}).run(DBConnection);
+			})
+			.then(function () {
+				return r.table("panels").get(sessionID).run(DBConnection);
+			})
+			.then(function (panel) {
+				// Broadcast the new number of spots
+				io.emit("availability", {
+					"session": sessionID,
+					"taken": panel.capacity.taken
+				});
+				// Put the session in the user's database entry
+				//return r.table("attendees").filter({"code": userID})
+			})
+			.catch(CancelError, function (err) {
+				response.send({
+					"error": err.message
+				});
+			})
 	});
-});
 app.route("/sessions/wpp").get(function (request, response) {
 	r.table("sessions").filter({"type": "wpp"}).orderBy("name").run(DBConnection).then(function (data) {
 		response.send(data);

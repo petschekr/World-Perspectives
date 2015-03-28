@@ -145,6 +145,7 @@
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
+				window.user = this.user;
 			},
 			handleButton: function(e) {
 				var element = e.target || e.srcElement;
