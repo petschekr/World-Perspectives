@@ -5,9 +5,16 @@ var fs = require("fs");
 var moment = require("moment");
 var Promise = require("bluebird");
 fs = Promise.promisifyAll(fs);
-var Q = require("kew"); // Because the Orchesrate driver for Node.js forces its use
+var Q = require("kew"); // Because the Orchestrate driver for Node.js forces its use
 // Initialize the database connection
 var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
+db.ping()
+	.then(function () {
+		console.log("Successfully connected to Orchestrate");
+	})
+	.fail(function () {
+		console.error("Failed to connect to Orchestrate");
+	});
 
 // Set up the Express server
 var express = require("express");
