@@ -149,9 +149,22 @@ app.route("/sessions/panels")
 						.from("panels", previousSession.path.key)
 						.related("attendee")
 						.to("users", userID));
-					return Q.all(deregistrationPromises).then(function () {
-						return db.search("users", `@path.key: ${attendeeKey}`);
-					});
+					return Q.all(deregistrationPromises)
+						.then(function () {
+							return db.newGraphReader()
+								.get()
+								.from("panels", previousSession.path.key)
+								.related("attendee");
+						})
+						.then(function (results) {
+							var currentAttendees = results.body.total_count || results.body.count;
+							io.emit("availability", {
+								"type": "panel",
+								"session": previousSession.path.key,
+								"taken": currentAttendees
+							});
+							return db.search("users", `@path.key: ${attendeeKey}`);
+						});
 				}
 				else {
 					return db.search("users", `@path.key: ${attendeeKey}`);
@@ -288,9 +301,22 @@ app.route("/sessions/wpp")
 						.from("sessions", previousSession.path.key)
 						.related("attendee")
 						.to("users", userID));
-					return Q.all(deregistrationPromises).then(function () {
-						return db.search("users", `@path.key: ${attendeeKey}`);
-					});
+					return Q.all(deregistrationPromises)
+						.then(function () {
+							return db.newGraphReader()
+								.get()
+								.from("sessions", previousSession.path.key)
+								.related("attendee");
+						})
+						.then(function (results) {
+							var currentAttendees = results.body.total_count || results.body.count;
+							io.emit("availability", {
+								"type": "wpp",
+								"session": previousSession.path.key,
+								"taken": currentAttendees
+							});
+							return db.search("users", `@path.key: ${attendeeKey}`);
+						});
 				}
 				else {
 					return db.search("users", `@path.key: ${attendeeKey}`);
@@ -427,9 +453,22 @@ app.route("/sessions/science")
 						.from("sessions", previousSession.path.key)
 						.related("attendee")
 						.to("users", userID));
-					return Q.all(deregistrationPromises).then(function () {
-						return db.search("users", `@path.key: ${attendeeKey}`);
-					});
+					return Q.all(deregistrationPromises)
+						.then(function () {
+							return db.newGraphReader()
+								.get()
+								.from("sessions", previousSession.path.key)
+								.related("attendee");
+						})
+						.then(function (results) {
+							var currentAttendees = results.body.total_count || results.body.count;
+							io.emit("availability", {
+								"type": "science",
+								"session": previousSession.path.key,
+								"taken": currentAttendees
+							});
+							return db.search("users", `@path.key: ${attendeeKey}`);
+						});
 				}
 				else {
 					return db.search("users", `@path.key: ${attendeeKey}`);
@@ -462,7 +501,7 @@ app.route("/sessions/science")
 				}
 				// Broadcast the new number of attendees
 				io.emit("availability", {
-					"type": "wpp",
+					"type": "science",
 					"session": sessionID,
 					"taken": sessionInfo.capacity.taken + 1
 				});
