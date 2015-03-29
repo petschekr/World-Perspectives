@@ -64,7 +64,7 @@
 			<content-panel headtitle="Panel Selection">
 				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
 				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/panels" index="1" panel="true"></session-list>
+				<session-list url="/sessions/panels" index="1" panel="true" type="panel"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-1" on-click="{{handleButton}}">
@@ -82,7 +82,7 @@
 			<content-panel headtitle="Global Studies Session Selection">
 				<p class="no-margin">This is a session with a single presenter on a specific global issue</p>
 				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/wpp" index="2"></session-list>
+				<session-list url="/sessions/wpp" index="2" type="wpp"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-2" on-click="{{handleButton}}">
@@ -100,7 +100,7 @@
 			<content-panel headtitle="Science Session Selection">
 				<p class="no-margin">This is a session with a single presenter on scientific research that the presenter has performed</p>
 				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/science" index="3"></session-list>
+				<session-list url="/sessions/science" index="3" type="science"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-3" on-click="{{handleButton}}">
@@ -126,6 +126,13 @@
 				"name": "Loading..."
 			},
 			panelCount: 0,
+			created: function() {
+				window.selections = {
+					"panel": undefined,
+					"wpp": undefined,
+					"science": undefined
+				};
+			},
 			ready: function() {
 				this.url = "/info/" + window.location.pathname.split("/").pop();
 				this.panelCount = this.$.progressController.getElementsByTagName("content-panel").length;
@@ -161,6 +168,12 @@
 			goForward: function() {
 				if (this.transitioning)
 					return;
+				// Update sessions that are disallowed due to time conflicts
+				var listsToUpdate = this.$.progressController.querySelectorAll("session-list:not([panel])");
+				for (var i = 0; i < listsToUpdate.length; i++) {
+					listsToUpdate[i].updateDisallowed();
+				}
+
 				// Check if progression is allowed
 				if (!this.$["forward-" + this.$.progressController.selected].disabled) {
 					window.scrollTo(0, 0);

@@ -36,7 +36,7 @@
 	}
 </style>
 
-<polymer-element name="session-list" attributes="url index panel">
+<polymer-element name="session-list" attributes="url index panel type">
 	<template>
 		<style>
 			paper-item span {
@@ -103,13 +103,23 @@
 					<b>Presenter:</b>
 					{{selectedSession.presenter}}
 				</template>
+				<template if="{{!selectedSession.allowed}}">
+					<h2 style="color: #ff4136; text-align: center; margin: 10px 0;">This item has a time conflict with one of your previous choices and therefore cannot be selected</h2>
+				</template>
 			</p>
 			<paper-button affirmative type="cancel" on-tap="{{dialogButtonHandler}}">
 				Cancel
 			</paper-button>
-			<paper-button affirmative autofocus type="select" on-tap="{{dialogButtonHandler}}" style="color: #4285f4;">
-				Select
-			</paper-button>
+			<template if="{{selectedSession.allowed}}">
+				<paper-button affirmative autofocus type="select" on-tap="{{dialogButtonHandler}}" style="color: #4285f4;">
+					Select
+				</paper-button>
+			</template>
+			<template if="{{!selectedSession.allowed}}">
+				<paper-button affirmative autofocus type="select" disabled>
+					Select
+				</paper-button>
+			</template>
 		</paper-action-dialog>
 	</template>
 	<script>
@@ -156,6 +166,23 @@
 				// Format the times
 				this.selectedSession.time.startFormat = moment(new Date(this.selectedSession.time.start)).format("h:mm A");
 				this.selectedSession.time.endFormat = moment(new Date(this.selectedSession.time.end)).format("h:mm A");
+				// Check for allowed time
+				this.selectedSession.allowed = true;
+				if (this.type === "wpp") {
+					if (!window.selections.panel)
+						return;
+					if (this.selectedSession.time.startFormat === window.selections.panel.time.startFormat) {
+						this.selectedSession.allowed = false;
+					}
+				}
+				else if (this.type === "science") {
+					if (!window.selections.panel || !window.selections.wpp)
+						return;
+					if (this.selectedSession.time.startFormat === window.selections.panel.time.startFormat || this.selectedSession.time.startFormat === window.selections.wpp.time.startFormat) {
+						this.selectedSession.allowed = false;
+					}
+				}
+
 				this.async(function() {
 					this.$.details.open();
 				});
@@ -181,6 +208,7 @@
 			},
 			finishSelection: function() {
 				console.timeEnd("Session selection");
+				window.selections[this.type] = this.selectedSession;
 				// Unselect the previous choice
 				if (this.previousSelectedSession) {
 					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
@@ -199,6 +227,46 @@
 				setTimeout((function() {
 					this.forwardButton.click();
 				}).bind(this), 1);
+			},
+			updateDisallowed: function() {
+				if (this.type === "wpp") {
+					if (!window.selections.panel)
+						return
+					// Disallow based on selected panel
+					var timeToCheck = new Date(window.selections.panel.time.start).valueOf();
+					for (var i = 0; i < this.sessions.length; i++) {
+						var titleElement = this.$.itemcontainer.querySelector("#id" + this.sessions[i].id + " h2");
+						if (new Date(this.sessions[i].time.start).valueOf() === timeToCheck) {
+							// Conflicting start time
+							titleElement.style.textDecoration = "line-through";
+							titleElement.style.opacity = "0.5";
+						}
+						else {
+							titleElement.style.textDecoration = "";
+							titleElement.style.opacity = "";
+						}
+					}
+				}
+				else if (this.type === "science") {
+					if (!window.selections.panel || !window.selections.wpp)
+						return
+					// Disallow based on selected panel AND WPP session
+					var timeToCheck1 = new Date(window.selections.panel.time.start).valueOf();
+					var timeToCheck2 = new Date(window.selections.wpp.time.start).valueOf();
+					for (var i = 0; i < this.sessions.length; i++) {
+						var iterationTime = new Date(this.sessions[i].time.start).valueOf();
+						var titleElement = this.$.itemcontainer.querySelector("#id" + this.sessions[i].id + " h2");
+						if (iterationTime === timeToCheck1 || iterationTime === timeToCheck2) {
+							// Conflicting start time
+							titleElement.style.textDecoration = "line-through";
+							titleElement.style.opacity = "0.5";
+						}
+						else {
+							titleElement.style.textDecoration = "";
+							titleElement.style.opacity = "";
+						}
+					}
+				}
 			}
 		});
 	</script>
