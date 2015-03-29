@@ -184,6 +184,7 @@ app.route("/sessions/panels")
 				}
 				// Broadcast the new number of attendees
 				io.emit("availability", {
+					"type": "panel",
 					"session": sessionID,
 					"taken": sessionInfo.capacity.taken + 1
 				});
@@ -220,38 +221,284 @@ app.route("/sessions/panels")
 				}
 			});
 	});
-app.route("/sessions/wpp").get(function (request, response) {
-	db.newSearchBuilder()
-		.collection("sessions")
-		.limit(100)
-		.sort("name", "asc")
-		.query('value.type: "wpp"')
-		.then(function (results) {
-			results = results.body.results;
-			var sessions = results.map(function (sessionResponse) {
-				var sessionObject = sessionResponse.value;
-				sessionObject.id = sessionResponse.path.key;
-				return sessionObject;
+app.route("/sessions/wpp")
+	.get(function (request, response) {
+		db.newSearchBuilder()
+			.collection("sessions")
+			.limit(100)
+			.sort("name", "asc")
+			.query('value.type: "wpp"')
+			.then(function (results) {
+				results = results.body.results;
+				var sessions = results.map(function (sessionResponse) {
+					var sessionObject = sessionResponse.value;
+					sessionObject.id = sessionResponse.path.key;
+					return sessionObject;
+				});
+				response.send(sessions);
+			})
+	})
+	.post(postParser, function (request, response) {
+		// Register the user for their selected first choice
+		var userID = request.body.attendee.toString();
+		var sessionID = request.body.session.toString();
+		if (!userID || !sessionID) {
+			response.send({
+				"error": "Missing attendee ID or session ID"
 			});
-			response.send(sessions);
-		})
-});
-app.route("/sessions/science").get(function (request, response) {
-	db.newSearchBuilder()
-		.collection("sessions")
-		.limit(100)
-		.sort("name", "asc")
-		.query('value.type: "science"')
-		.then(function (results) {
-			results = results.body.results;
-			var sessions = results.map(function (sessionResponse) {
-				var sessionObject = sessionResponse.value;
-				sessionObject.id = sessionResponse.path.key;
-				return sessionObject;
+			return;
+		}
+		
+		function CancelError (message) {
+			this.message = message;
+		}
+		CancelError.prototype = Object.create(Error.prototype);
+
+		var sessionKey = sessionID;
+		var attendeeKey = userID;
+		var sessionInfo = undefined;
+
+		// Deregister the previous session (if it exists)
+		// At this stage, only first choices for each type will have been selected
+		db.newGraphReader()
+			.get()
+			.from("users", userID)
+			.related("attendee")
+			.then(function (results) {
+				if (results.body.count > 3) {
+					return Q.reject(new CancelError("Can't edit choices at this stage."));
+				}
+				results = results.body.results;
+				var previousSession = undefined;
+				for (var i = 0; i < results.length; i++) {
+					if (results[i].value.type === "wpp") {
+						previousSession = results[i];
+					}
+				}
+				if (previousSession) {
+					// Deregister
+					var deregistrationPromises = [];
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("users", userID)
+						.related("attendee")
+						.to("sessions", previousSession.path.key));
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("sessions", previousSession.path.key)
+						.related("attendee")
+						.to("users", userID));
+					return Q.all(deregistrationPromises).then(function () {
+						return db.search("users", `@path.key: ${attendeeKey}`);
+					});
+				}
+				else {
+					return db.search("users", `@path.key: ${attendeeKey}`);
+				}
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid attendee ID."));
+				}
+				attendeeKey = results[0].path.key;
+				return db.search("sessions", `@path.key: ${sessionKey}`)
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid session ID."));
+				}
+				sessionInfo = results[0].value;
+				sessionInfo.id = results[0].path.key;
+				return db.newGraphReader()
+					.get()
+					.from("sessions", sessionKey)
+					.related("attendee");
+			})
+			.then(function (results) {
+				var currentAttendees = results.body.total_count || results.body.count;
+				if (currentAttendees >= sessionInfo.capacity.total) {
+					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
+				}
+				// Broadcast the new number of attendees
+				io.emit("availability", {
+					"type": "wpp",
+					"session": sessionID,
+					"taken": sessionInfo.capacity.taken + 1
+				});
+				// Proceed with registration for this spot (create a bidirectional relationship)
+				var graphPromises = [];
+				graphPromises.push(db.newGraphBuilder()
+					.create()
+					.from("sessions", sessionKey)
+					.related("attendee")
+					.to("users", attendeeKey));
+				graphPromises.push(db.newGraphBuilder()
+					.create()
+					.from("users", attendeeKey)
+					.related("attendee")
+					.to("sessions", sessionKey));
+				return Q.all(graphPromises);
+			})
+			.then(function () {
+				response.json({
+					"success": true
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
 			});
-			response.send(sessions);
-		})
-});
+	});
+app.route("/sessions/science")
+	.get(function (request, response) {
+		db.newSearchBuilder()
+			.collection("sessions")
+			.limit(100)
+			.sort("name", "asc")
+			.query('value.type: "science"')
+			.then(function (results) {
+				results = results.body.results;
+				var sessions = results.map(function (sessionResponse) {
+					var sessionObject = sessionResponse.value;
+					sessionObject.id = sessionResponse.path.key;
+					return sessionObject;
+				});
+				response.send(sessions);
+			})
+	})
+	.post(postParser, function (request, response) {
+		// Register the user for their selected first choice
+		var userID = request.body.attendee.toString();
+		var sessionID = request.body.session.toString();
+		if (!userID || !sessionID) {
+			response.send({
+				"error": "Missing attendee ID or session ID"
+			});
+			return;
+		}
+		
+		function CancelError (message) {
+			this.message = message;
+		}
+		CancelError.prototype = Object.create(Error.prototype);
+
+		var sessionKey = sessionID;
+		var attendeeKey = userID;
+		var sessionInfo = undefined;
+
+		// Deregister the previous session (if it exists)
+		// At this stage, only first choices for each type will have been selected
+		db.newGraphReader()
+			.get()
+			.from("users", userID)
+			.related("attendee")
+			.then(function (results) {
+				if (results.body.count > 3) {
+					return Q.reject(new CancelError("Can't edit choices at this stage."));
+				}
+				results = results.body.results;
+				var previousSession = undefined;
+				for (var i = 0; i < results.length; i++) {
+					if (results[i].value.type === "science") {
+						previousSession = results[i];
+					}
+				}
+				if (previousSession) {
+					// Deregister
+					var deregistrationPromises = [];
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("users", userID)
+						.related("attendee")
+						.to("sessions", previousSession.path.key));
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("sessions", previousSession.path.key)
+						.related("attendee")
+						.to("users", userID));
+					return Q.all(deregistrationPromises).then(function () {
+						return db.search("users", `@path.key: ${attendeeKey}`);
+					});
+				}
+				else {
+					return db.search("users", `@path.key: ${attendeeKey}`);
+				}
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid attendee ID."));
+				}
+				attendeeKey = results[0].path.key;
+				return db.search("sessions", `@path.key: ${sessionKey}`)
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid session ID."));
+				}
+				sessionInfo = results[0].value;
+				sessionInfo.id = results[0].path.key;
+				return db.newGraphReader()
+					.get()
+					.from("sessions", sessionKey)
+					.related("attendee");
+			})
+			.then(function (results) {
+				var currentAttendees = results.body.total_count || results.body.count;
+				if (currentAttendees >= sessionInfo.capacity.total) {
+					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
+				}
+				// Broadcast the new number of attendees
+				io.emit("availability", {
+					"type": "wpp",
+					"session": sessionID,
+					"taken": sessionInfo.capacity.taken + 1
+				});
+				// Proceed with registration for this spot (create a bidirectional relationship)
+				var graphPromises = [];
+				graphPromises.push(db.newGraphBuilder()
+					.create()
+					.from("sessions", sessionKey)
+					.related("attendee")
+					.to("users", attendeeKey));
+				graphPromises.push(db.newGraphBuilder()
+					.create()
+					.from("users", attendeeKey)
+					.related("attendee")
+					.to("sessions", sessionKey));
+				return Q.all(graphPromises);
+			})
+			.then(function () {
+				response.json({
+					"success": true
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	});
 
 // 404 page
 app.use(function (request, response, next) {
