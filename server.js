@@ -119,7 +119,44 @@ app.route("/sessions/panels")
 		var attendeeKey = userID;
 		var sessionInfo = undefined;
 
-		db.search("users", `@path.key: ${attendeeKey}`)
+		// Deregister the previous session (if it exists)
+		// At this stage, only first choices for each type will have been selected
+		db.newGraphReader()
+			.get()
+			.from("users", userID)
+			.related("attendee")
+			.then(function (results) {
+				if (results.body.count > 3) {
+					return Q.reject(new CancelError("Can't edit choices at this stage."));
+				}
+				results = results.body.results;
+				var previousSession = undefined;
+				for (var i = 0; i < results.length; i++) {
+					if (results[i].path.collection === "panels") {
+						previousSession = results[i];
+					}
+				}
+				if (previousSession) {
+					// Deregister
+					var deregistrationPromises = [];
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("users", userID)
+						.related("attendee")
+						.to("panels", previousSession.path.key));
+					deregistrationPromises.push(db.newGraphBuilder()
+						.remove()
+						.from("panels", previousSession.path.key)
+						.related("attendee")
+						.to("users", userID));
+					return Q.all(deregistrationPromises).then(function () {
+						return db.search("users", `@path.key: ${attendeeKey}`);
+					});
+				}
+				else {
+					return db.search("users", `@path.key: ${attendeeKey}`);
+				}
+			})
 			.then(function (results) {
 				results = results.body.results;
 				if (results.length !== 1) {
@@ -134,6 +171,7 @@ app.route("/sessions/panels")
 					return Q.reject(new CancelError("Invalid session ID."));
 				}
 				sessionInfo = results[0].value;
+				sessionInfo.id = results[0].path.key;
 				return db.newGraphReader()
 					.get()
 					.from("panels", sessionKey)
