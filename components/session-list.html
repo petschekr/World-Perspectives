@@ -4,6 +4,7 @@
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
 <script src="/bower_components/moment/moment.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 
 <style>
 	body /deep/ paper-action-dialog h1 {
@@ -123,6 +124,20 @@
 				this.forwardButton = null;
 				this.checkmark = '<core-icon icon="radio-button-on"></core-icon>';
 				this.dash = '<core-icon icon="radio-button-off"></core-icon>';
+			},
+			ready: function() {
+				// WebSocket connection to update session availability in real-time
+				var socket = io.connect("/");
+				socket.on("availability", (function (data) {
+					if (this.sessionsLookup[data.session]) {
+						// Relevent to this session-list
+						this.sessionsLookup[data.session].capacity.taken = data.taken;
+						// Update any open dialog's data
+						if (this.selectedSession.id === data.session) {
+							this.selectedSession.capacity.taken = data.taken;
+						}
+					}
+				}).bind(this));
 			},
 			loaded: function() {
 				// Make a copy of the loaded data

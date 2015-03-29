@@ -15,7 +15,6 @@
 <link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
 <link rel="import" href="/components/content-panel.html" />
 <link rel="import" href="/components/session-list.html" />
-<script src="/socket.io/socket.io.js"></script>
 
 <polymer-element name="registration-element">
 	<template>
@@ -135,12 +134,6 @@
 				}).bind(this));
 				this.$.progressController.addEventListener("core-animated-pages-transition-prepare", (function() {
 					this.$.progress.value = (this.$.progressController.selected / (this.panelCount - 1)) * 100;
-				}).bind(this));
-				// WebSocket connection to update session availability in real-time
-				var socket = io.connect("/");
-				socket.on("availability", (function (data) {
-					console.log(data);
-					//socket.emit("my other event", { my: "data" });
 				}).bind(this));
 			},
 			userResponse: function() {
