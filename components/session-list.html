@@ -154,7 +154,7 @@
 						// Register this with the server
 						var sendData = {
 							"session": this.selectedSession.id,
-							"attendee": window.user.id
+							"attendee": window.user.username
 						};
 						this.$.postSession.params = JSON.stringify(sendData);
 						this.$.postSession.go();
