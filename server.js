@@ -598,6 +598,176 @@ app.route("/sessions/science")
 				}
 			});
 	});
+app.route("/sessions/remaining/1").get(function (request, response) {
+	var username = request.signedCookies.username;
+	if (!username) {
+		response.status(400).send({
+			"error": "Missing identification cookie"
+		});
+		return;
+	}
+	db.search("users", `@path.key: ${username}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid identification cookie."));
+			}
+			return db.newGraphReader()
+				.get()
+				.from("users", username)
+				.related("attendee");
+		})
+		.then(function (results) {
+			if (results.body.count !== 3) {
+				return Q.reject(new CancelError("More or fewer than 3 sessions chosen already."));
+			}
+			results = results.body.results;
+			//moment(date).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]")
+			var availableStartTimes = [
+				1429707600000, // 9:00 AM - first session
+				1429710900000, // 9:55 AM - second session
+				1429716600000, // 11:30 AM - third session
+				1429719900000, // 12:25 PM - fourth session
+				1429723200000 // 1:20 PM - fifth session
+			];
+			for (var i = 0; i < results.length; i++) {
+				availableStartTimes.splice(new Date(results[i].value.time.start).valueOf(), 1);
+			}
+			// availableStartTimes will now only contain two times that are available
+			var findTime;
+			availableStartTimes[0] = moment(availableStartTimes[0]);
+			availableStartTimes[1] = moment(availableStartTimes[1]);
+
+			if (availableStartTimes[0].isBefore(availableStartTimes[1])) {
+				findTime = availableStartTimes[0];
+			}
+			else {
+				findTime = availableStartTimes[1];
+			}
+			findTime = findTime.utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+
+			var searchPromises = [];
+			searchPromises.push(
+				db.search("panels", `value.time.start: "${findTime}"`)
+			);
+			searchPromises.push(
+				db.newSearchBuilder()
+					.collection("sessions")
+					.sort("type", "asc")
+					.query(`value.time.start: "${findTime}"`)
+			);
+			return Q.all(searchPromises);
+		})
+		.then(function (results) {
+			var availableSessions = results[0].body.results;
+			availableSessions.concat(results[1].body.results);
+			availableSessions = availableSessions.map(function (session) {
+				var sessionObject = session.value;
+				sessionObject.id = session.path.key;
+				return sessionObject;
+			});
+			var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
+			var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
+			response.json({
+				"start": startFormat,
+				"end": endFormat,
+				"sessions": availableSessions
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				console.error(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/sessions/remaining/2").get(function (request, response) {
+	var username = request.signedCookies.username;
+	if (!username) {
+		response.status(400).send({
+			"error": "Missing identification cookie"
+		});
+		return;
+	}
+	db.search("users", `@path.key: ${username}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid identification cookie."));
+			}
+			return db.newGraphReader()
+				.get()
+				.from("users", username)
+				.related("attendee");
+		})
+		.then(function (results) {
+			if (results.body.count !== 4) {
+				return Q.reject(new CancelError("More or fewer than 4 sessions chosen already."));
+			}
+			results = results.body.results;
+			//moment(date).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]")
+			var availableStartTimes = [
+				1429707600000, // 9:00 AM - first session
+				1429710900000, // 9:55 AM - second session
+				1429716600000, // 11:30 AM - third session
+				1429719900000, // 12:25 PM - fourth session
+				1429723200000 // 1:20 PM - fifth session
+			];
+			for (var i = 0; i < results.length; i++) {
+				availableStartTimes.splice(new Date(results[i].value.time.start).valueOf(), 1);
+			}
+			// availableStartTimes will now only contain time that is available
+			var findTime = availableStartTimes[0].utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+
+			var searchPromises = [];
+			searchPromises.push(
+				db.search("panels", `value.time.start: "${findTime}"`)
+			);
+			searchPromises.push(
+				db.newSearchBuilder()
+					.collection("sessions")
+					.sort("type", "asc")
+					.query(`value.time.start: "${findTime}"`)
+			);
+			return Q.all(searchPromises);
+		})
+		.then(function (results) {
+			var availableSessions = results[0].body.results;
+			availableSessions.concat(results[1].body.results);
+			availableSessions = availableSessions.map(function (session) {
+				var sessionObject = session.value;
+				sessionObject.id = session.path.key;
+				return sessionObject;
+			});
+			var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
+			var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
+			response.json({
+				"start": startFormat,
+				"end": endFormat,
+				"sessions": availableSessions
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				console.error(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
 
 // 404 page
 app.use(function (request, response, next) {
