@@ -290,7 +290,7 @@ app.route("/sessions/wpp")
 		var userID = request.body.attendee.toString();
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
-			response..status(400).send({
+			response.status(400).send({
 				"error": "Missing attendee ID or session ID"
 			});
 			return;
