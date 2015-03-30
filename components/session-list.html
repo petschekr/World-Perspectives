@@ -3,6 +3,7 @@
 <link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
 <script src="/bower_components/moment/moment.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 
@@ -201,6 +202,8 @@
 						this.$.postSession.params = JSON.stringify(sendData);
 						this.$.postSession.go();
 						console.time("Session selection");
+						// Show a loading indicator
+						window.loadingToast.show();
 					}
 				}
 				uponDialogClose = uponDialogClose.bind(this);
@@ -208,6 +211,7 @@
 			},
 			finishSelection: function() {
 				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
 				window.selections[this.type] = this.selectedSession;
 				// Unselect the previous choice
 				if (this.previousSelectedSession) {

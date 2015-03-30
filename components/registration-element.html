@@ -37,6 +37,13 @@
 				-moz-transition: transform 0.5s;
 				transition: transform 0.5s;
 			}
+			paper-toast {
+				width: 100%;
+				bottom: 0;
+				left: 0;
+				border-radius: 0;
+				text-align: center;
+			}
 		</style>
 		<!-- Key handler for arrow key events -->
 		<core-a11y-keys target="{{rootDocument}}" keys="left pagedown" on-keys-pressed="{{goBackward}}"></core-a11y-keys>
@@ -117,6 +124,7 @@
 			</content-panel>
 		</core-animated-pages>
 		<paper-progress id="progress"></paper-progress>
+		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
 	</template>
 	<script>
 		Polymer({
@@ -142,6 +150,7 @@
 				this.$.progressController.addEventListener("core-animated-pages-transition-prepare", (function() {
 					this.$.progress.value = (this.$.progressController.selected / (this.panelCount - 1)) * 100;
 				}).bind(this));
+				window.loadingToast = this.$.loading;
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
