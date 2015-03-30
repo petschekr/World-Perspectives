@@ -49,6 +49,11 @@ app.use("/img", serveStatic("img"));
 // Set up the Socket.io server
 var io = require("socket.io")(server);
 
+function CancelError (message) {
+	this.message = message;
+}
+CancelError.prototype = Object.create(Error.prototype);
+
 app.route("/register").get(function (request, response) {
 	fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
 		.then(function (html) {
@@ -125,11 +130,6 @@ app.route("/sessions/panels")
 			});
 			return;
 		}
-		
-		function CancelError (message) {
-			this.message = message;
-		}
-		CancelError.prototype = Object.create(Error.prototype);
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
@@ -295,11 +295,6 @@ app.route("/sessions/wpp")
 			});
 			return;
 		}
-		
-		function CancelError (message) {
-			this.message = message;
-		}
-		CancelError.prototype = Object.create(Error.prototype);
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
@@ -465,11 +460,6 @@ app.route("/sessions/science")
 			});
 			return;
 		}
-		
-		function CancelError (message) {
-			this.message = message;
-		}
-		CancelError.prototype = Object.create(Error.prototype);
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
