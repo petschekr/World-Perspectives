@@ -144,7 +144,7 @@
 						// Relevent to this session-list
 						this.sessionsLookup[data.session].capacity.taken = data.taken;
 						// Update any open dialog's data
-						if (this.selectedSession.id === data.session) {
+						if (this.selectedSession && this.selectedSession.id === data.session) {
 							this.selectedSession.capacity.taken = data.taken;
 						}
 					}
