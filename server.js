@@ -256,7 +256,7 @@ app.route("/sessions/panels")
 			})
 			.fail(function (err) {
 				if (err instanceof CancelError) {
-					response.json({
+					response.status(400).json({
 						"error": err.message
 					});
 				}
@@ -426,7 +426,7 @@ app.route("/sessions/wpp")
 			})
 			.fail(function (err) {
 				if (err instanceof CancelError) {
-					response.json({
+					response.status(400).json({
 						"error": err.message
 					});
 				}
@@ -596,7 +596,7 @@ app.route("/sessions/science")
 			})
 			.fail(function (err) {
 				if (err instanceof CancelError) {
-					response.json({
+					response.status(400).json({
 						"error": err.message
 					});
 				}

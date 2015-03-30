@@ -144,6 +144,8 @@
 		</core-animated-pages>
 		<paper-progress id="progress"></paper-progress>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
+		<paper-toast id="notifier" text="Something happened" ></paper-toast>
+
 	</template>
 	<script>
 		Polymer({
@@ -171,6 +173,7 @@
 					this.$.progress.value = (this.$.progressController.selected / (this.panelCount - 1)) * 100;
 				}).bind(this));
 				window.loadingToast = this.$.loading;
+				window.notifierToast = this.$.notifier;
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;

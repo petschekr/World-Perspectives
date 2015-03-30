@@ -64,7 +64,7 @@
 			}
 		</style>
 		<core-ajax id="getSessions" auto url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
-		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" handleAs="json"></core-ajax>
+		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
 
 		<div id="itemcontainer">
 			<template repeat="{{session in sessions}}">
@@ -231,6 +231,22 @@
 				setTimeout((function() {
 					this.forwardButton.click();
 				}).bind(this), 1);
+			},
+			handleError: function(e) {
+				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
+				window.notifierToast.text = e.detail.response.error;
+				window.notifierToast.show();
+				// Failed requests will still deregister any previous registrations for that session type
+				// Unselect the previous choice
+				if (this.previousSelectedSession) {
+					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
+				}
+				// Undim all other items
+				var titles = this.$.itemcontainer.querySelectorAll("h2");
+				for (var i = 0; i < titles.length; i++) {
+					titles[i].style.opacity = "1";
+				}
 			},
 			updateDisallowed: function() {
 				if (this.type === "wpp") {
