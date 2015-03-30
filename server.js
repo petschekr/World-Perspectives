@@ -244,8 +244,8 @@ app.route("/sessions/panels")
 				);
 				registrationPromises.push(
 					db.newPatchBuilder("panels", sessionKey)
-					.inc("capacity.taken", 1)
-					.apply()
+						.inc("capacity.taken", 1)
+						.apply()
 				);
 				return Q.all(registrationPromises);
 			})
@@ -325,16 +325,25 @@ app.route("/sessions/wpp")
 				if (previousSession) {
 					// Deregister
 					var deregistrationPromises = [];
-					deregistrationPromises.push(db.newGraphBuilder()
-						.remove()
-						.from("users", userID)
-						.related("attendee")
-						.to("sessions", previousSession.path.key));
-					deregistrationPromises.push(db.newGraphBuilder()
-						.remove()
-						.from("sessions", previousSession.path.key)
-						.related("attendee")
-						.to("users", userID));
+					deregistrationPromises.push(
+							db.newGraphBuilder()
+								.remove()
+								.from("users", userID)
+								.related("attendee")
+								.to("sessions", previousSession.path.key)
+						);
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from("sessions", previousSession.path.key)
+							.related("attendee")
+							.to("users", userID)
+					);
+					deregistrationPromises.push(
+						db.newPatchBuilder("sessions", previousSession.path.key)
+							.inc("capacity.taken", -1)
+							.apply()
+					);
 					return Q.all(deregistrationPromises)
 						.then(function () {
 							return db.newGraphReader()
@@ -389,16 +398,25 @@ app.route("/sessions/wpp")
 				});
 				// Proceed with registration for this spot (create a bidirectional relationship)
 				var registrationPromises = [];
-				registrationPromises.push(db.newGraphBuilder()
-					.create()
-					.from("sessions", sessionKey)
-					.related("attendee")
-					.to("users", attendeeKey));
-				registrationPromises.push(db.newGraphBuilder()
-					.create()
-					.from("users", attendeeKey)
-					.related("attendee")
-					.to("sessions", sessionKey));
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("sessions", sessionKey)
+						.related("attendee")
+						.to("users", attendeeKey)
+				);
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("users", attendeeKey)
+						.related("attendee")
+						.to("sessions", sessionKey)
+				);
+				registrationPromises.push(
+					db.newPatchBuilder("sessions", sessionKey)
+						.inc("capacity.taken", 1)
+						.apply()
+				);
 				return Q.all(registrationPromises);
 			})
 			.then(function () {
@@ -477,16 +495,25 @@ app.route("/sessions/science")
 				if (previousSession) {
 					// Deregister
 					var deregistrationPromises = [];
-					deregistrationPromises.push(db.newGraphBuilder()
-						.remove()
-						.from("users", userID)
-						.related("attendee")
-						.to("sessions", previousSession.path.key));
-					deregistrationPromises.push(db.newGraphBuilder()
-						.remove()
-						.from("sessions", previousSession.path.key)
-						.related("attendee")
-						.to("users", userID));
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from("users", userID)
+							.related("attendee")
+							.to("sessions", previousSession.path.key)
+					);
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from("sessions", previousSession.path.key)
+							.related("attendee")
+							.to("users", userID)
+					);
+					deregistrationPromises.push(
+						db.newPatchBuilder("sessions", previousSession.path.key)
+							.inc("capacity.taken", -1)
+							.apply()
+					);
 					return Q.all(deregistrationPromises)
 						.then(function () {
 							return db.newGraphReader()
@@ -541,16 +568,25 @@ app.route("/sessions/science")
 				});
 				// Proceed with registration for this spot (create a bidirectional relationship)
 				var registrationPromises = [];
-				registrationPromises.push(db.newGraphBuilder()
-					.create()
-					.from("sessions", sessionKey)
-					.related("attendee")
-					.to("users", attendeeKey));
-				registrationPromises.push(db.newGraphBuilder()
-					.create()
-					.from("users", attendeeKey)
-					.related("attendee")
-					.to("sessions", sessionKey));
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("sessions", sessionKey)
+						.related("attendee")
+						.to("users", attendeeKey)
+				);
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("users", attendeeKey)
+						.related("attendee")
+						.to("sessions", sessionKey)
+				);
+				registrationPromises.push(
+					db.newPatchBuilder("sessions", sessionKey)
+						.inc("capacity.taken", 1)
+						.apply()
+				);
 				return Q.all(registrationPromises);
 			})
 			.then(function () {
