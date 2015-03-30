@@ -30,14 +30,16 @@ var postParser = bodyParser.urlencoded({"extended": false});
 
 app.use(compress());
 app.use(responseTime());
+var cookieOptions = {
+	"path": "/",
+	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
+	"secure": false, // Set this to true when you get a domain + SSL cert
+	"httpOnly": true,
+	"signed": true
+};
 app.use(cookieParser(
 	"2ecdd4ffeacce64fa760f0be9cdfc7f9422eb8048564e5c2779167be66a19819", // Secret for signing cookies
-	{
-		"path": "/",
-		"maxAge": 60 * 24 * 30 * 6, // 6 months
-		"secure": false, // Set this to true when you get a domain + SSL cert
-		"httpOnly": true
-	}
+	cookieOptions
 ));
 app.use("/bower_components", serveStatic("bower_components"));
 app.use("/components", serveStatic("components"));
@@ -63,6 +65,13 @@ app.route("/register/:code").get(function (request, response) {
 				response.redirect("/register");
 				return;
 			}
+			var user = results[0].value;
+			var username = results[0].path.key;
+			// Set a cookie to identify this user later
+			if (request.signedCookies.username !== username) {
+				response.cookie("username", username, cookieOptions);
+			}
+
 			fs.readFileAsync("register.html", {"encoding": "utf8"})
 				.then(function (html) {
 					response.send(html);
