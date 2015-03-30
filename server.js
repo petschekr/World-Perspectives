@@ -125,7 +125,7 @@ app.route("/sessions/panels")
 		var userID = request.body.attendee.toString();
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
-			response.send({
+			response.status(400).send({
 				"error": "Missing attendee ID or session ID"
 			});
 			return;
@@ -290,7 +290,7 @@ app.route("/sessions/wpp")
 		var userID = request.body.attendee.toString();
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
-			response.send({
+			response..status(400).send({
 				"error": "Missing attendee ID or session ID"
 			});
 			return;
@@ -455,7 +455,7 @@ app.route("/sessions/science")
 		var userID = request.body.attendee.toString();
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
-			response.send({
+			response.status(400).send({
 				"error": "Missing attendee ID or session ID"
 			});
 			return;
