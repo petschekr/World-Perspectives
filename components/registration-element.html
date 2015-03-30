@@ -122,6 +122,25 @@
 					</div>
 				</footer>
 			</content-panel>
+			<content-panel headtitle="Confirm First Choices">
+				<p class="no-margin">Please review your first choices and go back to change them if you'd like</p>
+				<p style="font-size: 1.4em;">Panel: <b>{{selections.panel.name}}</b></p>
+				<p style="font-size: 1.4em;">Global Session: <b>{{selections.wpp.name}}</b></p>
+				<p style="font-size: 1.4em;">Science Session: <b>{{selections.science.name}}</b></p>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-4" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-4" on-click="{{handleButton}}">
+							<core-icon icon="done" style="margin-left: 0; margin-right: 4px;"></core-icon>
+							Confirm
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
 		</core-animated-pages>
 		<paper-progress id="progress"></paper-progress>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
@@ -140,6 +159,7 @@
 					"wpp": undefined,
 					"science": undefined
 				};
+				this.selections = window.selections;
 			},
 			ready: function() {
 				this.url = "/info/" + window.location.pathname.split("/").pop();
