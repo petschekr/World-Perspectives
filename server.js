@@ -1093,14 +1093,6 @@ app.use(function (err, request, response, next) {
 	response.send("An error occurred!");
 });
 
-// Socket.io stuff
-io.on("connection", function (socket) {
-	// socket.emit("availability", {});
-	// socket.on("event", function (data) {
-	// 	console.log(data);
-	// });
-});
-
 var PORT = 80;
 server.listen(PORT, "0.0.0.0", function () {
 	console.log("Server listening on port " + PORT);
