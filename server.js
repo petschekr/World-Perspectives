@@ -622,7 +622,7 @@ app.route("/sessions/remaining/1").get(function (request, response) {
 				return Q.reject(new CancelError("More or fewer than 3 sessions chosen already."));
 			}
 			results = results.body.results;
-			//moment(date).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]")
+
 			var availableStartTimes = [
 				1429707600000, // 9:00 AM - first session
 				1429710900000, // 9:55 AM - second session
@@ -631,7 +631,8 @@ app.route("/sessions/remaining/1").get(function (request, response) {
 				1429723200000 // 1:20 PM - fifth session
 			];
 			for (var i = 0; i < results.length; i++) {
-				availableStartTimes.splice(new Date(results[i].value.time.start).valueOf(), 1);
+				var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
+				availableStartTimes.splice(foundIndex, 1);
 			}
 			// availableStartTimes will now only contain two times that are available
 			var findTime;
@@ -713,7 +714,7 @@ app.route("/sessions/remaining/2").get(function (request, response) {
 				return Q.reject(new CancelError("More or fewer than 4 sessions chosen already."));
 			}
 			results = results.body.results;
-			//moment(date).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]")
+
 			var availableStartTimes = [
 				1429707600000, // 9:00 AM - first session
 				1429710900000, // 9:55 AM - second session
@@ -722,7 +723,8 @@ app.route("/sessions/remaining/2").get(function (request, response) {
 				1429723200000 // 1:20 PM - fifth session
 			];
 			for (var i = 0; i < results.length; i++) {
-				availableStartTimes.splice(new Date(results[i].value.time.start).valueOf(), 1);
+				var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
+				availableStartTimes.splice(foundIndex, 1);
 			}
 			// availableStartTimes will now only contain time that is available
 			var findTime = availableStartTimes[0].utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
