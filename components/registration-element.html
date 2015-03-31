@@ -174,6 +174,27 @@
 					</div>
 				</footer>
 			</content-panel>
+			<content-panel headtitle="Finished">
+				<p class="no-margin">Here are the sessions that you've selected and been placed in. Please note that they are subject to change before the symposium.</p>
+				<p style="font-size: 1.4em;">9:00 AM - 9:55 AM: <b>{{selectionsTimes.first.name}}</b></p>
+				<p style="font-size: 1.4em;">9:55 AM - 10:45 AM: <b>{{selectionsTimes.second.name}}</b></p>
+				<p style="font-size: 1.4em;">11:30 AM - 12:20 PM: <b>{{selectionsTimes.third.name}}</b></p>
+				<p style="font-size: 1.4em;">12:25 AM - 1:15 PM: <b>{{selectionsTimes.fourth.name}}</b></p>
+				<p style="font-size: 1.4em;">1:20 AM - 2:10 PM: <b>{{selectionsTimes.fifth.name}}</b></p>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-7" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-7" on-click="{{handleExit}}">
+							<core-icon icon="done-all" style="margin-left: 0; margin-right: 4px;"></core-icon>
+							Done
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
 		</core-animated-pages>
 		<paper-progress id="progress"></paper-progress>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
@@ -223,6 +244,9 @@
 					this.goForward();	
 				}
 			},
+			handleExit: function() {
+				window.location = "/";
+			},
 			// Progress functions
 			transitioning: false,
 			goBackward: function() {
@@ -247,6 +271,36 @@
 				}
 				else if (nextIndex === 6) {
 					this.$.progressController.querySelector('timeslot-list[index="6"]').update();
+				}
+				else if (nextIndex === 7) {
+					this.selectionsTimes = {
+						"first": null,
+						"second": null,
+						"third": null,
+						"fourth": null,
+						"fifth": null
+					};
+					Object.keys(window.selections).forEach((function (key) {
+						var session = window.selections[key];
+						var unixTimeStart = new Date(session.time.start).valueOf();
+						switch (unixTimeStart) {
+							case 1429707600000: // 9:00 AM - first session
+								this.selectionsTimes.first = session;
+								break;
+							case 1429710900000: // 9:55 AM - second session
+								this.selectionsTimes.second = session;
+								break;
+							case 1429716600000: // 11:30 AM - third session
+								this.selectionsTimes.third = session;
+								break;
+							case 1429719900000: // 12:25 PM - fourth session
+								this.selectionsTimes.fourth = session;
+								break;
+							case 1429723200000: // 1:20 PM - fifth session
+								this.selectionsTimes.fifth = session;
+								break;
+						}
+					}).bind(this));
 				}
 
 				// Check if progression is allowed

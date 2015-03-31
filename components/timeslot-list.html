@@ -218,6 +218,9 @@
 				if (this.index === "5") {
 					window.selections.aux = this.selectedSession;
 				}
+				else if (this.index === "6") {
+					window.selections.aux2 = this.selectedSession;
+				}
 				// Unselect the previous choice
 				if (this.previousSelectedSession) {
 					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
