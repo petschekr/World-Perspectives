@@ -1090,7 +1090,7 @@ app.use(function (request, response, next) {
 app.use(function (err, request, response, next) {
 	console.error(err.stack);
 	response.status(500);
-	response.send("An error occurred!");
+	response.send("An internal server error occurred.");
 });
 
 var PORT = 80;
