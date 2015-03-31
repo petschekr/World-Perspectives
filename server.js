@@ -659,8 +659,9 @@ app.route("/sessions/remaining/1").get(function (request, response) {
 			return Q.all(searchPromises);
 		})
 		.then(function (results) {
-			var availableSessions = results[0].body.results;
-			availableSessions.concat(results[1].body.results);
+			var results1 = results[0].body.results.concat();
+			var results2 = results[1].body.results.concat();
+			var availableSessions = results1.concat(results2);
 			availableSessions = availableSessions.map(function (session) {
 				var sessionObject = session.value;
 				sessionObject.id = session.path.key;
@@ -739,8 +740,9 @@ app.route("/sessions/remaining/2").get(function (request, response) {
 			return Q.all(searchPromises);
 		})
 		.then(function (results) {
-			var availableSessions = results[0].body.results;
-			availableSessions.concat(results[1].body.results);
+			var results1 = results[0].body.results.concat();
+			var results2 = results[1].body.results.concat();
+			var availableSessions = results1.concat(results2);
 			availableSessions = availableSessions.map(function (session) {
 				var sessionObject = session.value;
 				sessionObject.id = session.path.key;
