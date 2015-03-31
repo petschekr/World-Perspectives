@@ -122,7 +122,7 @@ app.route("/sessions/panels")
 	})
 	.post(postParser, function (request, response) {
 		// Register the user for their selected first choice
-		var userID = request.body.attendee.toString();
+		var userID = request.signedCookies.username;
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
 			response.status(400).send({
@@ -287,7 +287,7 @@ app.route("/sessions/wpp")
 	})
 	.post(postParser, function (request, response) {
 		// Register the user for their selected first choice
-		var userID = request.body.attendee.toString();
+		var userID = request.signedCookies.username;
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
 			response.status(400).send({
@@ -452,7 +452,7 @@ app.route("/sessions/science")
 	})
 	.post(postParser, function (request, response) {
 		// Register the user for their selected first choice
-		var userID = request.body.attendee.toString();
+		var userID = request.signedCookies.username;
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
 			response.status(400).send({
