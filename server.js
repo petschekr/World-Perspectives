@@ -261,7 +261,7 @@ app.route("/sessions/panels")
 					});
 				}
 				else {
-					console.error(err);
+					console.error(err.stack);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -426,7 +426,7 @@ app.route("/sessions/wpp")
 					});
 				}
 				else {
-					console.error(err);
+					console.error(err.stack);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -591,187 +591,496 @@ app.route("/sessions/science")
 					});
 				}
 				else {
-					console.error(err);
+					console.error(err.stack);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
 				}
 			});
 	});
-app.route("/sessions/remaining/1").get(function (request, response) {
-	var username = request.signedCookies.username;
-	if (!username) {
-		response.status(400).send({
-			"error": "Missing identification cookie"
-		});
-		return;
-	}
-	db.search("users", `@path.key: ${username}`)
-		.then(function (results) {
-			results = results.body.results;
-			if (results.length !== 1) {
-				return Q.reject(new CancelError("Invalid identification cookie."));
-			}
-			return db.newGraphReader()
-				.get()
-				.from("users", username)
-				.related("attendee");
-		})
-		.then(function (results) {
-			if (results.body.count !== 3) {
-				return Q.reject(new CancelError("More or fewer than 3 sessions chosen already."));
-			}
-			results = results.body.results;
-
-			var availableStartTimes = [
-				1429707600000, // 9:00 AM - first session
-				1429710900000, // 9:55 AM - second session
-				1429716600000, // 11:30 AM - third session
-				1429719900000, // 12:25 PM - fourth session
-				1429723200000 // 1:20 PM - fifth session
-			];
-			for (var i = 0; i < results.length; i++) {
-				var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
-				availableStartTimes.splice(foundIndex, 1);
-			}
-			// availableStartTimes will now only contain two times that are available
-			var findTime;
-			availableStartTimes[0] = moment(availableStartTimes[0]);
-			availableStartTimes[1] = moment(availableStartTimes[1]);
-
-			if (availableStartTimes[0].isBefore(availableStartTimes[1])) {
-				findTime = availableStartTimes[0];
-			}
-			else {
-				findTime = availableStartTimes[1];
-			}
-			findTime = findTime.utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
-
-			var searchPromises = [];
-			searchPromises.push(
-				db.search("panels", `value.time.start: "${findTime}"`)
-			);
-			searchPromises.push(
-				db.newSearchBuilder()
-					.collection("sessions")
-					.sort("type", "asc")
-					.query(`value.time.start: "${findTime}"`)
-			);
-			return Q.all(searchPromises);
-		})
-		.then(function (results) {
-			var results1 = results[0].body.results.concat();
-			var results2 = results[1].body.results.concat();
-			var availableSessions = results1.concat(results2);
-			availableSessions = availableSessions.map(function (session) {
-				var sessionObject = session.value;
-				sessionObject.id = session.path.key;
-				return sessionObject;
+app.route("/sessions/remaining/1")
+	.get(function (request, response) {
+		var username = request.signedCookies.username;
+		if (!username) {
+			response.status(400).send({
+				"error": "Missing identification cookie"
 			});
-			var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
-			var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
-			response.json({
-				"start": startFormat,
-				"end": endFormat,
-				"sessions": availableSessions
-			});
-		})
-		.fail(function (err) {
-			if (err instanceof CancelError) {
-				response.status(400).json({
-					"error": err.message
-				});
-			}
-			else {
-				console.error(err);
-				response.status(500).json({
-					"error": "An internal server error occurred."
-				});
-			}
-		});
-});
-app.route("/sessions/remaining/2").get(function (request, response) {
-	var username = request.signedCookies.username;
-	if (!username) {
-		response.status(400).send({
-			"error": "Missing identification cookie"
-		});
-		return;
-	}
-	db.search("users", `@path.key: ${username}`)
-		.then(function (results) {
-			results = results.body.results;
-			if (results.length !== 1) {
-				return Q.reject(new CancelError("Invalid identification cookie."));
-			}
-			return db.newGraphReader()
-				.get()
-				.from("users", username)
-				.related("attendee");
-		})
-		.then(function (results) {
-			if (results.body.count !== 4) {
-				return Q.reject(new CancelError("More or fewer than 4 sessions chosen already."));
-			}
-			results = results.body.results;
+			return;
+		}
+		db.search("users", `@path.key: ${username}`)
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid identification cookie."));
+				}
+				return db.newGraphReader()
+					.get()
+					.from("users", username)
+					.related("attendee");
+			})
+			.then(function (results) {
+				if (results.body.count !== 3) {
+					return Q.reject(new CancelError("More or fewer than 3 sessions chosen already."));
+				}
+				results = results.body.results;
 
-			var availableStartTimes = [
-				1429707600000, // 9:00 AM - first session
-				1429710900000, // 9:55 AM - second session
-				1429716600000, // 11:30 AM - third session
-				1429719900000, // 12:25 PM - fourth session
-				1429723200000 // 1:20 PM - fifth session
-			];
-			for (var i = 0; i < results.length; i++) {
-				var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
-				availableStartTimes.splice(foundIndex, 1);
-			}
-			// availableStartTimes will now only contain time that is available
-			var findTime = availableStartTimes[0].utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+				var availableStartTimes = [
+					1429707600000, // 9:00 AM - first session
+					1429710900000, // 9:55 AM - second session
+					1429716600000, // 11:30 AM - third session
+					1429719900000, // 12:25 PM - fourth session
+					1429723200000 // 1:20 PM - fifth session
+				];
+				for (var i = 0; i < results.length; i++) {
+					var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
+					availableStartTimes.splice(foundIndex, 1);
+				}
+				// availableStartTimes will now only contain two times that are available
+				var findTime;
+				availableStartTimes[0] = moment(availableStartTimes[0]);
+				availableStartTimes[1] = moment(availableStartTimes[1]);
 
-			var searchPromises = [];
-			searchPromises.push(
-				db.search("panels", `value.time.start: "${findTime}"`)
-			);
-			searchPromises.push(
-				db.newSearchBuilder()
-					.collection("sessions")
-					.sort("type", "asc")
-					.query(`value.time.start: "${findTime}"`)
-			);
-			return Q.all(searchPromises);
-		})
-		.then(function (results) {
-			var results1 = results[0].body.results.concat();
-			var results2 = results[1].body.results.concat();
-			var availableSessions = results1.concat(results2);
-			availableSessions = availableSessions.map(function (session) {
-				var sessionObject = session.value;
-				sessionObject.id = session.path.key;
-				return sessionObject;
-			});
-			var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
-			var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
-			response.json({
-				"start": startFormat,
-				"end": endFormat,
-				"sessions": availableSessions
-			});
-		})
-		.fail(function (err) {
-			if (err instanceof CancelError) {
-				response.status(400).json({
-					"error": err.message
+				if (availableStartTimes[0].isBefore(availableStartTimes[1])) {
+					findTime = availableStartTimes[0];
+				}
+				else {
+					findTime = availableStartTimes[1];
+				}
+				findTime = findTime.utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+
+				var searchPromises = [];
+				searchPromises.push(
+					db.search("panels", `value.time.start: "${findTime}"`)
+				);
+				searchPromises.push(
+					db.newSearchBuilder()
+						.collection("sessions")
+						.sort("type", "asc")
+						.query(`value.time.start: "${findTime}"`)
+				);
+				return Q.all(searchPromises);
+			})
+			.then(function (results) {
+				var results1 = results[0].body.results.concat();
+				var results2 = results[1].body.results.concat();
+				var availableSessions = results1.concat(results2);
+				availableSessions = availableSessions.map(function (session) {
+					var sessionObject = session.value;
+					sessionObject.id = session.path.key;
+					return sessionObject;
 				});
-			}
-			else {
-				console.error(err);
-				response.status(500).json({
-					"error": "An internal server error occurred."
+				var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
+				var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
+				response.json({
+					"start": startFormat,
+					"end": endFormat,
+					"sessions": availableSessions
 				});
-			}
-		});
-});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err.stack);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	})
+	.post(postParser, function (request, response) {
+		var userID = request.signedCookies.username;
+		var sessionID = request.body.session;
+		var sessionType = request.body.sessionType;
+		var selectedPanelID = request.body.selectedPanel;
+		var selectedWPPID = request.body.selectedWPP;
+		var selectedScienceID = request.body.selectedScience;
+		if (!userID || !sessionID || !sessionType || !selectedPanelID || !selectedWPPID || !selectedScienceID) {
+			response.status(400).send({
+				"error": "Missing required information"
+			});
+			return;
+		}
+
+		var sessionKey = sessionID;
+		var attendeeKey = userID;
+		var sessionInfo = undefined;
+		var sessionCollection;
+		if (sessionType === "panel") {
+			sessionCollection = "panels";
+		}
+		else {
+			sessionCollection = "sessions";
+		}
+		
+		db.search("users", `@path.key: ${userID}`)
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid identification cookie."));
+				}
+				return db.newGraphReader()
+					.get()
+					.from("users", userID)
+					.related("attendee");
+			})
+			.then(function (results) {
+				if (results.body.count > 4) {
+					return Q.reject(new CancelError("Can't edit choices at this stage."));
+				}
+				results = results.body.results;
+				var previousSession = undefined;
+				for (var i = 0; i < results.length; i++) {
+					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID) {
+						previousSession = results[i];
+					}
+				}
+				if (previousSession) {
+					// Deregister
+					var deregistrationPromises = [];
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from("users", userID)
+							.related("attendee")
+							.to(previousSession.path.collection, previousSession.path.key)
+					);
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from(previousSession.path.collection, previousSession.path.key)
+							.related("attendee")
+							.to("users", userID)
+					);
+					deregistrationPromises.push(
+						db.newPatchBuilder(previousSession.path.collection, previousSession.path.key)
+							.inc("capacity.taken", -1)
+							.apply()
+					);
+					return Q.all(deregistrationPromises)
+						.then(function () {
+							return db.newGraphReader()
+								.get()
+								.from(previousSession.path.collection, previousSession.path.key)
+								.related("attendee");
+						})
+						.then(function (results) {
+							var currentAttendees = results.body.total_count || results.body.count;
+							io.emit("availability", {
+								"session": previousSession.path.key,
+								"taken": currentAttendees
+							});
+							return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+						});
+				}
+				else {
+					return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+				}
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid session ID."));
+				}
+				sessionInfo = results[0].value;
+				sessionInfo.id = results[0].path.key;
+				return db.newGraphReader()
+					.get()
+					.from(sessionCollection, sessionKey)
+					.related("attendee");
+			})
+			.then(function (results) {
+				var currentAttendees = results.body.total_count || results.body.count;
+				if (currentAttendees >= sessionInfo.capacity.total) {
+					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
+				}
+				// Broadcast the new number of attendees
+				io.emit("availability", {
+					"session": sessionID,
+					"taken": sessionInfo.capacity.taken + 1
+				});
+				// Proceed with registration for this spot (create a bidirectional relationship)
+				var registrationPromises = [];
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from(sessionCollection, sessionKey)
+						.related("attendee")
+						.to("users", attendeeKey)
+				);
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("users", attendeeKey)
+						.related("attendee")
+						.to(sessionCollection, sessionKey)
+				);
+				registrationPromises.push(
+					db.newPatchBuilder(sessionCollection, sessionKey)
+						.inc("capacity.taken", 1)
+						.apply()
+				);
+				return Q.all(registrationPromises);
+			})
+			.then(function () {
+				response.json({
+					"success": true
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err.stack);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	});
+app.route("/sessions/remaining/2")
+	.get(function (request, response) {
+		var username = request.signedCookies.username;
+		if (!username) {
+			response.status(400).send({
+				"error": "Missing identification cookie"
+			});
+			return;
+		}
+		db.search("users", `@path.key: ${username}`)
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid identification cookie."));
+				}
+				return db.newGraphReader()
+					.get()
+					.from("users", username)
+					.related("attendee");
+			})
+			.then(function (results) {
+				if (results.body.count !== 4) {
+					return Q.reject(new CancelError("More or fewer than 4 sessions chosen already."));
+				}
+				results = results.body.results;
+
+				var availableStartTimes = [
+					1429707600000, // 9:00 AM - first session
+					1429710900000, // 9:55 AM - second session
+					1429716600000, // 11:30 AM - third session
+					1429719900000, // 12:25 PM - fourth session
+					1429723200000 // 1:20 PM - fifth session
+				];
+				for (var i = 0; i < results.length; i++) {
+					var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
+					availableStartTimes.splice(foundIndex, 1);
+				}
+				// availableStartTimes will now only contain time that is available
+				var findTime = moment(availableStartTimes[0]).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+
+				var searchPromises = [];
+				searchPromises.push(
+					db.search("panels", `value.time.start: "${findTime}"`)
+				);
+				searchPromises.push(
+					db.newSearchBuilder()
+						.collection("sessions")
+						.sort("type", "asc")
+						.query(`value.time.start: "${findTime}"`)
+				);
+				return Q.all(searchPromises);
+			})
+			.then(function (results) {
+				var results1 = results[0].body.results.concat();
+				var results2 = results[1].body.results.concat();
+				var availableSessions = results1.concat(results2);
+				availableSessions = availableSessions.map(function (session) {
+					var sessionObject = session.value;
+					sessionObject.id = session.path.key;
+					return sessionObject;
+				});
+				var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
+				var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
+				response.json({
+					"start": startFormat,
+					"end": endFormat,
+					"sessions": availableSessions
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err.stack);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	})
+	.post(postParser, function (request, response) {
+		var userID = request.signedCookies.username;
+		var sessionID = request.body.session;
+		var sessionType = request.body.sessionType;
+		var selectedPanelID = request.body.selectedPanel;
+		var selectedWPPID = request.body.selectedWPP;
+		var selectedScienceID = request.body.selectedScience;
+		var selectedAuxID = request.body.selectedAux;
+		if (!userID || !sessionID || !sessionType || !selectedPanelID || !selectedWPPID || !selectedScienceID || !selectedAuxID) {
+			response.status(400).send({
+				"error": "Missing required information"
+			});
+			return;
+		}
+
+		var sessionKey = sessionID;
+		var attendeeKey = userID;
+		var sessionInfo = undefined;
+		var sessionCollection;
+		if (sessionType === "panel") {
+			sessionCollection = "panels";
+		}
+		else {
+			sessionCollection = "sessions";
+		}
+		
+		db.search("users", `@path.key: ${userID}`)
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid identification cookie."));
+				}
+				return db.newGraphReader()
+					.get()
+					.from("users", userID)
+					.related("attendee");
+			})
+			.then(function (results) {
+				if (results.body.count > 5) {
+					return Q.reject(new CancelError("Can't edit choices at this stage."));
+				}
+				results = results.body.results;
+				var previousSession = undefined;
+				for (var i = 0; i < results.length; i++) {
+					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID && results[i].path.key !== selectedAuxID) {
+						previousSession = results[i];
+					}
+				}
+				if (previousSession) {
+					// Deregister
+					var deregistrationPromises = [];
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from("users", userID)
+							.related("attendee")
+							.to(previousSession.path.collection, previousSession.path.key)
+					);
+					deregistrationPromises.push(
+						db.newGraphBuilder()
+							.remove()
+							.from(previousSession.path.collection, previousSession.path.key)
+							.related("attendee")
+							.to("users", userID)
+					);
+					deregistrationPromises.push(
+						db.newPatchBuilder(previousSession.path.collection, previousSession.path.key)
+							.inc("capacity.taken", -1)
+							.apply()
+					);
+					return Q.all(deregistrationPromises)
+						.then(function () {
+							return db.newGraphReader()
+								.get()
+								.from(previousSession.path.collection, previousSession.path.key)
+								.related("attendee");
+						})
+						.then(function (results) {
+							var currentAttendees = results.body.total_count || results.body.count;
+							io.emit("availability", {
+								"session": previousSession.path.key,
+								"taken": currentAttendees
+							});
+							return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+						});
+				}
+				else {
+					return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+				}
+			})
+			.then(function (results) {
+				results = results.body.results;
+				if (results.length !== 1) {
+					return Q.reject(new CancelError("Invalid session ID."));
+				}
+				sessionInfo = results[0].value;
+				sessionInfo.id = results[0].path.key;
+				return db.newGraphReader()
+					.get()
+					.from(sessionCollection, sessionKey)
+					.related("attendee");
+			})
+			.then(function (results) {
+				var currentAttendees = results.body.total_count || results.body.count;
+				if (currentAttendees >= sessionInfo.capacity.total) {
+					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
+				}
+				// Broadcast the new number of attendees
+				io.emit("availability", {
+					"session": sessionID,
+					"taken": sessionInfo.capacity.taken + 1
+				});
+				// Proceed with registration for this spot (create a bidirectional relationship)
+				var registrationPromises = [];
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from(sessionCollection, sessionKey)
+						.related("attendee")
+						.to("users", attendeeKey)
+				);
+				registrationPromises.push(
+					db.newGraphBuilder()
+						.create()
+						.from("users", attendeeKey)
+						.related("attendee")
+						.to(sessionCollection, sessionKey)
+				);
+				registrationPromises.push(
+					db.newPatchBuilder(sessionCollection, sessionKey)
+						.inc("capacity.taken", 1)
+						.apply()
+				);
+				return Q.all(registrationPromises);
+			})
+			.then(function () {
+				response.json({
+					"success": true
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+				else {
+					console.error(err.stack);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	});
 
 // 404 page
 app.use(function (request, response, next) {
@@ -779,7 +1088,7 @@ app.use(function (request, response, next) {
 });
 // Error handling
 app.use(function (err, request, response, next) {
-	console.error(err);
+	console.error(err.stack);
 	response.status(500);
 	response.send("An error occurred!");
 });

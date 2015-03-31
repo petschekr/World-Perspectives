@@ -15,6 +15,7 @@
 <link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
 <link rel="import" href="/components/content-panel.html" />
 <link rel="import" href="/components/session-list.html" />
+<link rel="import" href="/components/timeslot-list.html" />
 
 <polymer-element name="registration-element">
 	<template>
@@ -123,7 +124,7 @@
 				</footer>
 			</content-panel>
 			<content-panel headtitle="Confirm First Choices">
-				<p class="no-margin">Please review your first choices and go back to change them if you'd like</p>
+				<p class="no-margin">Please review your first choices and go back to change them if you'd like. You won't be able to change them after you proceed.</p>
 				<p style="font-size: 1.4em;">Panel: <b>{{selections.panel.name}}</b></p>
 				<p style="font-size: 1.4em;">Global Session: <b>{{selections.wpp.name}}</b></p>
 				<p style="font-size: 1.4em;">Science Session: <b>{{selections.science.name}}</b></p>
@@ -137,6 +138,38 @@
 						<paper-button class="custom" forward id="forward-4" on-click="{{handleButton}}">
 							<core-icon icon="done" style="margin-left: 0; margin-right: 4px;"></core-icon>
 							Confirm
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Remaining Sessions (Part 1)">
+				<timeslot-list url="/sessions/remaining/1" index="5"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward disabled id="backward-5" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-5" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Remaining Sessions (Part 2)">
+				<timeslot-list url="/sessions/remaining/2" index="6"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-6" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-6" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
 					</div>
 				</footer>
@@ -155,6 +188,8 @@
 				"name": "Loading..."
 			},
 			panelCount: 0,
+			remainingSlot1: {},
+			remainingSlot2: {},
 			created: function() {
 				window.selections = {
 					"panel": undefined,
@@ -204,6 +239,14 @@
 				var listsToUpdate = this.$.progressController.querySelectorAll("session-list:not([panel])");
 				for (var i = 0; i < listsToUpdate.length; i++) {
 					listsToUpdate[i].updateDisallowed();
+				}
+				// 5 and 6 are the remaining timeslot-list panels
+				var nextIndex = this.$.progressController.selected + 1;
+				if (nextIndex === 5) {
+					this.$.progressController.querySelector('timeslot-list[index="5"]').update();
+				}
+				else if (nextIndex === 6) {
+					this.$.progressController.querySelector('timeslot-list[index="6"]').update();
 				}
 
 				// Check if progression is allowed

@@ -1,0 +1,261 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-shadow/paper-shadow.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-action-dialog.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
+<script src="/bower_components/moment/moment.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+	body /deep/ paper-action-dialog h1 {
+		font-size: 2em;
+	}
+	body /deep/ paper-action-dialog h1 small {
+		float: left;
+		opacity: 0.65;
+		font-size: 60%;
+		margin: 5px 0;
+	}
+	body /deep/ paper-action-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+	/* For browsers that don't support shadow DOM */
+	paper-action-dialog h1 {
+		font-size: 2em;
+	}
+	paper-action-dialog h1 small {
+		float: left;
+		opacity: 0.65;
+		font-size: 60%;
+		margin: 5px 0;
+	}
+	paper-action-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+</style>
+
+<polymer-element name="timeslot-list" attributes="url index">
+	<template>
+		<style>
+			paper-item span {
+				color: #555;
+				width: 24px;
+				text-align: center;
+				margin-right: 10px;
+				font-size: 1.4em;
+				font-weight: bold;
+			}
+			paper-item span core-icon {
+				position: relative;
+  				top: -1px;
+			}
+			paper-item h2 {
+				margin: 0;
+				text-align: left;
+				font-size: 1.4em;
+				width: 476px; /* 500px - 24px */
+			}
+			paper-item {
+				padding-right: 30px;
+				width: 500px;
+			}
+			:host > p {
+				font-size: 1.2em;
+				margin-bottom: 0.5em;
+				margin-top: 0;
+			}
+		</style>
+		<core-ajax id="getSessions" url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
+		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
+
+		<p>Please choose a panel, global studies session, or science session to fill the <b>{{startTimeFormat}}</b> to <b>{{endTimeFormat}}</b> period</p>
+		
+		<div id="itemcontainer">
+			<template if="{{sessions.length == 0}}">
+				<p style="font-size: 1.4em;">Loading...</p>
+			</template>
+			<template repeat="{{session in sessions}}">
+				<paper-item on-tap="{{showDetails}}" id="{{'id' + session.id}}">
+					<span><core-icon icon="radio-button-off"></core-icon></span>
+					<h2>
+						{{session.name}}
+					</h2>
+				</paper-item>
+			</template>
+		</div>
+		<paper-action-dialog id="details" backdrop layered="true" transition="core-transition-center" style="max-width: 1500px;">
+			<h1>
+				<span>{{selectedSession.name}}</span>
+				<br />
+				<small>{{selectedSession.time.startFormat}} to {{selectedSession.time.endFormat}} — {{selectedSession.location}} ({{selectedSession.capacity.taken}}/{{selectedSession.capacity.total}})</small>
+			</h1>
+			<p class="lead">{{selectedSession.description}}</p>
+			<p>
+				<!-- For panels -->
+				<template if="{{panel}}">
+					<b>Panelists:</b>
+					<template repeat="{{panelist, index in selectedSession.panelists}}">
+						<template if="{{index != selectedSession.panelists.length - 1}}">
+							{{panelist}},
+						</template>
+						<template if="{{index == selectedSession.panelists.length - 1}}">
+							{{panelist}}
+						</template>
+					</template>
+					<br />
+					<b>Moderator:</b>
+					{{selectedSession.moderator}}
+				</template>
+				<!-- For regular sessions -->
+				<template if="{{!panel}}">
+					<b>Presenter:</b>
+					{{selectedSession.presenter}}
+				</template>
+			</p>
+			<paper-button affirmative type="cancel" on-tap="{{dialogButtonHandler}}">
+				Cancel
+			</paper-button>
+			<paper-button affirmative autofocus type="select" on-tap="{{dialogButtonHandler}}" style="color: #4285f4;">
+				Select
+			</paper-button>
+		</paper-action-dialog>
+	</template>
+	<script>
+		Polymer({
+			index: "0",
+			panel: false,
+			created: function() {
+				this.sessions = [];
+				this.sessionsLookup = {};
+				this.selectedSession = null;
+				this.previousSelectedSession = null;
+				this.forwardButton = null;
+				this.checkmark = '<core-icon icon="radio-button-on"></core-icon>';
+				this.dash = '<core-icon icon="radio-button-off"></core-icon>';
+				this.startTimeFormat = null;
+				this.endTimeFormat = null;
+			},
+			ready: function() {
+				// WebSocket connection to update session availability in real-time
+				var socket = io.connect("/");
+				socket.on("availability", (function (data) {
+					if (this.sessionsLookup[data.session]) {
+						// Relevent to this session-list
+						this.sessionsLookup[data.session].capacity.taken = data.taken;
+						// Update any open dialog's data
+						if (this.selectedSession && this.selectedSession.id === data.session) {
+							this.selectedSession.capacity.taken = data.taken;
+						}
+					}
+				}).bind(this));
+			},
+			loaded: function() {
+				// Make a copy of the loaded data
+				this.sessions = this.$.getSessions.response.sessions.slice(0);
+				this.startTimeFormat = this.$.getSessions.response.start;
+				this.endTimeFormat = this.$.getSessions.response.end;
+				for (var i = 0, len = this.sessions.length; i < len; i++) {
+					this.sessionsLookup[this.sessions[i].id] = this.sessions[i];
+				}
+			},
+			domReady: function() {
+				this.forwardButton = this.parentElement.querySelector("paper-button#" + "forward-" + this.index);
+			},
+			showDetails: function(e) {
+				var targetID = e.currentTarget.id;
+				this.previousSelectedSession = this.selectedSession;
+				this.selectedSession = this.sessionsLookup[targetID.slice(2)]; // .slice() to removed "id" at the beginning of the id
+				// Format the times
+				this.selectedSession.time.startFormat = moment(new Date(this.selectedSession.time.start)).format("h:mm A");
+				this.selectedSession.time.endFormat = moment(new Date(this.selectedSession.time.end)).format("h:mm A");
+
+				this.panel = !this.selectedSession.type;
+
+				this.async(function() {
+					this.$.details.open();
+				});
+			},
+			dialogButtonHandler: function(e) {
+				var initiatorAction = e.currentTarget.attributes.type.value;
+				this.$.details.close();
+				var uponDialogClose = function() {
+					document.removeEventListener("core-overlay-close-completed", uponDialogClose);
+					if (initiatorAction === "select") {
+						// Register this with the server
+						var sessionType;
+						if (this.selectedSession.type) {
+							sessionType = "session";
+						}
+						else {
+							sessionType = "panel";
+						}
+						var sendData = {
+							"session": this.selectedSession.id,
+							"sessionType": sessionType,
+							"selectedPanel": window.selections.panel.id,
+							"selectedWPP": window.selections.wpp.id,
+							"selectedScience": window.selections.science.id,
+						};
+						if (this.index === "6") {
+							sendData.selectedAux = window.selections.aux.id;
+						}
+						this.$.postSession.params = JSON.stringify(sendData);
+						this.$.postSession.go();
+						console.time("Session selection");
+						// Show a loading indicator
+						window.loadingToast.show();
+					}
+				}
+				uponDialogClose = uponDialogClose.bind(this);
+				document.addEventListener("core-overlay-close-completed", uponDialogClose);	
+			},
+			finishSelection: function() {
+				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
+				if (this.index === "5") {
+					window.selections.aux = this.selectedSession;
+				}
+				// Unselect the previous choice
+				if (this.previousSelectedSession) {
+					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
+				}
+				// Turn the item's dash into a checkmark
+				this.$.itemcontainer.querySelector("#id" + this.selectedSession.id + " span").innerHTML = this.checkmark;
+				// Dim the other items
+				var titles = this.$.itemcontainer.querySelectorAll("h2");
+				for (var i = 0; i < titles.length; i++) {
+					titles[i].style.opacity = "0.5";
+				}
+				this.$.itemcontainer.querySelector("#id" + this.selectedSession.id + " h2").style.opacity = "1";
+				// Proceed
+				this.forwardButton.removeAttribute("disabled");
+				// Dirty hack for visual glitch in Google Chrome
+				setTimeout((function() {
+					this.forwardButton.click();
+				}).bind(this), 1);
+			},
+			handleError: function(e) {
+				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
+				window.notifierToast.text = e.detail.response.error || "An error occurred!";
+				window.notifierToast.show();
+				// Failed requests will still deregister any previous registrations for that session type
+				// Unselect the previous choice
+				if (this.previousSelectedSession) {
+					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
+				}
+				// Undim all other items
+				var titles = this.$.itemcontainer.querySelectorAll("h2");
+				for (var i = 0; i < titles.length; i++) {
+					titles[i].style.opacity = "1";
+				}
+			},
+			update: function() {
+				this.$.getSessions.go();
+			}
+		});
+	</script>
+</polymer-element>
