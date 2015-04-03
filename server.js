@@ -16,6 +16,7 @@ db.ping()
 		console.error("Failed to connect to Orchestrate");
 		process.exit(1);
 	});
+var pusher = new (require("pushbullet"))("gxCTjdJQa7PMjNUFGY3j5ITVWDQ9xvNQ");
 
 // Set up the Express server
 var express = require("express");
@@ -54,6 +55,11 @@ function CancelError (message) {
 	this.message = message;
 }
 CancelError.prototype = Object.create(Error.prototype);
+function handleError (error) {
+	console.error(error.stack);
+	// Notify via PushBullet
+	pusher.note({}, "WPP Error", `${new Date().toString()}\n\n${error.stack}`, function() {});
+}
 
 app.route("/register").get(function (request, response) {
 	fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
@@ -262,7 +268,7 @@ app.route("/sessions/panels")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -427,7 +433,7 @@ app.route("/sessions/wpp")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -592,7 +598,7 @@ app.route("/sessions/science")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -685,7 +691,7 @@ app.route("/sessions/remaining/1")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -838,7 +844,7 @@ app.route("/sessions/remaining/1")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -921,7 +927,7 @@ app.route("/sessions/remaining/2")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -1075,7 +1081,7 @@ app.route("/sessions/remaining/2")
 					});
 				}
 				else {
-					console.error(err.stack);
+					handleError(err);
 					response.status(500).json({
 						"error": "An internal server error occurred."
 					});
@@ -1089,7 +1095,7 @@ app.use(function (request, response, next) {
 });
 // Error handling
 app.use(function (err, request, response, next) {
-	console.error(err.stack);
+	handleError(err);
 	response.status(500);
 	response.send("An internal server error occurred.");
 });
