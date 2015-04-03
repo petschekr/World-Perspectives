@@ -14,6 +14,7 @@ db.ping()
 	})
 	.fail(function () {
 		console.error("Failed to connect to Orchestrate");
+		process.exit(1);
 	});
 
 // Set up the Express server
