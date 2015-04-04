@@ -3,6 +3,7 @@
 <link rel="import" href="/bower_components/core-icons/core-icons.html" />
 <link rel="import" href="/bower_components/core-menu/core-menu.html" />
 <link rel="import" href="/bower_components/core-item/core-item.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/icon-transition/icon-transition.html" />
 <link rel="import" href="/components/content-section.html" />
@@ -58,6 +59,8 @@
 			}
 		</style>
 		
+		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
+
 		<core-toolbar>
 			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
 			<span flex>GFA World Perspectives Symposium</span>
@@ -65,9 +68,10 @@
 		</core-toolbar>
 		<section id="sidepanel" class="hidden">
 			<core-menu selected="0">
-				<core-item icon="settings" label="Settings"></core-item>
-				<core-item icon="favorite" label="Favorite"></core-item>
-				<core-item icon="account-box" label="Account"></core-item>
+				<core-item icon="event" label="Schedule"></core-item>
+				<template if="{{user.admin}}">
+					<core-item icon="settings" label="Admin Panel"></core-item>
+				</template>
 			</core-menu>
 			<section class="minor">
 				<ul>
@@ -109,6 +113,10 @@
 			},
 			contact: function() {
 				this.$.contactLink.click();
+			},
+			userResponse: function() {
+				this.user = this.$["info-ajax"].response;
+				window.user = this.user;
 			}
 		});
 	</script>
