@@ -83,11 +83,25 @@ app.route("/register/:code").get(function (request, response) {
 			if (request.signedCookies.username !== username) {
 				response.cookie("username", username, cookieOptions);
 			}
-
-			fs.readFileAsync("register.html", {"encoding": "utf8"})
-				.then(function (html) {
-					response.send(html);
-				})
+			// Reject request if already registered
+			db.newGraphReader()
+				.get()
+				.from("users", username)
+				.related("attendee")
+				.then(function (results) {
+					if (results.body.count > 3) {
+						fs.readFileAsync("alreadyregistered.html", {"encoding": "utf8"})
+							.then(function (html) {
+								response.send(html);
+							})
+					}
+					else {
+						fs.readFileAsync("register.html", {"encoding": "utf8"})
+							.then(function (html) {
+								response.send(html);
+							})
+					}
+				});
 		});
 });
 // AJAX endpoints
