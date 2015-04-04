@@ -132,7 +132,8 @@ app.route("/info/:code").get(function (request, response) {
 			response.json({
 				"code": result.value.code,
 				"name": result.value.name,
-				"username": result.path.key
+				"username": result.path.key,
+				"admin": !!result.value.admin
 			});	
 		});
 });
