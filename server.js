@@ -66,7 +66,13 @@ app.route("/").get(function (request, response) {
 		.then(function (html) {
 			response.send(html);
 		});
-})
+});
+app.route("/about").get(function (request, response) {
+	fs.readFileAsync("about.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
 app.route("/register").get(function (request, response) {
 	fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
 		.then(function (html) {

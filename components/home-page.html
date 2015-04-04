@@ -38,6 +38,24 @@
 			#sidepanel.hidden {
 				margin-left: -256px;
 			}
+			section.minor {
+				color: rgb(153, 153, 153);
+				position: absolute;
+				bottom: 0;
+				width: 100%;
+			}
+			section.minor ul {
+				list-style: none;
+				padding-left: 0;
+			}
+			section.minor paper-button {
+				margin-left: 10px;
+				margin-right: 10px;
+				width: calc(100% - 20px);
+			}
+			section.minor paper-button:hover {
+				color: black;
+			}
 		</style>
 		
 		<core-toolbar>
@@ -51,6 +69,18 @@
 				<core-item icon="favorite" label="Favorite"></core-item>
 				<core-item icon="account-box" label="Account"></core-item>
 			</core-menu>
+			<section class="minor">
+				<ul>
+					<li id="about">
+						<paper-button noink on-tap="{{about}}">About</paper-button>
+						<a id="aboutLink" href="/about" style="display: hidden;"></a>
+					</li>
+					<li id="contact">
+						<paper-button noink on-tap="{{contact}}">Contact</paper-button>
+						<a id="contactLink" href="mailto:petschekr@gfacademy.org" style="display: hidden;"></a>
+					</li>
+				</ul>
+			</section>
 		</section>
 		<content-section>
 			<h2>Hello world!</h2>
@@ -73,6 +103,12 @@
 					this.icon = "menu";
 					this.$.sidepanel.classList.add("hidden");
 				}
+			},
+			about: function() {
+				this.$.aboutLink.click();
+			},
+			contact: function() {
+				this.$.contactLink.click();
 			}
 		});
 	</script>
