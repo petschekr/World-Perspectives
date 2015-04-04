@@ -61,6 +61,12 @@ function handleError (error) {
 	pusher.note({}, "WPP Error", `${new Date().toString()}\n\n${error.stack}`, function() {});
 }
 
+app.route("/").get(function (request, response) {
+	fs.readFileAsync("index.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+})
 app.route("/register").get(function (request, response) {
 	fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
 		.then(function (html) {

@@ -1,0 +1,79 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-toolbar/core-toolbar.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/core-menu/core-menu.html" />
+<link rel="import" href="/bower_components/core-item/core-item.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/icon-transition/icon-transition.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<polymer-element name="home-page">
+	<template>
+		<style>
+			core-toolbar {
+				background: #3ea346;
+				color: #f1f1f1;
+				fill: #f1f1f1;
+				z-index: 150;
+			}
+			paper-toast {
+				width: 100%;
+				bottom: 0;
+				left: 0;
+				border-radius: 0;
+				text-align: center;
+			}
+			:host {
+				height: 100%;
+			}
+			#sidepanel {
+				height: calc(100% - 64px);
+				background-color: white;
+				width: 256px;
+				transition: margin-left 0.5s;
+				position: fixed;
+				box-shadow: 0 0 6px rgba(0,0,0,0.3);
+				z-index: 100;
+			}
+			#sidepanel.hidden {
+				margin-left: -256px;
+			}
+		</style>
+		
+		<core-toolbar>
+			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
+			<span flex>GFA World Perspectives Symposium</span>
+			<paper-icon-button icon="more-vert"></paper-icon-button>
+		</core-toolbar>
+		<section id="sidepanel" class="hidden">
+			<core-menu selected="0">
+				<core-item icon="settings" label="Settings"></core-item>
+				<core-item icon="favorite" label="Favorite"></core-item>
+				<core-item icon="account-box" label="Account"></core-item>
+			</core-menu>
+		</section>
+		<content-section>
+			<h2>Hello world!</h2>
+		</content-section>
+	</template>
+	<script>
+		Polymer({
+			icon: "menu",
+			menuOpened: false,
+			ready: function() {
+				
+			},
+			toggleMenu: function() {
+				this.menuOpened = !this.menuOpened;
+				if (this.menuOpened) {
+					this.icon = "right-arrow";
+					this.$.sidepanel.classList.remove("hidden");
+				}
+				else {
+					this.icon = "menu";
+					this.$.sidepanel.classList.add("hidden");
+				}
+			}
+		});
+	</script>
+</polymer-element>
