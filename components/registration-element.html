@@ -50,7 +50,7 @@
 		<core-a11y-keys target="{{rootDocument}}" keys="left pagedown" on-keys-pressed="{{goBackward}}"></core-a11y-keys>
 		<core-a11y-keys target="{{rootDocument}}" keys="right pageup" on-keys-pressed="{{goForward}}"></core-a11y-keys>
 		<!-- AJAX for loading the user's data -->
-		<core-ajax id="info-ajax" auto url="{{url}}" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
+		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
 		<core-animated-pages transitions="slide-from-right" id="progressController">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
@@ -204,7 +204,6 @@
 	<script>
 		Polymer({
 			rootDocument: document,
-			url: "",
 			user: {
 				"name": "Loading..."
 			},
@@ -220,7 +219,6 @@
 				this.selections = window.selections;
 			},
 			ready: function() {
-				this.url = "/info/" + window.location.pathname.split("/").pop();
 				this.panelCount = this.$.progressController.getElementsByTagName("content-panel").length;
 				this.$.progressController.addEventListener("core-animated-pages-transition-end", (function() {
 					this.transitioning = false;

@@ -117,14 +117,14 @@ app.route("/register/:code").get(function (request, response) {
 		});
 });
 // AJAX endpoints
-app.route("/info/:code").get(function (request, response) {
-	var code = request.params.code.toString();
-	db.search("users", `value.code: "${code}"`)
+app.route("/info").get(function (request, response) {
+	var userID = request.signedCookies.username;
+	db.search("users", `@path.key: ${userID}`)
 		.then(function (results) {
 			results = results.body.results;
 			if (results.length !== 1) {
 				response.status(404).json({
-					"error": "No user with that registration code exists"
+					"error": "Invalid identification cookie"
 				});
 				return;
 			}
