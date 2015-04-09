@@ -45,6 +45,9 @@
 				border-radius: 0;
 				text-align: center;
 			}
+			paper-toast[error] {
+				background-color: #ff4136;				
+			}
 		</style>
 		<!-- Key handler for arrow key events -->
 		<core-a11y-keys target="{{rootDocument}}" keys="left pagedown" on-keys-pressed="{{goBackward}}"></core-a11y-keys>
@@ -198,7 +201,7 @@
 		</core-animated-pages>
 		<paper-progress id="progress"></paper-progress>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
-		<paper-toast id="notifier" text="Something happened" ></paper-toast>
+		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
 
 	</template>
 	<script>
@@ -239,7 +242,7 @@
 					this.goBackward();
 				}
 				else if (element.attributes.forward) {
-					this.goForward();	
+					this.goForward();
 				}
 			},
 			handleExit: function() {

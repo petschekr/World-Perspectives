@@ -259,7 +259,7 @@
 			handleError: function(e) {
 				console.timeEnd("Session selection");
 				window.loadingToast.dismiss();
-				window.notifierToast.text = e.detail.response.error;
+				window.notifierToast.text = e.detail.response.response.error;
 				window.notifierToast.show();
 				// Failed requests will still deregister any previous registrations for that session type
 				// Unselect the previous choice
