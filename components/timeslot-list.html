@@ -40,7 +40,7 @@
 <polymer-element name="timeslot-list" attributes="url index">
 	<template>
 		<style>
-			paper-item span {
+			paper-item > span {
 				color: #555;
 				width: 24px;
 				text-align: center;
@@ -48,9 +48,10 @@
 				font-size: 1.4em;
 				font-weight: bold;
 			}
-			paper-item span core-icon {
+			paper-item > span core-icon {
 				position: relative;
-  				top: -1px;
+				top: -1px;
+				left: -3px;
 			}
 			paper-item h2 {
 				margin: 0;
@@ -62,6 +63,22 @@
 				padding-right: 30px;
 				width: 500px;
 			}
+			paper-item h2 > small {
+				color: #4F4F4F;
+				font-weight: lighter;
+				font-size: 75%;
+				display: block;
+				text-decoration: none !important;
+			}
+			paper-item h2 > small > span.session-type {
+				font-weight: bold;
+			}
+			paper-item h2 > small > span.panelist::after {
+				content: ",";
+			}
+			paper-item h2 > small > span.panelist:last-child::after {
+				content: "";
+			}
 			:host > p {
 				font-size: 1.2em;
 				margin-bottom: 0.5em;
@@ -72,7 +89,7 @@
 		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
 
 		<p>Please choose a panel, global studies session, or science session to fill the <b>{{startTimeFormat}}</b> to <b>{{endTimeFormat}}</b> period</p>
-		
+
 		<div id="itemcontainer">
 			<template if="{{sessions.length == 0}}">
 				<p style="font-size: 1.4em;">Loading...</p>
@@ -82,6 +99,25 @@
 					<span><core-icon icon="radio-button-off"></core-icon></span>
 					<h2>
 						{{session.name}}
+						<template if="{{!session.type}}">
+							<small>
+								<span class="session-type">Panel</span> –
+								<template repeat="{{panelist in session.panelists}}">
+									<span class="panelist">{{panelist}}</span>
+								</template>
+							</small>
+						</template>
+						<template if="{{!!session.type}}">
+							<small>
+								<template if="{{session.type == 'wpp'}}">
+									<span class="session-type">Global Session</span> –
+								</template>
+								<template if="{{session.type == 'science'}}">
+									<span class="session-type">Science Session</span> –
+								</template>
+								{{session.presenter}}
+							</small>
+						</template>
 					</h2>
 				</paper-item>
 			</template>
@@ -210,7 +246,7 @@
 					}
 				}
 				uponDialogClose = uponDialogClose.bind(this);
-				document.addEventListener("core-overlay-close-completed", uponDialogClose);	
+				document.addEventListener("core-overlay-close-completed", uponDialogClose);
 			},
 			finishSelection: function() {
 				console.timeEnd("Session selection");
