@@ -67,10 +67,11 @@
 			<paper-icon-button icon="more-vert"></paper-icon-button>
 		</core-toolbar>
 		<section id="sidepanel" class="hidden">
+			<a id="adminLink" href="/admin" style="display: hidden;"></a>
 			<core-menu selected="0">
 				<core-item icon="event" label="Schedule"></core-item>
 				<template if="{{user.admin}}">
-					<core-item icon="settings" label="Admin Panel"></core-item>
+					<core-item icon="settings" label="Admin Panel" on-tap="{{admin}}"></core-item>
 				</template>
 			</core-menu>
 			<section class="minor">
@@ -113,6 +114,9 @@
 			},
 			contact: function() {
 				this.$.contactLink.click();
+			},
+			admin: function() {
+				this.$.adminLink.click();
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
