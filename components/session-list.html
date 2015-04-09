@@ -40,7 +40,7 @@
 <polymer-element name="session-list" attributes="url index panel type">
 	<template>
 		<style>
-			paper-item span {
+			paper-item > span {
 				color: #555;
 				width: 24px;
 				text-align: center;
@@ -48,9 +48,10 @@
 				font-size: 1.4em;
 				font-weight: bold;
 			}
-			paper-item span core-icon {
+			paper-item > span core-icon {
 				position: relative;
   				top: -1px;
+				left: -3px;
 			}
 			paper-item h2 {
 				margin: 0;
@@ -62,6 +63,19 @@
 				padding-right: 30px;
 				width: 500px;
 			}
+			paper-item h2 > small {
+				color: #4F4F4F;
+				font-weight: lighter;
+				font-size: 75%;
+				display: block;
+				text-decoration: none !important;
+			}
+			paper-item h2 > small > span::after {
+				content: ",";
+			}
+			paper-item h2 > small > span:last-child::after {
+				content: "";
+			}
 		</style>
 		<core-ajax id="getSessions" auto url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
 		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
@@ -72,6 +86,16 @@
 					<span><core-icon icon="radio-button-off"></core-icon></span>
 					<h2>
 						{{session.name}}
+						<template if="{{!session.type}}">
+							<small>
+								<template repeat="{{panelist in session.panelists}}">
+									<span>{{panelist}}</span>
+								</template>
+							</small>
+						</template>
+						<template if="{{!!session.type}}">
+							<small>{{session.presenter}}</small>
+						</template>
 					</h2>
 				</paper-item>
 			</template>
@@ -207,7 +231,7 @@
 					}
 				}
 				uponDialogClose = uponDialogClose.bind(this);
-				document.addEventListener("core-overlay-close-completed", uponDialogClose);	
+				document.addEventListener("core-overlay-close-completed", uponDialogClose);
 			},
 			finishSelection: function() {
 				console.timeEnd("Session selection");
