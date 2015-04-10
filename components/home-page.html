@@ -58,8 +58,8 @@
 				color: black;
 			}
 		</style>
-		
-		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
+
+		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
 
 		<core-toolbar>
 			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
@@ -87,8 +87,8 @@
 				</ul>
 			</section>
 		</section>
-		<content-section>
-			<h2>Hello world!</h2>
+		<content-section id="errorSection" style="display: none;">
+			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">The schedule below is a general schedule. Please follow the link sent to your school email to log in and see your personalized schedule.</h2>
 		</content-section>
 	</template>
 	<script>
@@ -96,7 +96,7 @@
 			icon: "menu",
 			menuOpened: false,
 			ready: function() {
-				
+
 			},
 			toggleMenu: function() {
 				this.menuOpened = !this.menuOpened;
@@ -121,6 +121,13 @@
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
 				window.user = this.user;
+			},
+			handleError: function(e) {
+				var errorMessage = e.detail.response.response.error;
+				if (e.detail.xhr.status === 403) {
+					// User not logged in
+					this.$.errorSection.style.display = "block";
+				}
 			}
 		});
 	</script>
