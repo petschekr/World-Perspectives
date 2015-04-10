@@ -19,9 +19,25 @@
 				background: #f1f1f1;
 				overflow-x: hidden;
 			}
+			body > h1 {
+				width: 100%;
+				text-align: center;
+			}
+			registration-element {
+				transition: opacity ease-in 0.2s;
+			}
+			registration-element[unresolved] {
+				opacity: 0; display: block; overflow: hidden; position: relative;
+			} 
 		</style>
 	</head>
-	<body unresolved>
-		<registration-element></registration-element>
+	<body>
+		<h1>Loading...</h1>
+		<registration-element unresolved></registration-element>
+		<script>
+			window.addEventListener("polymer-ready", function() {
+				document.querySelector("body > h1").style.display = "none";
+			});
+		</script>
 	</body>
 </html>
