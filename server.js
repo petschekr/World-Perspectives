@@ -123,7 +123,7 @@ app.route("/info").get(function (request, response) {
 		.then(function (results) {
 			results = results.body.results;
 			if (results.length !== 1) {
-				response.status(404).json({
+				response.status(403).json({
 					"error": "Invalid identification cookie"
 				});
 				return;
@@ -134,7 +134,7 @@ app.route("/info").get(function (request, response) {
 				"name": result.value.name,
 				"username": result.path.key,
 				"admin": !!result.value.admin
-			});	
+			});
 		});
 });
 app.route("/sessions/panels")
@@ -749,7 +749,7 @@ app.route("/sessions/remaining/1")
 		else {
 			sessionCollection = "sessions";
 		}
-		
+
 		db.search("users", `@path.key: ${userID}`)
 			.then(function (results) {
 				results = results.body.results;
@@ -986,7 +986,7 @@ app.route("/sessions/remaining/2")
 		else {
 			sessionCollection = "sessions";
 		}
-		
+
 		db.search("users", `@path.key: ${userID}`)
 			.then(function (results) {
 				results = results.body.results;
