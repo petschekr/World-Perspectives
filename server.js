@@ -63,6 +63,42 @@ function handleError (error) {
 	pusher.note({}, "WPP Error", `${new Date().toString()}\n\n${error.stack}`, function() {});
 }
 
+app.route("/login/:code").get(function (request, response) {
+	response.clearCookie("username");
+	var code = request.params.code.toString();
+	// Check if the provided code is valid
+	db.search("users", `value.code: "${code}"`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				// Invalid code
+				fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
+					.then(function (html) {
+						response.send(html);
+					});
+				return;
+			}
+			var user = results[0].value;
+			var username = results[0].path.key;
+			// Set a cookie to identify this user later
+			if (request.signedCookies.username !== username) {
+				response.cookie("username", username, cookieOptions);
+			}
+			// Direct request by whether the user has already registered
+			db.newGraphReader()
+				.get()
+				.from("users", username)
+				.related("attendee")
+				.then(function (results) {
+					if (results.body.count > 3) {
+						response.redirect("/");
+					}
+					else {
+						response.redirect("/register");
+					}
+				});
+		});
+});
 app.route("/").get(function (request, response) {
 	fs.readFileAsync("index.html", {"encoding": "utf8"})
 		.then(function (html) {
@@ -76,31 +112,18 @@ app.route("/about").get(function (request, response) {
 		});
 });
 app.route("/register").get(function (request, response) {
-	fs.readFileAsync("invalidcode.html", {"encoding": "utf8"})
-		.then(function (html) {
-			response.send(html);
-		});
-});
-app.route("/register/:code").get(function (request, response) {
-	var code = request.params.code.toString();
-	// Check if the provided code is valid
-	db.search("users", `value.code: "${code}"`)
+	var userID = request.signedCookies.username;
+	db.search("users", `@path.key: ${userID}`)
 		.then(function (results) {
 			results = results.body.results;
 			if (results.length !== 1) {
-				response.redirect("/register");
+				response.redirect("/");
 				return;
-			}
-			var user = results[0].value;
-			var username = results[0].path.key;
-			// Set a cookie to identify this user later
-			if (request.signedCookies.username !== username) {
-				response.cookie("username", username, cookieOptions);
 			}
 			// Reject request if already registered
 			db.newGraphReader()
 				.get()
-				.from("users", username)
+				.from("users", userID)
 				.related("attendee")
 				.then(function (results) {
 					if (results.body.count > 3) {
@@ -118,6 +141,7 @@ app.route("/register/:code").get(function (request, response) {
 				});
 		});
 });
+
 // AJAX endpoints
 app.route("/info").get(function (request, response) {
 	var userID = request.signedCookies.username;
