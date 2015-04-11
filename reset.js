@@ -1,3 +1,5 @@
+/*jslint node: true */
+/*jslint esnext: true */
 var Q = require("kew");
 var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
 
@@ -29,12 +31,10 @@ Q.all(infoPromises)
 		var users = results.body.results;
 		totalUsers = users.length;
 		users = users.map(function (user) {
-			return [
-				db.remove("users", user.path.key, true),
-				db.put("users", user.path.key, user.value)
-			];
-		}).reduce(function (a, b) {
-			return a.concat(b);
+			return db.remove("users", user.path.key, true)
+				.then(function () {
+					return db.put("users", user.path.key, user.value);
+				});
 		});
 		return Q.all(users);
 	})
