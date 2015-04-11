@@ -1,10 +1,12 @@
+/*jslint node: true */
+/*jslint esnext: true */
 "use strict";
 var crypto = require("crypto");
 var fs = require("fs");
 
 var moment = require("moment");
-var Promise = require("bluebird");
-fs = Promise.promisifyAll(fs);
+var BPromise = require("bluebird");
+fs = BPromise.promisifyAll(fs);
 var Q = require("kew"); // Because the Orchestrate driver for Node.js forces its use
 // Initialize the database connection
 var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
@@ -27,7 +29,7 @@ var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
 
 var app = express();
-var server = require("http").Server(app)
+var server = require("http").Server(app);
 var postParser = bodyParser.urlencoded({"extended": false});
 
 app.use(compress());
@@ -105,13 +107,13 @@ app.route("/register/:code").get(function (request, response) {
 						fs.readFileAsync("alreadyregistered.html", {"encoding": "utf8"})
 							.then(function (html) {
 								response.send(html);
-							})
+							});
 					}
 					else {
 						fs.readFileAsync("register.html", {"encoding": "utf8"})
 							.then(function (html) {
 								response.send(html);
-							})
+							});
 					}
 				});
 		});
@@ -167,7 +169,7 @@ app.route("/sessions/panels")
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
-		var sessionInfo = undefined;
+		var sessionInfo = null;
 
 		// Deregister the previous session (if it exists)
 		// At this stage, only first choices for each type will have been selected
@@ -180,7 +182,7 @@ app.route("/sessions/panels")
 					return Q.reject(new CancelError("Can't edit choices at this stage."));
 				}
 				results = results.body.results;
-				var previousSession = undefined;
+				var previousSession = null;
 				for (var i = 0; i < results.length; i++) {
 					if (results[i].path.collection === "panels") {
 						previousSession = results[i];
@@ -235,7 +237,7 @@ app.route("/sessions/panels")
 					return Q.reject(new CancelError("Invalid attendee ID."));
 				}
 				attendeeKey = results[0].path.key;
-				return db.search("panels", `@path.key: ${sessionKey}`)
+				return db.search("panels", `@path.key: ${sessionKey}`);
 			})
 			.then(function (results) {
 				results = results.body.results;
@@ -317,7 +319,7 @@ app.route("/sessions/wpp")
 					return sessionObject;
 				});
 				response.send(sessions);
-			})
+			});
 	})
 	.post(postParser, function (request, response) {
 		// Register the user for their selected first choice
@@ -332,7 +334,7 @@ app.route("/sessions/wpp")
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
-		var sessionInfo = undefined;
+		var sessionInfo = null;
 
 		// Deregister the previous session (if it exists)
 		// At this stage, only first choices for each type will have been selected
@@ -345,7 +347,7 @@ app.route("/sessions/wpp")
 					return Q.reject(new CancelError("Can't edit choices at this stage."));
 				}
 				results = results.body.results;
-				var previousSession = undefined;
+				var previousSession = null;
 				for (var i = 0; i < results.length; i++) {
 					if (results[i].value.type === "wpp") {
 						previousSession = results[i];
@@ -400,7 +402,7 @@ app.route("/sessions/wpp")
 					return Q.reject(new CancelError("Invalid attendee ID."));
 				}
 				attendeeKey = results[0].path.key;
-				return db.search("sessions", `@path.key: ${sessionKey}`)
+				return db.search("sessions", `@path.key: ${sessionKey}`);
 			})
 			.then(function (results) {
 				results = results.body.results;
@@ -482,7 +484,7 @@ app.route("/sessions/science")
 					return sessionObject;
 				});
 				response.send(sessions);
-			})
+			});
 	})
 	.post(postParser, function (request, response) {
 		// Register the user for their selected first choice
@@ -497,7 +499,7 @@ app.route("/sessions/science")
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
-		var sessionInfo = undefined;
+		var sessionInfo = null;
 
 		// Deregister the previous session (if it exists)
 		// At this stage, only first choices for each type will have been selected
@@ -510,7 +512,7 @@ app.route("/sessions/science")
 					return Q.reject(new CancelError("Can't edit choices at this stage."));
 				}
 				results = results.body.results;
-				var previousSession = undefined;
+				var previousSession = null;
 				for (var i = 0; i < results.length; i++) {
 					if (results[i].value.type === "science") {
 						previousSession = results[i];
@@ -565,7 +567,7 @@ app.route("/sessions/science")
 					return Q.reject(new CancelError("Invalid attendee ID."));
 				}
 				attendeeKey = results[0].path.key;
-				return db.search("sessions", `@path.key: ${sessionKey}`)
+				return db.search("sessions", `@path.key: ${sessionKey}`);
 			})
 			.then(function (results) {
 				results = results.body.results;
@@ -741,7 +743,7 @@ app.route("/sessions/remaining/1")
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
-		var sessionInfo = undefined;
+		var sessionInfo = null;
 		var sessionCollection;
 		if (sessionType === "panel") {
 			sessionCollection = "panels";
@@ -766,7 +768,7 @@ app.route("/sessions/remaining/1")
 					return Q.reject(new CancelError("Can't edit choices at this stage."));
 				}
 				results = results.body.results;
-				var previousSession = undefined;
+				var previousSession = null;
 				for (var i = 0; i < results.length; i++) {
 					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID) {
 						previousSession = results[i];
@@ -807,11 +809,11 @@ app.route("/sessions/remaining/1")
 								"session": previousSession.path.key,
 								"taken": currentAttendees
 							});
-							return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+							return db.search(sessionCollection, `@path.key: ${sessionKey}`);
 						});
 				}
 				else {
-					return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+					return db.search(sessionCollection, `@path.key: ${sessionKey}`);
 				}
 			})
 			.then(function (results) {
@@ -978,7 +980,7 @@ app.route("/sessions/remaining/2")
 
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
-		var sessionInfo = undefined;
+		var sessionInfo = null;
 		var sessionCollection;
 		if (sessionType === "panel") {
 			sessionCollection = "panels";
@@ -1003,7 +1005,7 @@ app.route("/sessions/remaining/2")
 					return Q.reject(new CancelError("Can't edit choices at this stage."));
 				}
 				results = results.body.results;
-				var previousSession = undefined;
+				var previousSession = null;
 				for (var i = 0; i < results.length; i++) {
 					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID && results[i].path.key !== selectedAuxID) {
 						previousSession = results[i];
@@ -1044,11 +1046,11 @@ app.route("/sessions/remaining/2")
 								"session": previousSession.path.key,
 								"taken": currentAttendees
 							});
-							return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+							return db.search(sessionCollection, `@path.key: ${sessionKey}`);
 						});
 				}
 				else {
-					return db.search(sessionCollection, `@path.key: ${sessionKey}`)
+					return db.search(sessionCollection, `@path.key: ${sessionKey}`);
 				}
 			})
 			.then(function (results) {
