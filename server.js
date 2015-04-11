@@ -175,12 +175,12 @@ app.route("/schedule").get(function (request, response) {
 	var scheduleResponse = [
 		{"time": "8:00 AM – 8:10 AM", "title": "Advisory"},
 		{"time": "8:15 AM – 8:55 AM", "title": "Opening Assembly", "location": "Bedford Gym"},
-		{"time": "9:00 AM – 9:50 AM", "title": "Session 1", "location": ""}, // index 2
-		{"time": "9:55 AM – 10:45 AM", "title": "Session 2", "location": ""}, // index 3
+		{"time": "9:00 AM – 9:50 AM", "title": "Session 1", "location": "", "people": []}, // index 2
+		{"time": "9:55 AM – 10:45 AM", "title": "Session 2", "location": "", "people": []}, // index 3
 		{"time": "10:50 AM – 11:25 AM", "title": "Lunch"},
-		{"time": "11:30 AM – 12:20 PM", "title": "Session 3", "location": ""}, // index 5
-		{"time": "12:25 PM – 1:15 PM", "title": "Session 4", "location": ""}, // index 6
-		{"time": "1:20 PM – 2:10 PM", "title": "Session 5", "location": ""}, // index 7
+		{"time": "11:30 AM – 12:20 PM", "title": "Session 3", "location": "", "people": []}, // index 5
+		{"time": "12:25 PM – 1:15 PM", "title": "Session 4", "location": "", "people": []}, // index 6
+		{"time": "1:20 PM – 2:10 PM", "title": "Session 5", "location": "", "people": []}, // index 7
 		{"time": "2:15 PM – 2:40 PM", "title": "Advisory"}
 	];
 	db.search("users", `@path.key: ${userID}`)
@@ -237,6 +237,7 @@ app.route("/schedule").get(function (request, response) {
 				function applyToSchedule (index) {
 					scheduleResponse[index].title = session.name + ` (${sessionType})`;
 					scheduleResponse[index].location = session.location;
+					scheduleResponse[index].people = (sessionType === "Panel") ? session.panelists.join(", ") : session.presenter;
 				}
 			});
 

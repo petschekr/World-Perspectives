@@ -60,6 +60,7 @@
 			}
 			tr td:last-of-type {
 				width: 118px;
+				text-align: center;
 			}
 			table {
 				border: 1px solid #DDD;
@@ -92,7 +93,16 @@
 			<table id="scheduleTable">
 				<tr template repeat="{{entry in schedule}}">
 					<td>{{entry.time}}</td>
-					<td>{{entry.title}}</td>
+					<td>
+						<template if="{{!entry.people}}">
+							{{entry.title}}
+						</template>
+						<template if="{{entry.people}}">
+							<b>{{entry.title}}</b>
+							<br />
+							<i>{{entry.people}}</i>
+						</template>
+					</td>
 					<td>{{entry.location}}</td>
 				</tr>
 
