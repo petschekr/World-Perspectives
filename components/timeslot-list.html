@@ -84,6 +84,15 @@
 				margin-bottom: 0.5em;
 				margin-top: 0;
 			}
+			/* Mobile styles */
+			@media screen and (max-width: 35.5em) {
+				paper-item > span {
+					display: none;
+				}
+				paper-item {
+					width: auto;
+				}
+			}
 		</style>
 		<core-ajax id="getSessions" url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
 		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
