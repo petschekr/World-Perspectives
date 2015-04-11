@@ -88,7 +88,7 @@
 				border-top: 1px solid #ddd;
 			}
 			#schedule table td:first-child {
-				width: 146px;
+				width: 152px;
 			}
 			#schedule table td:nth-child(2) {
 				font-weight: normal;
@@ -150,6 +150,16 @@
 					<tr template repeat="{{event in schedule}}">
 						<td>{{event.time}}</td>
 						<td>{{event.title}}</td>
+						<td>
+							<template if="{{!event.people}}">
+								{{event.title}}
+							</template>
+							<template if="{{event.people}}">
+								<b>{{event.title}}</b>
+								<br />
+								<i>{{event.people}}</i>
+							</template>
+						</td>
 						<td>{{event.location}}</td>
 					</tr>
 				</tbody>
