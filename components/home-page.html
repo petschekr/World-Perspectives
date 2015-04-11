@@ -96,6 +96,22 @@
 			#schedule table td:last-child {
 				width: 118px;
 			}
+			#schedule table td.shorttime {
+				display: none;
+				white-space: pre;
+			}
+			/* Mobile styles */
+			@media screen and (max-width: 35.5em) {
+				#schedule table td:last-child {
+					width: auto;
+				}
+				#schedule table td.longtime {
+					display: none;
+				}
+				#schedule table td.shorttime {
+					display: table-cell;
+				}
+			}
 		</style>
 
 		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
@@ -148,8 +164,8 @@
 						<td></td><td><strong>Loading...</strong></td><td></td>
 					</tr>
 					<tr template repeat="{{event in schedule}}">
-						<td>{{event.time}}</td>
-						<td>{{event.title}}</td>
+						<td class="longtime">{{event.time}}</td>
+						<td class="shorttime">{{event.shortTime}}</td>
 						<td>
 							<template if="{{!event.people}}">
 								{{event.title}}
@@ -207,6 +223,7 @@
 					if (!this.schedule[i].location) {
 						this.schedule[i].location = "";
 					}
+					this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
 				}
 				if (this.$["schedule-ajax"].response.registered < 5) {
 					this.$.notRegistered.style.display = "block";
