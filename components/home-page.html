@@ -130,6 +130,9 @@
 		<content-section id="errorSection" style="display: none;">
 			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">The schedule below is a general schedule. Please follow the link sent to your school email to log in and see your personalized schedule.</h2>
 		</content-section>
+		<content-section id="notRegistered" style="display: none;">
+			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">You haven't finished registered yet. Please <a href="/register">register</a> to see your completed schedule.</h2>
+		</content-section>
 		<content-section id="schedule">
 			<h2 class="name">{{user.name}}</h2>
 			<h2 class="time">April 22, 2015</h2>
@@ -189,11 +192,14 @@
 				window.user = this.user;
 			},
 			scheduleResponse: function() {
-				this.schedule = this.$["schedule-ajax"].response;
+				this.schedule = this.$["schedule-ajax"].response.data;
 				for (var i = 0; i < this.schedule.length; i++) {
 					if (!this.schedule[i].location) {
 						this.schedule[i].location = "";
 					}
+				}
+				if (this.$["schedule-ajax"].response.registered < 5) {
+					this.$.notRegistered.style.display = "block";
 				}
 			},
 			handleError: function(e) {

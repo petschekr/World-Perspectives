@@ -209,7 +209,10 @@ app.route("/schedule").get(function (request, response) {
 				}
 			});
 
-			response.json(scheduleResponse);
+			response.json({
+				"registered": results.length,
+				"data": scheduleResponse
+			});
 		})
 		.fail(function (err) {
 			if (err instanceof CancelError) {
