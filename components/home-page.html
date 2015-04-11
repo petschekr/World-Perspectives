@@ -100,6 +100,9 @@
 				display: none;
 				white-space: pre;
 			}
+			core-toolbar span.shorttitle {
+				display: none;
+			}
 			/* Mobile styles */
 			@media screen and (max-width: 35.5em) {
 				#schedule table td:last-child {
@@ -111,6 +114,12 @@
 				#schedule table td.shorttime {
 					display: table-cell;
 				}
+				core-toolbar span.longtitle {
+					display: none;
+				}
+				core-toolbar span.shorttitle {
+					display: inline;
+				}
 			}
 		</style>
 
@@ -119,7 +128,8 @@
 
 		<core-toolbar>
 			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
-			<span flex>GFA World Perspectives Symposium</span>
+			<span flex class="longtitle">GFA World Perspectives Symposium</span>
+			<span flex class="shorttitle">GFA WPP Symposium</span>
 			<paper-icon-button icon="print" on-tap="{{print}}"></paper-icon-button>
 		</core-toolbar>
 		<section id="sidepanel" class="hidden">
