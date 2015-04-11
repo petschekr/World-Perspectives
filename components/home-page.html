@@ -141,10 +141,10 @@
 					</tr>
 				</thead>
 				<tbody>
-					<template if="{{!schedule}}">
+					<template if="{{schedule.length === 0}}">
 						<tr><td></td><td><strong>Loading...</strong></td><td></td></tr>
 					</template>
-					<template if="{{schedule}}">
+					<template if="{{schedule.length > 0}}">
 						<template repeat="{{event in schedule}}">
 							<tr>
 								<td>{{event.time}}</td>
