@@ -207,6 +207,14 @@
 				if (e.detail.xhr.status === 403) {
 					// User not logged in
 					this.$.errorSection.style.display = "block";
+					if (e.detail.response.response.data) {
+						this.schedule = e.detail.response.response.data;
+						for (var i = 0; i < this.schedule.length; i++) {
+							if (!this.schedule[i].location) {
+								this.schedule[i].location = "";
+							}
+						}
+					}
 				}
 			}
 		});
