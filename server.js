@@ -139,6 +139,92 @@ app.route("/info").get(function (request, response) {
 			});
 		});
 });
+app.route("/schedule").get(function (request, response) {
+	var userID = request.signedCookies.username;
+	var user = null;
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Invalid identification cookie"
+				});
+				return;
+			}
+			user = results[0];
+			return db.newGraphReader()
+				.get()
+				.from("users", userID)
+				.related("attendee");
+		})
+		.then(function (results) {
+			results = results.body.results;
+
+			var scheduleResponse = [
+				{"time": "8:00 AM - 8:10 AM", "title": "Advisory"},
+				{"time": "8:15 AM - 8:55 AM", "title": "Opening Assembly", "location": "Bedford Gym"},
+				{"time": "9:00 AM - 9:50 AM", "title": "Session 1", "location": ""}, // index 2
+				{"time": "9:55 AM - 10:45 AM", "title": "Session 2", "location": ""}, // index 3
+				{"time": "10:50 AM - 11:25 AM", "title": "Lunch"},
+				{"time": "11:30 AM - 12:20 PM", "title": "Session 3", "location": ""}, // index 5
+				{"time": "12:25 PM - 1:15 PM", "title": "Session 4", "location": ""}, // index 6
+				{"time": "1:20 PM - 2:10 PM", "title": "Session 5", "location": ""}, // index 7
+				{"time": "2:15 PM - 2:40 PM", "title": "Advisory"}
+			];
+			results.forEach(function (session) {
+				session = session.value;
+				var sessionType;
+				if (!session.type) {
+					sessionType = "Panel";
+				}
+				else {
+					if (session.type === "wpp") {
+						sessionType = "Global";
+					}
+					else if (session.type === "science") {
+						sessionType = "Science";
+					}
+				}
+				var unixTimeStart = new Date(session.time.start).valueOf();
+				switch (unixTimeStart) {
+					case 1429707600000: // 9:00 AM - first session
+						applyToSchedule(2);
+						break;
+					case 1429710900000: // 9:55 AM - second session
+						applyToSchedule(3);
+						break;
+					case 1429716600000: // 11:30 AM - third session
+						applyToSchedule(5);
+						break;
+					case 1429719900000: // 12:25 PM - fourth session
+						applyToSchedule(6);
+						break;
+					case 1429723200000: // 1:20 PM - fifth session
+						applyToSchedule(7);
+						break;
+				}
+				function applyToSchedule (index) {
+					scheduleResponse[index].title = session.name + ` (${sessionType})`;
+					scheduleResponse[index].location = session.location;
+				}
+			});
+
+			response.json(scheduleResponse);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
 app.route("/sessions/panels")
 	.get(function (request, response) {
 		db.newSearchBuilder()
