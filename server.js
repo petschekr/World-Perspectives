@@ -141,6 +141,12 @@ app.route("/register").get(function (request, response) {
 				});
 		});
 });
+app.route("/schedule/print").get(function (request, response) {
+	fs.readFileAsync("schedule.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
 
 // AJAX endpoints
 app.route("/info").get(function (request, response) {

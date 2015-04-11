@@ -1,0 +1,128 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/core-item/core-item.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" />
+
+<polymer-element name="schedule-display">
+	<template>
+		<style>
+			@media print {
+				button {
+					display: none;
+				}
+				.schedule {
+					page-break-after: always;
+				}
+				.schedule:last-of-type {
+					page-break-after: auto;
+				}
+			}
+			img {
+				display: block;
+				margin: 20px auto;
+			}
+			button {
+				position: absolute;
+				top: 5px;
+				left: 5px;
+			}
+			h4 {
+				margin: 5px 10px 5px 10px;
+			}
+			h4:first-of-type {
+				font-family: 'Ubuntu', sans-serif;
+				font-size: 22px;
+				float: left;
+			}
+			h4:last-of-type {
+				font-family: 'Ubuntu', sans-serif;
+				font-weight: 300;
+				float: right;
+				position: relative;
+				top: 4px;
+			}
+			.clear {
+				clear: both;
+			}
+			hr {
+				border: 1px dashed rgba(0, 0, 0, 0.2);
+			}
+			tr td:first-of-type {
+				font-family: "Ubuntu Mono";
+				width: 155px;
+			}
+			tr td:last-of-type {
+				font-family: 'Raleway', sans-serif;
+				font-size: 95%;
+			}
+			table {
+				border: 1px solid #DDD;
+				width: 100%;
+				border-collapse: collapse;
+				border-spacing: 0;
+			}
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+			table td {
+				padding: 8px;
+				border: 1px solid #DDD;
+			}
+			table tr {
+				vertical-align: top;
+			}
+		</style>
+
+		<core-ajax id="schedule-ajax" auto url="/schedule" handleAs="json" on-core-response="{{scheduleResponse}}" on-core-error="{{handleError}}"></core-ajax>
+
+		<button onclick="window.print()">Print Schedule</button>
+		<div class="schedule">
+			<img src="/img/logo.svg" />
+			<h4 class="name">
+				Ryan Petschek
+			</h4>
+			<h4 class="date">April 22nd, 2015</h4>
+			<div class="clear"></div>
+			<hr />
+			<table>
+				<tr>
+					<td>8:00 AM - 8:10 AM</td>
+					<td>Advisory</td>
+				</tr>
+				<tr>
+					<td>8:15 AM - 8:55 AM</td>
+					<td>Opening Assembly</td>
+				</tr>
+				<tr>
+					<td>9:00 AM - 9:50 AM</td>
+					<td>
+						<b>Her Hand in Marriage: Are Child Brides a Consequence of Culture or Poverty?</b> - Elettra Baldi
+						<br />
+						<i>Global Session</i>
+					</td>
+				</tr>
+				<tr>
+					<td>9:00 AM - 9:50 AM</td>
+					<td>
+						<b>Her Hand in Marriage: Are Child Brides a Consequence of Culture or Poverty?</b> - Elettra Baldi
+						<br />
+						<i>Global Session</i>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+			ready: function () {
+				setTimeout(function () {
+					window.print();
+					window.history.back();
+				}, 1000);
+			}
+		});
+	</script>
+</polymer-element>
