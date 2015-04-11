@@ -51,11 +51,15 @@
 			}
 			tr td:first-of-type {
 				font-family: "Ubuntu Mono";
-				width: 155px;
+				width: 152px;
+				white-space: pre;
 			}
-			tr td:last-of-type {
+			tr td:nth-of-type(2), tr td:last-of-type {
 				font-family: 'Raleway', sans-serif;
 				font-size: 95%;
+			}
+			tr td:last-of-type {
+				width: 118px;
 			}
 			table {
 				border: 1px solid #DDD;
@@ -75,19 +79,24 @@
 			}
 		</style>
 
+		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="schedule-ajax" auto url="/schedule" handleAs="json" on-core-response="{{scheduleResponse}}" on-core-error="{{handleError}}"></core-ajax>
 
 		<button onclick="window.print()">Print Schedule</button>
 		<div class="schedule">
 			<img src="/img/logo.svg" />
-			<h4 class="name">
-				Ryan Petschek
-			</h4>
+			<h4 class="name">{{user.name}}</h4>
 			<h4 class="date">April 22nd, 2015</h4>
 			<div class="clear"></div>
 			<hr />
-			<table>
-				<tr>
+			<table id="scheduleTable">
+				<tr template repeat="{{entry in schedule}}">
+					<td>{{entry.time}}</td>
+					<td>{{entry.title}}</td>
+					<td>{{entry.location}}</td>
+				</tr>
+
+				<!-- <tr>
 					<td>8:00 AM - 8:10 AM</td>
 					<td>Advisory</td>
 				</tr>
@@ -104,24 +113,62 @@
 					</td>
 				</tr>
 				<tr>
-					<td>9:00 AM - 9:50 AM</td>
+					<td>12:00 PM - 12:50 PM</td>
 					<td>
 						<b>Her Hand in Marriage: Are Child Brides a Consequence of Culture or Poverty?</b> - Elettra Baldi
 						<br />
 						<i>Global Session</i>
 					</td>
-				</tr>
+				</tr> -->
 			</table>
 		</div>
 
 	</template>
 	<script>
 		Polymer({
+			schedule: [],
 			ready: function () {
 				setTimeout(function () {
 					window.print();
 					window.history.back();
 				}, 1000);
+			},
+			userResponse: function() {
+				this.user = this.$["info-ajax"].response;
+				window.user = this.user;
+			},
+			scheduleResponse: function() {
+				this.schedule = this.$["schedule-ajax"].response.data;
+				for (var i = 0; i < this.schedule.length; i++) {
+					if (!this.schedule[i].location) {
+						this.schedule[i].location = "";
+					}
+					// Format times
+					var time = this.schedule[i].time.split("–");
+					if (time[0].length === 8) {
+						time[0] += " ";
+					}
+					if (time[1].length === 8) {
+						time[1] = " " + time[1];
+					}
+					this.schedule[i].time = time.join("–");
+				}
+			},
+			handleError: function(e) {
+				var errorMessage = e.detail.response.response.error;
+				if (e.detail.xhr.status === 403) {
+					// User not logged in
+					this.$.errorSection.style.display = "block";
+
+					if (e.detail.response.response.data) {
+						this.schedule = e.detail.response.response.data;
+						for (var i = 0; i < this.schedule.length; i++) {
+							if (!this.schedule[i].location) {
+								this.schedule[i].location = "";
+							}
+						}
+					}
+				}
 			}
 		});
 	</script>
