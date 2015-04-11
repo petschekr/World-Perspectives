@@ -141,18 +141,14 @@
 					</tr>
 				</thead>
 				<tbody>
-					<template if="{{schedule.length === 0}}">
-						<tr><td></td><td><strong>Loading...</strong></td><td></td></tr>
-					</template>
-					<template if="{{schedule.length > 0}}">
-						<template repeat="{{event in schedule}}">
-							<tr>
-								<td>{{event.time}}</td>
-								<td>{{event.title}}</td>
-								<td>{{event.location}}</td>
-							</tr>
-						</template>
-					</template>
+					<tr template if="{{schedule.length === 0}}">
+						<td></td><td><strong>Loading...</strong></td><td></td>
+					</tr>
+					<tr template repeat="{{event in schedule}}">
+						<td>{{event.time}}</td>
+						<td>{{event.title}}</td>
+						<td>{{event.location}}</td>
+					</tr>
 				</tbody>
 			</table>
 		</content-section>
