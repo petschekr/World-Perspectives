@@ -354,9 +354,9 @@ app.route("/sessions/:period")
 			db.search("panels", `@path.key: ${sessionKey}`),
 			db.search("sessions", `@path.key: ${sessionKey}`)
 		]).then(function (results) {
-			var userResults = results[0].data.results;
-			var panelResults = results[1].data.results;
-			var sessionResults = results[2].data.results;
+			var userResults = results[0].body.results;
+			var panelResults = results[1].body.results;
+			var sessionResults = results[2].body.results;
 
 			if (userResults.length !== 1) {
 				return Q.reject(new CancelError("Invalid indentification cookie"));
