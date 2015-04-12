@@ -33,6 +33,7 @@ Q.all(infoPromises)
 		users = users.map(function (user) {
 			return db.remove("users", user.path.key, true)
 				.then(function () {
+					user.value.registered = false;
 					return db.put("users", user.path.key, user.value);
 				});
 		});

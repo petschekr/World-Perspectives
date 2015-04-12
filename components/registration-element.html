@@ -54,6 +54,7 @@
 		<core-a11y-keys target="{{rootDocument}}" keys="right pageup" on-keys-pressed="{{goForward}}"></core-a11y-keys>
 		<!-- AJAX for loading the user's data -->
 		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}"></core-ajax>
+		<core-ajax id="complete-ajax" method="POST" url="/register/done" handleAs="json" on-core-response="{{handleExitDone}}" on-core-error="{{handleExitFailed}}"></core-ajax>
 		<core-animated-pages transitions="slide-from-right" id="progressController">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
@@ -246,7 +247,18 @@
 				}
 			},
 			handleExit: function() {
+				this.$["complete-ajax"].go();
+				// Show a loading indicator
+				window.loadingToast.show();
+			},
+			handleExitDone: function() {
+				window.loadingToast.dismiss();
 				window.location = "/";
+			},
+			handleExitFailed: function(e) {
+				window.loadingToast.dismiss();
+				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
+				window.notifierToast.show();
 			},
 			// Progress functions
 			transitioning: false,

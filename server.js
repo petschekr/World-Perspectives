@@ -85,18 +85,12 @@ app.route("/login/:code").get(function (request, response) {
 				response.cookie("username", username, cookieOptions);
 			}
 			// Direct request by whether the user has already registered
-			db.newGraphReader()
-				.get()
-				.from("users", username)
-				.related("attendee")
-				.then(function (results) {
-					if (results.body.count > 3) {
-						response.redirect("/");
-					}
-					else {
-						response.redirect("/register");
-					}
-				});
+			if (user.registered) {
+				response.redirect("/");
+			}
+			else {
+				response.redirect("/register");
+			}
 		});
 });
 app.route("/").get(function (request, response) {
@@ -121,24 +115,18 @@ app.route("/register").get(function (request, response) {
 				return;
 			}
 			// Reject request if already registered
-			db.newGraphReader()
-				.get()
-				.from("users", userID)
-				.related("attendee")
-				.then(function (results) {
-					if (results.body.count >= 5) {
-						fs.readFileAsync("alreadyregistered.html", {"encoding": "utf8"})
-							.then(function (html) {
-								response.send(html);
-							});
-					}
-					else {
-						fs.readFileAsync("register.html", {"encoding": "utf8"})
-							.then(function (html) {
-								response.send(html);
-							});
-					}
-				});
+			if (results[0].value.registered) {
+				fs.readFileAsync("alreadyregistered.html", {"encoding": "utf8"})
+					.then(function (html) {
+						response.send(html);
+					});
+			}
+			else {
+				fs.readFileAsync("register.html", {"encoding": "utf8"})
+					.then(function (html) {
+						response.send(html);
+					});
+			}
 		});
 });
 app.route("/schedule/print").get(function (request, response) {
@@ -260,6 +248,74 @@ app.route("/schedule").get(function (request, response) {
 					"error": "An internal server error occurred."
 				});
 			}
+		});
+});
+app.route("/register/done").post(function (request, response) {
+	var userID = request.signedCookies.username;
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Invalid identification cookie"
+				});
+				return;
+			}
+			db.newGraphReader()
+				.get()
+				.from("users", userID)
+				.related("attendee")
+				.then(function (results) {
+					if (results.body.count < 5) {
+						// User hasn't actually finished registering
+						return Q.reject(new CancelError("Registration isn't completed"));
+					}
+					results = results.body.results;
+					// Make sure that the user has selected one panel
+					var hasSelectedPanel = false;
+					for (let i = 0; i < results.length; i++) {
+						if (!results[i].value.type) {
+							hasSelectedPanel = true;
+							break;
+						}
+					}
+					if (!hasSelectedPanel) {
+						return Q.reject(new CancelError("You must select at least one panel"));
+					}
+					// Make sure that the user has selected one session
+					var hasSelectedSession = false;
+					for (let i = 0; i < results.length; i++) {
+						if (!!results[i].value.type) {
+							hasSelectedSession = true;
+							break;
+						}
+					}
+					if (!hasSelectedSession) {
+						return Q.reject(new CancelError("You must select at least one global studies or science session"));
+					}
+					// Done! Mark as registered
+					return db.newPatchBuilder("users", userID)
+						.add("registered", true)
+						.apply();
+				})
+				.then(function () {
+					response.json({
+						"success": true
+					});
+				})
+				.fail(function (err) {
+					if (err instanceof CancelError) {
+						response.status(400).json({
+							"error": err.message
+						});
+					}
+					else {
+						handleError(err);
+						response.status(500).json({
+							"error": "An internal server error occurred."
+						});
+					}
+				});
 		});
 });
 app.route("/sessions/:period")
@@ -384,7 +440,7 @@ app.route("/sessions/:period")
 		.then(function (results) {
 			results = results.body.results;
 			var previousSession = null;
-			for (var i = 0; i < results.length; i++) {
+			for (let i = 0; i < results.length; i++) {
 				if (results[i].value.time.start === sessionInfo.time.start) {
 					previousSession = results[i];
 				}

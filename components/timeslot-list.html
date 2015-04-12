@@ -265,7 +265,7 @@
 						window.selections.fifth = this.selectedSession;
 						break;
 				}
-				
+
 				// Unselect the previous choice
 				if (this.previousSelectedSession) {
 					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
@@ -288,7 +288,7 @@
 			handleError: function(e) {
 				console.timeEnd("Session selection");
 				window.loadingToast.dismiss();
-				window.notifierToast.text = e.detail.response.error || "An error occurred!";
+				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
 				window.notifierToast.show();
 				// Failed requests will still deregister any previous registrations for that session type
 				// Unselect the previous choice
