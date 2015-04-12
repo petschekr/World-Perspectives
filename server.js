@@ -126,7 +126,7 @@ app.route("/register").get(function (request, response) {
 				.from("users", userID)
 				.related("attendee")
 				.then(function (results) {
-					if (results.body.count > 3) {
+					if (results.body.count >= 5) {
 						fs.readFileAsync("alreadyregistered.html", {"encoding": "utf8"})
 							.then(function (html) {
 								response.send(html);
