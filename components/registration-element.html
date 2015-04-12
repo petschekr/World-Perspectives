@@ -46,7 +46,7 @@
 				text-align: center;
 			}
 			paper-toast[error] {
-				background-color: #ff4136;				
+				background-color: #ff4136;
 			}
 		</style>
 		<!-- Key handler for arrow key events -->
@@ -72,10 +72,14 @@
 					</div>
 				</footer>
 			</content-panel>
-			<content-panel headtitle="Panel Selection">
-				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
-				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/panels" index="1" panel="true" type="panel"></session-list>
+			<content-panel headtitle="Instructions">
+				<p class="no-margin">You'll choose a session or panel to attend for each of the five presentation periods of the symposium</p>
+				<ul>
+					<li><strong>Panel:</strong> A panel is a large session with many presenters discussing a general topic</li>
+					<li><strong>Global Studies Session:</strong> A session with a single presenter on a specific global issue</li>
+					<li><strong>Science Session:</strong> A session with a single presenter on scientific research that the presenter has performed</li>
+				</ul>
+				<p><em>You must choose at least one panel and one session</em></p>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-1" on-click="{{handleButton}}">
@@ -83,17 +87,17 @@
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-1" on-click="{{handleButton}}">
+						<paper-button class="custom" forward id="forward-1" on-click="{{handleButton}}">
 							Next
 							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
 					</div>
 				</footer>
 			</content-panel>
-			<content-panel headtitle="Global Studies Session Selection">
-				<p class="no-margin">This is a session with a single presenter on a specific global issue</p>
+			<content-panel headtitle="Panel Selection">
+				<p class="no-margin">A panel is a large session with many presenters discussing a general topic</p>
 				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/wpp" index="2" type="wpp"></session-list>
+				<session-list url="/sessions/panels" index="1" panel="true" type="panel"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-2" on-click="{{handleButton}}">
@@ -108,10 +112,10 @@
 					</div>
 				</footer>
 			</content-panel>
-			<content-panel headtitle="Science Session Selection">
-				<p class="no-margin">This is a session with a single presenter on scientific research that the presenter has performed</p>
+			<content-panel headtitle="Global Studies Session Selection">
+				<p class="no-margin">This is a session with a single presenter on a specific global issue</p>
 				<p><strong>Please pick your first choice</strong></p>
-				<session-list url="/sessions/science" index="3" type="science"></session-list>
+				<session-list url="/sessions/wpp" index="2" type="wpp"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-3" on-click="{{handleButton}}">
@@ -126,11 +130,10 @@
 					</div>
 				</footer>
 			</content-panel>
-			<content-panel headtitle="Confirm First Choices">
-				<p class="no-margin">Please review your first choices and go back to change them if you'd like. You won't be able to change them after you proceed.</p>
-				<p style="font-size: 1.4em;">Panel: <b>{{selections.panel.name}}</b></p>
-				<p style="font-size: 1.4em;">Global Session: <b>{{selections.wpp.name}}</b></p>
-				<p style="font-size: 1.4em;">Science Session: <b>{{selections.science.name}}</b></p>
+			<content-panel headtitle="Science Session Selection">
+				<p class="no-margin">This is a session with a single presenter on scientific research that the presenter has performed</p>
+				<p><strong>Please pick your first choice</strong></p>
+				<session-list url="/sessions/science" index="3" type="science"></session-list>
 				<footer>
 					<div horizontal layout>
 						<paper-button class="custom" backward id="backward-4" on-click="{{handleButton}}">
@@ -138,7 +141,26 @@
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward id="forward-4" on-click="{{handleButton}}">
+						<paper-button class="custom" forward disabled id="forward-4" on-click="{{handleButton}}">
+							Next
+							<core-icon icon="arrow-forward"></core-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Confirm First Choices">
+				<p class="no-margin">Please review your first choices and go back to change them if you'd like. You won't be able to change them after you proceed.</p>
+				<p style="font-size: 1.4em;">Panel: <b>{{selections.panel.name}}</b></p>
+				<p style="font-size: 1.4em;">Global Session: <b>{{selections.wpp.name}}</b></p>
+				<p style="font-size: 1.4em;">Science Session: <b>{{selections.science.name}}</b></p>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-5" on-click="{{handleButton}}">
+							<core-icon icon="arrow-back"></core-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-5" on-click="{{handleButton}}">
 							<core-icon icon="done" style="margin-left: 0; margin-right: 4px;"></core-icon>
 							Confirm
 						</paper-button>
@@ -149,12 +171,12 @@
 				<timeslot-list url="/sessions/remaining/1" index="5"></timeslot-list>
 				<footer>
 					<div horizontal layout>
-						<paper-button class="custom" backward disabled id="backward-5" on-click="{{handleButton}}">
+						<paper-button class="custom" backward disabled id="backward-6" on-click="{{handleButton}}">
 							<core-icon icon="arrow-back"></core-icon>
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-5" on-click="{{handleButton}}">
+						<paper-button class="custom" forward disabled id="forward-6" on-click="{{handleButton}}">
 							Next
 							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
@@ -165,12 +187,12 @@
 				<timeslot-list url="/sessions/remaining/2" index="6"></timeslot-list>
 				<footer>
 					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-6" on-click="{{handleButton}}">
+						<paper-button class="custom" backward id="backward-7" on-click="{{handleButton}}">
 							<core-icon icon="arrow-back"></core-icon>
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-6" on-click="{{handleButton}}">
+						<paper-button class="custom" forward disabled id="forward-7" on-click="{{handleButton}}">
 							Next
 							<core-icon icon="arrow-forward"></core-icon>
 						</paper-button>
@@ -186,12 +208,12 @@
 				<p style="font-size: 1.4em;">1:20 AM - 2:10 PM: <b>{{selectionsTimes.fifth.name}}</b></p>
 				<footer>
 					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-7" on-click="{{handleButton}}">
+						<paper-button class="custom" backward id="backward-8" on-click="{{handleButton}}">
 							<core-icon icon="arrow-back"></core-icon>
 							Back
 						</paper-button>
 						<span flex></span>
-						<paper-button class="custom" forward id="forward-7" on-click="{{handleExit}}">
+						<paper-button class="custom" forward id="forward-8" on-click="{{handleExit}}">
 							<core-icon icon="done-all" style="margin-left: 0; margin-right: 4px;"></core-icon>
 							Done
 						</paper-button>
