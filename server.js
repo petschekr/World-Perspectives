@@ -335,7 +335,7 @@ app.route("/sessions/:period")
 	.post(postParser, function (request, response) {
 		// Register the user for their selected choice
 		var userID = request.signedCookies.username;
-		var sessionID = request.body.session.toString();
+		var sessionID = request.body.session;
 		if (!userID || !sessionID) {
 			response.status(400).send({
 				"error": "Missing attendee ID or session ID"
