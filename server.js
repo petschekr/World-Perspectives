@@ -262,6 +262,76 @@ app.route("/schedule").get(function (request, response) {
 			}
 		});
 });
+app.route("/sessions/:period")
+	.get(function (request, response) {
+		var period = request.params.period;
+		var time;
+		switch (period) {
+			case "1": // 9:00 AM - first session
+				time = 1429707600000;
+				break;
+			case "2": // 9:55 AM - second session
+				time = 1429710900000;
+				break;
+			case "3": // 11:30 AM - third session
+				time = 1429716600000;
+				break;
+			case "4": // 12:25 PM - fourth session
+				time = 1429719900000;
+				break;
+			case "5": // 1:20 PM - fifth session
+				time = 1429723200000;
+				break;
+			default:
+				response.json({
+					"error": "Invalid time period selected"
+				});
+				return;
+		}
+		var findTime = moment(new Date(time)).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
+
+		Q.all([
+			db.search("panels", `value.time.start: "${findTime}"`),
+			db.search("sessions", `value.time.start: "${findTime}"`)
+		]).then(function (results) {
+				var results1 = results[0].body.results.concat();
+				var results2 = results[1].body.results.concat();
+				var availableSessions = results1.concat(results2);
+				availableSessions = availableSessions.map(function (session) {
+					var sessionObject = session.value;
+					sessionObject.id = session.path.key;
+					return sessionObject;
+				});
+				// Sort by title
+				availableSessions.sort(function (a, b) {
+					a = a.name.toLowerCase();
+					b = b.name.toLowerCase();
+					if (a < b) return -1;
+					if (a > b) return 1;
+					return 0;
+				});
+				var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
+				var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
+				response.json({
+					"start": startFormat,
+					"end": endFormat,
+					"sessions": availableSessions
+				});
+			})
+			.fail(function (err) {
+				if (err instanceof CancelError) {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+				else {
+					handleError(err);
+					response.status(500).json({
+						"error": "An internal server error occurred."
+					});
+				}
+			});
+	});
 app.route("/sessions/panels")
 	.get(function (request, response) {
 		db.newSearchBuilder()
