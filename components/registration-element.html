@@ -289,13 +289,7 @@
 				}
 				// 5 and 6 are the remaining timeslot-list panels
 				var nextIndex = this.$.progressController.selected + 1;
-				if (nextIndex === 5) {
-					this.$.progressController.querySelector('timeslot-list[index="5"]').update();
-				}
-				else if (nextIndex === 6) {
-					this.$.progressController.querySelector('timeslot-list[index="6"]').update();
-				}
-				else if (nextIndex === 7) {
+				if (nextIndex === 7) {
 					this.selectionsTimes = {
 						"first": null,
 						"second": null,
