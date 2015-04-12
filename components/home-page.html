@@ -235,7 +235,7 @@
 					}
 					this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
 				}
-				if (this.$["schedule-ajax"].response.registered < 5) {
+				if (!this.$["schedule-ajax"].response.registered) {
 					this.$.notRegistered.style.display = "block";
 				}
 			},

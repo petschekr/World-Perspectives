@@ -182,6 +182,13 @@ app.route("/schedule").get(function (request, response) {
 				return Q.reject(new CancelError("handled"));
 			}
 			user = results[0];
+			if (!user.value.registered) {
+				response.json({
+					"registered": false,
+					"data": scheduleResponse
+				});
+				return Q.reject(new CancelError("handled"));
+			}
 			return db.newGraphReader()
 				.get()
 				.from("users", userID)
@@ -230,7 +237,7 @@ app.route("/schedule").get(function (request, response) {
 			});
 
 			response.json({
-				"registered": results.length,
+				"registered": true,
 				"data": scheduleResponse
 			});
 		})
