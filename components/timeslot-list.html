@@ -94,7 +94,8 @@
 				}
 			}
 		</style>
-		<core-ajax id="getSessions" url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
+
+		<core-ajax id="getSessions" auto url="{{url}}" on-core-response="{{loaded}}" handleAs="json"></core-ajax>
 		<core-ajax id="postSession" method="POST" url="{{url}}" on-core-response="{{finishSelection}}" on-core-error="{{handleError}}" handleAs="json"></core-ajax>
 
 		<p>Please choose a panel, global studies session, or science session to fill the <b>{{startTimeFormat}}</b> to <b>{{endTimeFormat}}</b> period</p>
@@ -230,23 +231,9 @@
 					document.removeEventListener("core-overlay-close-completed", uponDialogClose);
 					if (initiatorAction === "select") {
 						// Register this with the server
-						var sessionType;
-						if (this.selectedSession.type) {
-							sessionType = "session";
-						}
-						else {
-							sessionType = "panel";
-						}
 						var sendData = {
 							"session": this.selectedSession.id,
-							"sessionType": sessionType,
-							"selectedPanel": window.selections.panel.id,
-							"selectedWPP": window.selections.wpp.id,
-							"selectedScience": window.selections.science.id,
 						};
-						if (this.index === "6") {
-							sendData.selectedAux = window.selections.aux.id;
-						}
 						this.$.postSession.params = JSON.stringify(sendData);
 						this.$.postSession.go();
 						console.time("Session selection");
@@ -260,12 +247,25 @@
 			finishSelection: function() {
 				console.timeEnd("Session selection");
 				window.loadingToast.dismiss();
-				if (this.index === "5") {
-					window.selections.aux = this.selectedSession;
+
+				switch (this.startTimeFormat) {
+					case "9:00 AM":
+						window.selections.first = this.selectedSession;
+						break;
+					case "9:55 AM":
+						window.selections.second = this.selectedSession;
+						break;
+					case "11:30 AM":
+						window.selections.third = this.selectedSession;
+						break;
+					case "12:25 PM":
+						window.selections.fourth = this.selectedSession;
+						break;
+					case "1:20 PM":
+						window.selections.fifth = this.selectedSession;
+						break;
 				}
-				else if (this.index === "6") {
-					window.selections.aux2 = this.selectedSession;
-				}
+				
 				// Unselect the previous choice
 				if (this.previousSelectedSession) {
 					this.$.itemcontainer.querySelector("#id" + this.previousSelectedSession.id + " span").innerHTML = this.dash;
@@ -300,9 +300,6 @@
 				for (var i = 0; i < titles.length; i++) {
 					titles[i].style.opacity = "1";
 				}
-			},
-			update: function() {
-				this.$.getSessions.go();
 			}
 		});
 	</script>
