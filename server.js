@@ -331,26 +331,9 @@ app.route("/sessions/:period")
 					});
 				}
 			});
-	});
-app.route("/sessions/panels")
-	.get(function (request, response) {
-		db.newSearchBuilder()
-			.collection("panels")
-			.limit(100)
-			.sort("name", "asc")
-			.query("*")
-			.then(function (results) {
-				results = results.body.results;
-				var panels = results.map(function (panelResponse) {
-					var panelObject = panelResponse.value;
-					panelObject.id = panelResponse.path.key;
-					return panelObject;
-				});
-				response.send(panels);
-			});
 	})
 	.post(postParser, function (request, response) {
-		// Register the user for their selected first choice
+		// Register the user for their selected choice
 		var userID = request.signedCookies.username;
 		var sessionID = request.body.session.toString();
 		if (!userID || !sessionID) {
@@ -363,952 +346,143 @@ app.route("/sessions/panels")
 		var sessionKey = sessionID;
 		var attendeeKey = userID;
 		var sessionInfo = null;
+		var sessionCollection = null;
+		var userInfo = null;
 
-		// Deregister the previous session (if it exists)
-		// At this stage, only first choices for each type will have been selected
-		db.newGraphReader()
-			.get()
-			.from("users", userID)
-			.related("attendee")
-			.then(function (results) {
-				if (results.body.count > 3) {
-					return Q.reject(new CancelError("Can't edit choices at this stage."));
+		Q.all([
+			db.search("users", `@path.key: ${attendeeKey}`),
+			db.search("panels", `@path.key: ${sessionKey}`),
+			db.search("sessions", `@path.key: ${sessionKey}`)
+		]).then(function (results) {
+			var userResults = results[0].data.results;
+			var panelResults = results[1].data.results;
+			var sessionResults = results[2].data.results;
+
+			if (userResults.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			userInfo = userResults[0];
+
+			if (panelResults.length !== 1 && sessionResults.length !== 1) {
+				return Q.reject(new CancelError("Invalid session ID."));
+			}
+			if (panelResults.length === 1) {
+				sessionInfo = panelResults[0].value;
+				sessionInfo.id = panelResults[0].path.key;
+				sessionCollection = "panels";
+			}
+			if (sessionResults.length === 1) {
+				sessionInfo = sessionResults[0].value;
+				sessionInfo.id = sessionResults[0].path.key;
+				sessionCollection = "sessions";
+			}
+			return db.newGraphReader()
+				.get()
+				.from("users", userID)
+				.related("attendee");
+		})
+		.then(function (results) {
+			results = results.body.results;
+			var previousSession = null;
+			for (var i = 0; i < results.length; i++) {
+				if (results[i].value.time.start === sessionInfo.time.start) {
+					previousSession = results[i];
 				}
-				results = results.body.results;
-				var previousSession = null;
-				for (var i = 0; i < results.length; i++) {
-					if (results[i].path.collection === "panels") {
-						previousSession = results[i];
-					}
-				}
-				if (previousSession) {
-					// Deregister
-					var deregistrationPromises = [];
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("users", userID)
-							.related("attendee")
-							.to("panels", previousSession.path.key)
-					);
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("panels", previousSession.path.key)
-							.related("attendee")
-							.to("users", userID)
-					);
-					deregistrationPromises.push(
-						db.newPatchBuilder("panels", previousSession.path.key)
-							.inc("capacity.taken", -1)
-							.apply()
-					);
-					return Q.all(deregistrationPromises)
-						.then(function () {
-							return db.newGraphReader()
-								.get()
-								.from("panels", previousSession.path.key)
-								.related("attendee");
-						})
-						.then(function (results) {
-							var currentAttendees = results.body.total_count || results.body.count;
-							io.emit("availability", {
-								"type": "panel",
-								"session": previousSession.path.key,
-								"taken": currentAttendees
-							});
-							return db.search("users", `@path.key: ${attendeeKey}`);
-						});
-				}
-				else {
-					return db.search("users", `@path.key: ${attendeeKey}`);
-				}
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid attendee ID."));
-				}
-				attendeeKey = results[0].path.key;
-				return db.search("panels", `@path.key: ${sessionKey}`);
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid session ID."));
-				}
-				sessionInfo = results[0].value;
-				sessionInfo.id = results[0].path.key;
-				return db.newGraphReader()
-					.get()
-					.from("panels", sessionKey)
-					.related("attendee");
-			})
-			.then(function (results) {
-				var currentAttendees = results.body.total_count || results.body.count;
-				if (currentAttendees >= sessionInfo.capacity.total) {
-					return Q.reject(new CancelError("There are too many people in that panel. Please choose another."));
-				}
-				// Broadcast the new number of attendees
-				io.emit("availability", {
-					"type": "panel",
-					"session": sessionID,
-					"taken": sessionInfo.capacity.taken + 1
-				});
-				// Proceed with registration for this spot (create a bidirectional relationship)
-				var registrationPromises = [];
-				registrationPromises.push(
+			}
+			if (previousSession) {
+				// Deregister
+				var deregistrationPromises = [
 					db.newGraphBuilder()
-						.create()
-						.from("panels", sessionKey)
+						.remove()
+						.from("users", userID)
 						.related("attendee")
-						.to("users", attendeeKey)
-				);
-				registrationPromises.push(
+						.to(previousSession.path.collection, previousSession.path.key),
 					db.newGraphBuilder()
-						.create()
-						.from("users", attendeeKey)
+						.remove()
+						.from(previousSession.path.collection, previousSession.path.key)
 						.related("attendee")
-						.to("panels", sessionKey)
-				);
-				registrationPromises.push(
-					db.newPatchBuilder("panels", sessionKey)
-						.inc("capacity.taken", 1)
+						.to("users", userID),
+					db.newPatchBuilder(previousSession.path.collection, previousSession.path.key)
+						.inc("capacity.taken", -1)
 						.apply()
-				);
-				return Q.all(registrationPromises);
-			})
-			.then(function () {
-				response.json({
-					"success": true
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
-			});
-	});
-app.route("/sessions/wpp")
-	.get(function (request, response) {
-		db.newSearchBuilder()
-			.collection("sessions")
-			.limit(100)
-			.sort("name", "asc")
-			.query('value.type: "wpp"')
-			.then(function (results) {
-				results = results.body.results;
-				var sessions = results.map(function (sessionResponse) {
-					var sessionObject = sessionResponse.value;
-					sessionObject.id = sessionResponse.path.key;
-					return sessionObject;
-				});
-				response.send(sessions);
-			});
-	})
-	.post(postParser, function (request, response) {
-		// Register the user for their selected first choice
-		var userID = request.signedCookies.username;
-		var sessionID = request.body.session.toString();
-		if (!userID || !sessionID) {
-			response.status(400).send({
-				"error": "Missing attendee ID or session ID"
-			});
-			return;
-		}
-
-		var sessionKey = sessionID;
-		var attendeeKey = userID;
-		var sessionInfo = null;
-
-		// Deregister the previous session (if it exists)
-		// At this stage, only first choices for each type will have been selected
-		db.newGraphReader()
-			.get()
-			.from("users", userID)
-			.related("attendee")
-			.then(function (results) {
-				if (results.body.count > 3) {
-					return Q.reject(new CancelError("Can't edit choices at this stage."));
-				}
-				results = results.body.results;
-				var previousSession = null;
-				for (var i = 0; i < results.length; i++) {
-					if (results[i].value.type === "wpp") {
-						previousSession = results[i];
-					}
-				}
-				if (previousSession) {
-					// Deregister
-					var deregistrationPromises = [];
-					deregistrationPromises.push(
-							db.newGraphBuilder()
-								.remove()
-								.from("users", userID)
-								.related("attendee")
-								.to("sessions", previousSession.path.key)
-						);
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("sessions", previousSession.path.key)
-							.related("attendee")
-							.to("users", userID)
-					);
-					deregistrationPromises.push(
-						db.newPatchBuilder("sessions", previousSession.path.key)
-							.inc("capacity.taken", -1)
-							.apply()
-					);
-					return Q.all(deregistrationPromises)
-						.then(function () {
-							return db.newGraphReader()
-								.get()
-								.from("sessions", previousSession.path.key)
-								.related("attendee");
-						})
-						.then(function (results) {
-							var currentAttendees = results.body.total_count || results.body.count;
-							io.emit("availability", {
-								"type": "wpp",
-								"session": previousSession.path.key,
-								"taken": currentAttendees
-							});
-							return db.search("users", `@path.key: ${attendeeKey}`);
-						});
-				}
-				else {
-					return db.search("users", `@path.key: ${attendeeKey}`);
-				}
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid attendee ID."));
-				}
-				attendeeKey = results[0].path.key;
-				return db.search("sessions", `@path.key: ${sessionKey}`);
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid session ID."));
-				}
-				sessionInfo = results[0].value;
-				sessionInfo.id = results[0].path.key;
-				return db.newGraphReader()
-					.get()
-					.from("sessions", sessionKey)
-					.related("attendee");
-			})
-			.then(function (results) {
-				var currentAttendees = results.body.total_count || results.body.count;
-				if (currentAttendees >= sessionInfo.capacity.total) {
-					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
-				}
-				// Broadcast the new number of attendees
-				io.emit("availability", {
-					"type": "wpp",
-					"session": sessionID,
-					"taken": sessionInfo.capacity.taken + 1
-				});
-				// Proceed with registration for this spot (create a bidirectional relationship)
-				var registrationPromises = [];
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("sessions", sessionKey)
-						.related("attendee")
-						.to("users", attendeeKey)
-				);
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("users", attendeeKey)
-						.related("attendee")
-						.to("sessions", sessionKey)
-				);
-				registrationPromises.push(
-					db.newPatchBuilder("sessions", sessionKey)
-						.inc("capacity.taken", 1)
-						.apply()
-				);
-				return Q.all(registrationPromises);
-			})
-			.then(function () {
-				response.json({
-					"success": true
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
-			});
-	});
-app.route("/sessions/science")
-	.get(function (request, response) {
-		db.newSearchBuilder()
-			.collection("sessions")
-			.limit(100)
-			.sort("name", "asc")
-			.query('value.type: "science"')
-			.then(function (results) {
-				results = results.body.results;
-				var sessions = results.map(function (sessionResponse) {
-					var sessionObject = sessionResponse.value;
-					sessionObject.id = sessionResponse.path.key;
-					return sessionObject;
-				});
-				response.send(sessions);
-			});
-	})
-	.post(postParser, function (request, response) {
-		// Register the user for their selected first choice
-		var userID = request.signedCookies.username;
-		var sessionID = request.body.session.toString();
-		if (!userID || !sessionID) {
-			response.status(400).send({
-				"error": "Missing attendee ID or session ID"
-			});
-			return;
-		}
-
-		var sessionKey = sessionID;
-		var attendeeKey = userID;
-		var sessionInfo = null;
-
-		// Deregister the previous session (if it exists)
-		// At this stage, only first choices for each type will have been selected
-		db.newGraphReader()
-			.get()
-			.from("users", userID)
-			.related("attendee")
-			.then(function (results) {
-				if (results.body.count > 3) {
-					return Q.reject(new CancelError("Can't edit choices at this stage."));
-				}
-				results = results.body.results;
-				var previousSession = null;
-				for (var i = 0; i < results.length; i++) {
-					if (results[i].value.type === "science") {
-						previousSession = results[i];
-					}
-				}
-				if (previousSession) {
-					// Deregister
-					var deregistrationPromises = [];
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("users", userID)
-							.related("attendee")
-							.to("sessions", previousSession.path.key)
-					);
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("sessions", previousSession.path.key)
-							.related("attendee")
-							.to("users", userID)
-					);
-					deregistrationPromises.push(
-						db.newPatchBuilder("sessions", previousSession.path.key)
-							.inc("capacity.taken", -1)
-							.apply()
-					);
-					return Q.all(deregistrationPromises)
-						.then(function () {
-							return db.newGraphReader()
-								.get()
-								.from("sessions", previousSession.path.key)
-								.related("attendee");
-						})
-						.then(function (results) {
-							var currentAttendees = results.body.total_count || results.body.count;
-							io.emit("availability", {
-								"type": "science",
-								"session": previousSession.path.key,
-								"taken": currentAttendees
-							});
-							return db.search("users", `@path.key: ${attendeeKey}`);
-						});
-				}
-				else {
-					return db.search("users", `@path.key: ${attendeeKey}`);
-				}
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid attendee ID."));
-				}
-				attendeeKey = results[0].path.key;
-				return db.search("sessions", `@path.key: ${sessionKey}`);
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid session ID."));
-				}
-				sessionInfo = results[0].value;
-				sessionInfo.id = results[0].path.key;
-				return db.newGraphReader()
-					.get()
-					.from("sessions", sessionKey)
-					.related("attendee");
-			})
-			.then(function (results) {
-				var currentAttendees = results.body.total_count || results.body.count;
-				if (currentAttendees >= sessionInfo.capacity.total) {
-					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
-				}
-				// Broadcast the new number of attendees
-				io.emit("availability", {
-					"type": "science",
-					"session": sessionID,
-					"taken": sessionInfo.capacity.taken + 1
-				});
-				// Proceed with registration for this spot (create a bidirectional relationship)
-				var registrationPromises = [];
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("sessions", sessionKey)
-						.related("attendee")
-						.to("users", attendeeKey)
-				);
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("users", attendeeKey)
-						.related("attendee")
-						.to("sessions", sessionKey)
-				);
-				registrationPromises.push(
-					db.newPatchBuilder("sessions", sessionKey)
-						.inc("capacity.taken", 1)
-						.apply()
-				);
-				return Q.all(registrationPromises);
-			})
-			.then(function () {
-				response.json({
-					"success": true
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
-			});
-	});
-app.route("/sessions/remaining/1")
-	.get(function (request, response) {
-		var username = request.signedCookies.username;
-		if (!username) {
-			response.status(400).send({
-				"error": "Missing identification cookie"
-			});
-			return;
-		}
-		db.search("users", `@path.key: ${username}`)
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid identification cookie."));
-				}
-				return db.newGraphReader()
-					.get()
-					.from("users", username)
-					.related("attendee");
-			})
-			.then(function (results) {
-				if (results.body.count !== 3) {
-					return Q.reject(new CancelError("More or fewer than 3 sessions chosen already."));
-				}
-				results = results.body.results;
-
-				var availableStartTimes = [
-					1429707600000, // 9:00 AM - first session
-					1429710900000, // 9:55 AM - second session
-					1429716600000, // 11:30 AM - third session
-					1429719900000, // 12:25 PM - fourth session
-					1429723200000 // 1:20 PM - fifth session
 				];
-				for (var i = 0; i < results.length; i++) {
-					var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
-					availableStartTimes.splice(foundIndex, 1);
-				}
-				// availableStartTimes will now only contain two times that are available
-				var findTime;
-				availableStartTimes[0] = moment(availableStartTimes[0]);
-				availableStartTimes[1] = moment(availableStartTimes[1]);
-
-				if (availableStartTimes[0].isBefore(availableStartTimes[1])) {
-					findTime = availableStartTimes[0];
-				}
-				else {
-					findTime = availableStartTimes[1];
-				}
-				findTime = findTime.utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
-
-				var searchPromises = [];
-				searchPromises.push(
-					db.search("panels", `value.time.start: "${findTime}"`)
-				);
-				searchPromises.push(
-					db.newSearchBuilder()
-						.collection("sessions")
-						.sort("type", "asc")
-						.query(`value.time.start: "${findTime}"`)
-				);
-				return Q.all(searchPromises);
-			})
-			.then(function (results) {
-				var results1 = results[0].body.results.concat();
-				var results2 = results[1].body.results.concat();
-				var availableSessions = results1.concat(results2);
-				availableSessions = availableSessions.map(function (session) {
-					var sessionObject = session.value;
-					sessionObject.id = session.path.key;
-					return sessionObject;
-				});
-				var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
-				var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
-				response.json({
-					"start": startFormat,
-					"end": endFormat,
-					"sessions": availableSessions
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
-			});
-	})
-	.post(postParser, function (request, response) {
-		var userID = request.signedCookies.username;
-		var sessionID = request.body.session;
-		var sessionType = request.body.sessionType;
-		var selectedPanelID = request.body.selectedPanel;
-		var selectedWPPID = request.body.selectedWPP;
-		var selectedScienceID = request.body.selectedScience;
-		if (!userID || !sessionID || !sessionType || !selectedPanelID || !selectedWPPID || !selectedScienceID) {
-			response.status(400).send({
-				"error": "Missing required information"
-			});
-			return;
-		}
-
-		var sessionKey = sessionID;
-		var attendeeKey = userID;
-		var sessionInfo = null;
-		var sessionCollection;
-		if (sessionType === "panel") {
-			sessionCollection = "panels";
-		}
-		else {
-			sessionCollection = "sessions";
-		}
-
-		db.search("users", `@path.key: ${userID}`)
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid identification cookie."));
-				}
-				return db.newGraphReader()
-					.get()
-					.from("users", userID)
-					.related("attendee");
-			})
-			.then(function (results) {
-				if (results.body.count > 4) {
-					return Q.reject(new CancelError("Can't edit choices at this stage."));
-				}
-				results = results.body.results;
-				var previousSession = null;
-				for (var i = 0; i < results.length; i++) {
-					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID) {
-						previousSession = results[i];
-					}
-				}
-				if (previousSession) {
-					// Deregister
-					var deregistrationPromises = [];
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("users", userID)
-							.related("attendee")
-							.to(previousSession.path.collection, previousSession.path.key)
-					);
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
+				return Q.all(deregistrationPromises)
+					.then(function () {
+						return db.newGraphReader()
+							.get()
 							.from(previousSession.path.collection, previousSession.path.key)
-							.related("attendee")
-							.to("users", userID)
-					);
-					deregistrationPromises.push(
-						db.newPatchBuilder(previousSession.path.collection, previousSession.path.key)
-							.inc("capacity.taken", -1)
-							.apply()
-					);
-					return Q.all(deregistrationPromises)
-						.then(function () {
-							return db.newGraphReader()
-								.get()
-								.from(previousSession.path.collection, previousSession.path.key)
-								.related("attendee");
-						})
-						.then(function (results) {
-							var currentAttendees = results.body.total_count || results.body.count;
-							io.emit("availability", {
-								"session": previousSession.path.key,
-								"taken": currentAttendees
-							});
-							return db.search(sessionCollection, `@path.key: ${sessionKey}`);
+							.related("attendee");
+					})
+					.then(function (results) {
+						var currentAttendees = results.body.total_count || results.body.count;
+						io.emit("availability", {
+							"session": previousSession.path.key,
+							"taken": currentAttendees
 						});
-				}
-				else {
-					return db.search(sessionCollection, `@path.key: ${sessionKey}`);
-				}
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid session ID."));
-				}
-				sessionInfo = results[0].value;
-				sessionInfo.id = results[0].path.key;
+						return db.newGraphReader()
+							.get()
+							.from(sessionCollection, sessionKey)
+							.related("attendee");
+					});
+			}
+			else {
 				return db.newGraphReader()
 					.get()
 					.from(sessionCollection, sessionKey)
 					.related("attendee");
-			})
-			.then(function (results) {
-				var currentAttendees = results.body.total_count || results.body.count;
-				if (currentAttendees >= sessionInfo.capacity.total) {
-					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
-				}
-				// Broadcast the new number of attendees
-				io.emit("availability", {
-					"session": sessionID,
-					"taken": sessionInfo.capacity.taken + 1
-				});
-				// Proceed with registration for this spot (create a bidirectional relationship)
-				var registrationPromises = [];
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from(sessionCollection, sessionKey)
-						.related("attendee")
-						.to("users", attendeeKey)
-				);
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("users", attendeeKey)
-						.related("attendee")
-						.to(sessionCollection, sessionKey)
-				);
-				registrationPromises.push(
-					db.newPatchBuilder(sessionCollection, sessionKey)
-						.inc("capacity.taken", 1)
-						.apply()
-				);
-				return Q.all(registrationPromises);
-			})
-			.then(function () {
-				response.json({
-					"success": true
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
+			}
+		})
+		.then(function (results) {
+			var currentAttendees = results.body.total_count || results.body.count;
+			if (currentAttendees >= sessionInfo.capacity.total) {
+				return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
+			}
+			// Broadcast the new number of attendees
+			io.emit("availability", {
+				"session": sessionID,
+				"taken": sessionInfo.capacity.taken + 1
 			});
-	});
-app.route("/sessions/remaining/2")
-	.get(function (request, response) {
-		var username = request.signedCookies.username;
-		if (!username) {
-			response.status(400).send({
-				"error": "Missing identification cookie"
-			});
-			return;
-		}
-		db.search("users", `@path.key: ${username}`)
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid identification cookie."));
-				}
-				return db.newGraphReader()
-					.get()
-					.from("users", username)
-					.related("attendee");
-			})
-			.then(function (results) {
-				if (results.body.count !== 4) {
-					return Q.reject(new CancelError("More or fewer than 4 sessions chosen already."));
-				}
-				results = results.body.results;
-
-				var availableStartTimes = [
-					1429707600000, // 9:00 AM - first session
-					1429710900000, // 9:55 AM - second session
-					1429716600000, // 11:30 AM - third session
-					1429719900000, // 12:25 PM - fourth session
-					1429723200000 // 1:20 PM - fifth session
-				];
-				for (var i = 0; i < results.length; i++) {
-					var foundIndex = availableStartTimes.indexOf(new Date(results[i].value.time.start).valueOf());
-					availableStartTimes.splice(foundIndex, 1);
-				}
-				// availableStartTimes will now only contain time that is available
-				var findTime = moment(availableStartTimes[0]).utc().format("ddd MMM DD YYYY HH:mm:ss [GMT+00:00]"); // Formatted like the UTC string respresentation in the database
-
-				var searchPromises = [];
-				searchPromises.push(
-					db.search("panels", `value.time.start: "${findTime}"`)
-				);
-				searchPromises.push(
-					db.newSearchBuilder()
-						.collection("sessions")
-						.sort("type", "asc")
-						.query(`value.time.start: "${findTime}"`)
-				);
-				return Q.all(searchPromises);
-			})
-			.then(function (results) {
-				var results1 = results[0].body.results.concat();
-				var results2 = results[1].body.results.concat();
-				var availableSessions = results1.concat(results2);
-				availableSessions = availableSessions.map(function (session) {
-					var sessionObject = session.value;
-					sessionObject.id = session.path.key;
-					return sessionObject;
-				});
-				var startFormat = moment(new Date(availableSessions[0].time.start)).format("h:mm A");
-				var endFormat = moment(new Date(availableSessions[0].time.end)).format("h:mm A");
-				response.json({
-					"start": startFormat,
-					"end": endFormat,
-					"sessions": availableSessions
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
-			});
-	})
-	.post(postParser, function (request, response) {
-		var userID = request.signedCookies.username;
-		var sessionID = request.body.session;
-		var sessionType = request.body.sessionType;
-		var selectedPanelID = request.body.selectedPanel;
-		var selectedWPPID = request.body.selectedWPP;
-		var selectedScienceID = request.body.selectedScience;
-		var selectedAuxID = request.body.selectedAux;
-		if (!userID || !sessionID || !sessionType || !selectedPanelID || !selectedWPPID || !selectedScienceID || !selectedAuxID) {
-			response.status(400).send({
-				"error": "Missing required information"
-			});
-			return;
-		}
-
-		var sessionKey = sessionID;
-		var attendeeKey = userID;
-		var sessionInfo = null;
-		var sessionCollection;
-		if (sessionType === "panel") {
-			sessionCollection = "panels";
-		}
-		else {
-			sessionCollection = "sessions";
-		}
-
-		db.search("users", `@path.key: ${userID}`)
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid identification cookie."));
-				}
-				return db.newGraphReader()
-					.get()
-					.from("users", userID)
-					.related("attendee");
-			})
-			.then(function (results) {
-				if (results.body.count > 5) {
-					return Q.reject(new CancelError("Can't edit choices at this stage."));
-				}
-				results = results.body.results;
-				var previousSession = null;
-				for (var i = 0; i < results.length; i++) {
-					if (results[i].path.key !== selectedPanelID && results[i].path.key !== selectedWPPID && results[i].path.key !== selectedScienceID && results[i].path.key !== selectedAuxID) {
-						previousSession = results[i];
-					}
-				}
-				if (previousSession) {
-					// Deregister
-					var deregistrationPromises = [];
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from("users", userID)
-							.related("attendee")
-							.to(previousSession.path.collection, previousSession.path.key)
-					);
-					deregistrationPromises.push(
-						db.newGraphBuilder()
-							.remove()
-							.from(previousSession.path.collection, previousSession.path.key)
-							.related("attendee")
-							.to("users", userID)
-					);
-					deregistrationPromises.push(
-						db.newPatchBuilder(previousSession.path.collection, previousSession.path.key)
-							.inc("capacity.taken", -1)
-							.apply()
-					);
-					return Q.all(deregistrationPromises)
-						.then(function () {
-							return db.newGraphReader()
-								.get()
-								.from(previousSession.path.collection, previousSession.path.key)
-								.related("attendee");
-						})
-						.then(function (results) {
-							var currentAttendees = results.body.total_count || results.body.count;
-							io.emit("availability", {
-								"session": previousSession.path.key,
-								"taken": currentAttendees
-							});
-							return db.search(sessionCollection, `@path.key: ${sessionKey}`);
-						});
-				}
-				else {
-					return db.search(sessionCollection, `@path.key: ${sessionKey}`);
-				}
-			})
-			.then(function (results) {
-				results = results.body.results;
-				if (results.length !== 1) {
-					return Q.reject(new CancelError("Invalid session ID."));
-				}
-				sessionInfo = results[0].value;
-				sessionInfo.id = results[0].path.key;
-				return db.newGraphReader()
-					.get()
+			// Proceed with registration for this spot (create a bidirectional relationship)
+			var registrationPromises = [];
+			registrationPromises.push(
+				db.newGraphBuilder()
+					.create()
 					.from(sessionCollection, sessionKey)
-					.related("attendee");
-			})
-			.then(function (results) {
-				var currentAttendees = results.body.total_count || results.body.count;
-				if (currentAttendees >= sessionInfo.capacity.total) {
-					return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
-				}
-				// Broadcast the new number of attendees
-				io.emit("availability", {
-					"session": sessionID,
-					"taken": sessionInfo.capacity.taken + 1
-				});
-				// Proceed with registration for this spot (create a bidirectional relationship)
-				var registrationPromises = [];
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from(sessionCollection, sessionKey)
-						.related("attendee")
-						.to("users", attendeeKey)
-				);
-				registrationPromises.push(
-					db.newGraphBuilder()
-						.create()
-						.from("users", attendeeKey)
-						.related("attendee")
-						.to(sessionCollection, sessionKey)
-				);
-				registrationPromises.push(
-					db.newPatchBuilder(sessionCollection, sessionKey)
-						.inc("capacity.taken", 1)
-						.apply()
-				);
-				return Q.all(registrationPromises);
-			})
-			.then(function () {
-				response.json({
-					"success": true
-				});
-			})
-			.fail(function (err) {
-				if (err instanceof CancelError) {
-					response.status(400).json({
-						"error": err.message
-					});
-				}
-				else {
-					handleError(err);
-					response.status(500).json({
-						"error": "An internal server error occurred."
-					});
-				}
+					.related("attendee")
+					.to("users", attendeeKey)
+			);
+			registrationPromises.push(
+				db.newGraphBuilder()
+					.create()
+					.from("users", attendeeKey)
+					.related("attendee")
+					.to(sessionCollection, sessionKey)
+			);
+			registrationPromises.push(
+				db.newPatchBuilder(sessionCollection, sessionKey)
+					.inc("capacity.taken", 1)
+					.apply()
+			);
+			return Q.all(registrationPromises);
+		})
+		.then(function () {
+			response.json({
+				"success": true
 			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
 	});
 
 // 404 page
