@@ -363,6 +363,9 @@ app.route("/sessions/:period")
 				availableSessions = availableSessions.map(function (session) {
 					var sessionObject = session.value;
 					sessionObject.id = session.path.key;
+					// IE doesn't parse certain kinds of date strings
+					sessionObject.time.start = new Date(sessionObject.time.start).toJSON();
+					sessionObject.time.end = new Date(sessionObject.time.end).toJSON();
 					return sessionObject;
 				});
 				// Sort by title
