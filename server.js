@@ -506,7 +506,7 @@ app.route("/sessions/:period")
 			// Broadcast the new number of attendees
 			io.emit("availability", {
 				"session": sessionID,
-				"taken": sessionInfo.capacity.taken + 1
+				"taken": currentAttendees + 1
 			});
 			// Proceed with registration for this spot (create a bidirectional relationship)
 			var registrationPromises = [];
