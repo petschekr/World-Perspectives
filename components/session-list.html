@@ -171,7 +171,7 @@
 			},
 			ready: function() {
 				// WebSocket connection to update session availability in real-time
-				var socket = io.connect("/");
+				var socket = io.connect("/", {"secure": true});
 				socket.on("availability", (function (data) {
 					if (this.sessionsLookup[data.session]) {
 						// Relevent to this session-list

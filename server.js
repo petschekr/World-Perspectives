@@ -3,6 +3,9 @@
 "use strict";
 var crypto = require("crypto");
 var fs = require("fs");
+var http = require("http");
+var https = require("https");
+var urllib = require("url");
 
 var moment = require("moment");
 var BPromise = require("bluebird");
@@ -27,17 +30,30 @@ var responseTime = require("response-time");
 var compress = require("compression");
 var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
+var hsts = require("hsts");
 
 var app = express();
-var server = require("http").Server(app);
 var postParser = bodyParser.urlencoded({"extended": false});
 
 app.use(compress());
 app.use(responseTime());
+app.use(hsts({
+	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6 // 6 months
+}));
+app.use(function (request, response, next) {
+	if (request.secure) {
+		next();
+	}
+	else {
+		// Redirect to HTTPS
+		response.redirect(301, urllib.resolve("https://wppsymposium.org", request.url));
+	}
+});
+// HTTPS redirect
 var cookieOptions = {
 	"path": "/",
 	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
-	"secure": false, // Set this to true when you get a domain + SSL cert
+	"secure": true,
 	"httpOnly": true,
 	"signed": true
 };
@@ -49,9 +65,6 @@ app.use("/bower_components", serveStatic("bower_components"));
 app.use("/components", serveStatic("components"));
 app.use("/css", serveStatic("css"));
 app.use("/img", serveStatic("img"));
-
-// Set up the Socket.io server
-var io = require("socket.io")(server);
 
 function CancelError (message) {
 	this.message = message;
@@ -562,7 +575,21 @@ app.use(function (err, request, response, next) {
 	response.send("An internal server error occurred.");
 });
 
-var PORT = 80;
-server.listen(PORT, "0.0.0.0", function () {
-	console.log("Server listening on port " + PORT);
+const PORT = 80;
+const HTTPS_PORT = 443;
+var httpsOptions = {
+	key: fs.readFileSync("../https/wpp.key"),
+	cert: fs.readFileSync("../https/wppsymposium_org.crt"),
+	ca: [fs.readFileSync("../https/COMODORSADomainValidationSecureServerCA.crt"), fs.readFileSync("../https/COMODORSAAddTrustCA.crt"), fs.readFileSync("../https/AddTrustExternalCARoot.crt")]
+	//secureProtocol: "TLSv1_method"
+};
+
+// Set up the Socket.io server
+var server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", function () {
+	console.log("HTTPS server listening on port " + HTTPS_PORT);
+});
+var io = require("socket.io").listen(server);
+
+http.createServer(app).listen(PORT, "0.0.0.0", function() {
+	console.log("HTTP server listening on port " + PORT);
 });
