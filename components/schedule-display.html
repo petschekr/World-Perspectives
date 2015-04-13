@@ -113,10 +113,7 @@
 		Polymer({
 			schedule: [],
 			ready: function () {
-				setTimeout(function () {
-					window.print();
-					window.history.back();
-				}, 1000);
+
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
@@ -138,6 +135,10 @@
 					}
 					this.schedule[i].time = time.join("–");
 				}
+				setTimeout(function () {
+					window.print();
+					window.history.back();
+				}, 1000);
 			},
 			handleError: function(e) {
 				var errorMessage = e.detail.response.response.error;
