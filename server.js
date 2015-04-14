@@ -580,8 +580,9 @@ const HTTPS_PORT = 443;
 var httpsOptions = {
 	key: fs.readFileSync("../https/wpp.key"),
 	cert: fs.readFileSync("../https/wppsymposium_org.crt"),
-	ca: [fs.readFileSync("../https/COMODORSADomainValidationSecureServerCA.crt"), fs.readFileSync("../https/COMODORSAAddTrustCA.crt"), fs.readFileSync("../https/AddTrustExternalCARoot.crt")]
+	ca: [fs.readFileSync("../https/COMODORSADomainValidationSecureServerCA.crt"), fs.readFileSync("../https/COMODORSAAddTrustCA.crt"), fs.readFileSync("../https/AddTrustExternalCARoot.crt")],
 	//secureProtocol: "TLSv1_method"
+	ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
 };
 
 // Set up the Socket.io server
