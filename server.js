@@ -607,7 +607,6 @@ app.route("/admin/add/:type").post(postParser, function (request, response) {
 				return Q.reject(new CancelError("Missing data to import"));
 			}
 			// Parse as CSV
-			console.log(data.toString());
 			return Q.nfcall(csv.parse, data.toString(), {
 				"columns": ["firstName", "lastName", "email"]
 			});
