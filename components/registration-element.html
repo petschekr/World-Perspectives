@@ -239,10 +239,10 @@
 			},
 			handleButton: function(e) {
 				var element = e.target || e.srcElement;
-				if (element.attributes.backward) {
+				if (element.attributes.backward || element.parentElement.attributes.backward) {
 					this.goBackward();
 				}
-				else if (element.attributes.forward) {
+				else if (element.attributes.forward || element.parentElement.attributes.forward) {
 					this.goForward();
 				}
 			},
