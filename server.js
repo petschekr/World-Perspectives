@@ -23,6 +23,7 @@ db.ping()
 		process.exit(1);
 	});
 var pusher = new (require("pushbullet"))("gxCTjdJQa7PMjNUFGY3j5ITVWDQ9xvNQ");
+var sendgrid  = require("sendgrid")("petschekr", "WPP 2015");
 
 // Set up the Express server
 var express = require("express");
@@ -641,6 +642,109 @@ app.route("/admin/add/:type").post(postParser, function (request, response) {
 				}
 			});
 			return Q.all(studentAddPromises);
+		})
+		.then(function () {
+			response.json({
+				"success": true
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/send").post(function (request, response) {
+	var userID = request.signedCookies.username;
+
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+
+			// Get list of users
+			return db.newSearchBuilder()
+				.collection("users")
+				.limit(100)
+				.query("*");
+		})
+		.then(function (results) {
+			var allPeople = [];
+			allPeople = allPeople.concat(results.body.results);
+
+			function promiseWhile (condition, body) {
+				var done = Q.defer();
+				function loop() {
+					if (!condition())
+						return done.resolve(allPeople);
+					body().then(loop).fail(done.reject);
+				}
+				Q.fcall(loop);
+				return done.promise;
+			}
+
+			var currentResults = results;
+
+			return promiseWhile(
+				function () {
+					return currentResults.links && currentResults.links.next;
+				},
+				function () {
+					return currentResults.links.next.get().then(function (newResults) {
+						allPeople = allPeople.concat(newResults.body.results);
+						currentResults = newResults;
+						return Q.resolve();
+					});
+				}
+			);
+		})
+		.then(function (allPeople) {
+			allPeople = allPeople.map(function (person) {
+				var infoObject = {};
+				infoObject.name = person.value.name;
+				infoObject.code = person.value.code;
+				infoObject.email = person.path.key + "@gfacademy.org";
+				return infoObject;
+			});
+
+			var emailPromises = [];
+			allPeople.forEach(function (person) {
+				var email = new sendgrid.Email({
+					to: person.email,
+					from: "registration@wppsymposium.org",
+					subject: "WPP Symposium Registration",
+					text:
+`Hi ${person.name},
+
+You can register for this year's World Perspectives Symposium by clicking the following link:
+
+https://wppsymposium.org/login/${person.code}
+
+Feel free to reply to this email if you're having any problems.
+
+Thanks,
+The GFA World Perspectives Program Team`
+				});
+				var deferrer = Q.defer();
+				sendgrid.send(email, deferrer.makeNodeResolver());
+				emailPromises.push(deferrer.promise);
+			});
+
+			return Q.all(emailPromises);
 		})
 		.then(function () {
 			response.json({

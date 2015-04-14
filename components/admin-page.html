@@ -95,7 +95,7 @@
 			textarea {
 				color: black;
 			}
-			content-section h2 {
+			content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
 				margin-bottom: 0;
 			}
 			paper-button[raised] {
@@ -111,6 +111,7 @@
 		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="add-students-ajax" method="POST" url="/admin/add/students" handleAs="json" on-core-response="{{addStudentsResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="add-faculty-ajax" method="POST" url="/admin/add/faculty" handleAs="json" on-core-response="{{addFacultyResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<core-ajax id="send-emails-ajax" method="POST" url="/admin/send" handleAs="json" on-core-response="{{sendEmailsResponse}}" on-core-error="{{handleError}}"></core-ajax>
 
 		<core-toolbar>
 			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
@@ -161,6 +162,16 @@
 				<span flex></span>
 				<paper-button raised on-click="{{addFaculty}}">
 					Add
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
+		<content-section id="sendemails">
+			<h2>Send Registration Emails</h2>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="{{sendEmails}}">
+					Send
 				</paper-button>
 				<span flex></span>
 			</div>
@@ -234,6 +245,13 @@
 				this.$.loading.dismiss();
 				this.$.addfaculty.querySelector("textarea").value = "";
 				this.$.addfaculty.querySelector("textarea").blur();
+			},
+			sendEmails: function() {
+				this.$["send-emails-ajax"].go();
+				this.$.loading.show();
+			},
+			sendEmailsResponse: function() {
+				this.$.loading.dismiss();
 			},
 			handleError: function(e) {
 				this.$.loading.dismiss();
