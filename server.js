@@ -452,6 +452,44 @@ app.route("/sessions/:period")
 		var sessionCollection = null;
 		var userInfo = null;
 
+		function graphReaderGetAll (collection, key, relation) {
+			var allResults = [];
+
+			function promiseWhile (condition, body) {
+				var done = Q.defer();
+				function loop() {
+					if (!condition())
+						return done.resolve(allResults);
+					body().then(loop).fail(done.reject);
+				}
+				Q.fcall(loop);
+				return done.promise;
+			}
+
+			return db.newGraphReader()
+				.get()
+				.limit(100)
+				.from(collection, key)
+				.related(relation)
+				.then(function (results) {
+					allResults = allResults.concat(results.body.results);
+					var currentResults = results;
+					return promiseWhile(
+						function () {
+							return currentResults.links && currentResults.links.next;
+						},
+						function () {
+							return currentResults.links.next.get().then(function (newResults) {
+								allResults = allResults.concat(newResults.body.results);
+								currentResults = newResults;
+								return Q.resolve();
+							});
+						}
+					);
+				});
+		}
+
+
 		Q.all([
 			db.search("users", `@path.key: ${attendeeKey}`),
 			db.search("panels", `@path.key: ${sessionKey}`),
@@ -511,35 +549,23 @@ app.route("/sessions/:period")
 				];
 				return Q.all(deregistrationPromises)
 					.then(function () {
-						return db.newGraphReader()
-							.get()
-							.limit(100)
-							.from(previousSession.path.collection, previousSession.path.key)
-							.related("attendee");
+						return graphReaderGetAll(previousSession.path.collection, previousSession.path.key, "attendee");
 					})
 					.then(function (results) {
-						var currentAttendees = results.body.total_count || results.body.count;
+						var currentAttendees = results.length;
 						io.emit("availability", {
 							"session": previousSession.path.key,
 							"taken": currentAttendees
 						});
-						return db.newGraphReader()
-							.get()
-							.limit(100)
-							.from(sessionCollection, sessionKey)
-							.related("attendee");
+						return graphReaderGetAll(sessionCollection, sessionKey, "attendee");
 					});
 			}
 			else {
-				return db.newGraphReader()
-					.get()
-					.limit(100)
-					.from(sessionCollection, sessionKey)
-					.related("attendee");
+				return graphReaderGetAll(sessionCollection, sessionKey, "attendee");
 			}
 		})
 		.then(function (results) {
-			var currentAttendees = results.body.total_count || results.body.count;
+			var currentAttendees = results.length;
 			if (currentAttendees >= sessionInfo.capacity.total) {
 				return Q.reject(new CancelError("There are too many people in that session. Please choose another."));
 			}
