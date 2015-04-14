@@ -513,6 +513,7 @@ app.route("/sessions/:period")
 					.then(function () {
 						return db.newGraphReader()
 							.get()
+							.limit(100)
 							.from(previousSession.path.collection, previousSession.path.key)
 							.related("attendee");
 					})
@@ -524,6 +525,7 @@ app.route("/sessions/:period")
 						});
 						return db.newGraphReader()
 							.get()
+							.limit(100)
 							.from(sessionCollection, sessionKey)
 							.related("attendee");
 					});
@@ -531,6 +533,7 @@ app.route("/sessions/:period")
 			else {
 				return db.newGraphReader()
 					.get()
+					.limit(100)
 					.from(sessionCollection, sessionKey)
 					.related("attendee");
 			}
