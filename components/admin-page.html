@@ -252,6 +252,8 @@
 			},
 			sendEmailsResponse: function() {
 				this.$.loading.dismiss();
+				this.$.sendemails.querySelector("paper-button").disabled = true;
+				this.$.sendemails.querySelector("paper-button").style.backgroundColor = "grey";
 			},
 			handleError: function(e) {
 				this.$.loading.dismiss();
