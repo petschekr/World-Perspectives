@@ -8,6 +8,7 @@ var https = require("https");
 var urllib = require("url");
 
 var moment = require("moment");
+var csv = require("csv");
 var BPromise = require("bluebird");
 fs = BPromise.promisifyAll(fs);
 var Q = require("kew"); // Because the Orchestrate driver for Node.js forces its use
@@ -146,6 +147,28 @@ app.route("/schedule/print").get(function (request, response) {
 	fs.readFileAsync("schedule.html", {"encoding": "utf8"})
 		.then(function (html) {
 			response.send(html);
+		});
+});
+app.route("/admin").get(function (request, response) {
+	var userID = request.signedCookies.username;
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.redirect("/");
+				return;
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				response.redirect("/");
+				return;
+			}
+			else {
+				fs.readFileAsync("admin.html", {"encoding": "utf8"})
+					.then(function (html) {
+						response.send(html);
+					});
+			}
 		});
 });
 
@@ -563,6 +586,82 @@ app.route("/sessions/:period")
 			}
 		});
 	});
+app.route("/admin/add/:type").post(postParser, function (request, response) {
+	var userID = request.signedCookies.username;
+	var data = request.body.data;
+	var type = request.params.type;
+	if (!type)
+		type = "students";
+
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			if (!data) {
+				return Q.reject(new CancelError("Missing data to import"));
+			}
+			// Parse as CSV
+			console.log(data.toString());
+			return Q.nfcall(csv.parse, data.toString(), {
+				"columns": ["firstName", "lastName", "email"]
+			});
+		})
+		.then(function (students) {
+			var usernameRegExp = /^(.*?)@gfacademy\.org$/i;
+			students = students.map(function (student) {
+				var studentObject = {};
+				studentObject.name = student.firstName + " " + student.lastName;
+				studentObject.code = crypto.randomBytes(16).toString("hex");
+				if (type === "faculty")
+					studentObject.faculty = true;
+				try {
+					studentObject.username = student.email.match(usernameRegExp)[1];
+				}
+				catch (e) {
+					studentObject = undefined;
+					console.log("Skipped", student, "due to invalid email");
+				}
+				return studentObject;
+			});
+			var studentAddPromises = [];
+			students.forEach(function (student) {
+				if (student) {
+					studentAddPromises.push(
+						db.put("users", student.username, {
+							"name": student.name,
+							"code": student.code,
+							"faculty": student.faculty
+						})
+					);
+				}
+			});
+			return Q.all(studentAddPromises);
+		})
+		.then(function () {
+			response.json({
+				"success": true
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
 
 // 404 page
 app.use(function (request, response, next) {
