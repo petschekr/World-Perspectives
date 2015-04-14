@@ -680,10 +680,20 @@ app.route("/admin/send").post(function (request, response) {
 			return db.newSearchBuilder()
 				.collection("users")
 				.limit(100)
-				.query("*");
+				.query("value.registered: (NOT true)");
 		})
 		.then(function (results) {
-			var allPeople = [];
+			var allPeople = [
+				{
+					"path": {
+						"key": "petschekr"
+					},
+					"value": {
+						"name": "Ryan Petschek",
+						"code": "a1bd5967ba0f9d55ee4e84d268078b83"
+					}
+				}
+			];
 			allPeople = allPeople.concat(results.body.results);
 
 			function promiseWhile (condition, body) {
@@ -740,9 +750,21 @@ Thanks,
 The GFA World Perspectives Program Team`
 				});
 				var deferrer = Q.defer();
-				sendgrid.send(email, deferrer.makeNodeResolver());
+				sendgrid.send(email, function (err, json) {
+					if (err) {
+						deferrer.reject(err);
+					}
+					else {
+						setTimeout(function() {
+							console.log("Sent to:", email.to);
+							deferrer.resolve(json);
+						}, 2000);
+					}
+				});
 				emailPromises.push(deferrer.promise);
 			});
+			console.log("Total people:", allPeople.length);
+			console.log("Total promises:", emailPromises.length);
 
 			return Q.all(emailPromises);
 		})
