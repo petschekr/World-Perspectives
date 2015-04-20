@@ -78,6 +78,18 @@ function handleError (error) {
 	pusher.note({}, "WPP Error", `${new Date().toString()}\n\n${error.stack}`, function() {});
 }
 
+var scheduleResponseTemplate = [
+	{"time": "8:00 AM – 8:10 AM", "title": "Advisory"},
+	{"time": "8:15 AM – 8:55 AM", "title": "Opening Assembly", "location": "Bedford Gym"},
+	{"time": "9:00 AM – 9:50 AM", "title": "Session 1", "location": "", "people": []}, // index 2
+	{"time": "9:55 AM – 10:45 AM", "title": "Session 2", "location": "", "people": []}, // index 3
+	{"time": "10:50 AM – 11:25 AM", "title": "Lunch"},
+	{"time": "11:30 AM – 12:20 PM", "title": "Session 3", "location": "", "people": []}, // index 5
+	{"time": "12:25 PM – 1:15 PM", "title": "Session 4", "location": "", "people": []}, // index 6
+	{"time": "1:20 PM – 2:10 PM", "title": "Session 5", "location": "", "people": []}, // index 7
+	{"time": "2:15 PM – 2:40 PM", "title": "Advisory"}
+];
+
 app.route("/login/:code").get(function (request, response) {
 	response.clearCookie("username");
 	var code = request.params.code.toString();
@@ -197,17 +209,7 @@ app.route("/info").get(function (request, response) {
 app.route("/schedule").get(function (request, response) {
 	var userID = request.signedCookies.username;
 	var user = null;
-	var scheduleResponse = [
-		{"time": "8:00 AM – 8:10 AM", "title": "Advisory"},
-		{"time": "8:15 AM – 8:55 AM", "title": "Opening Assembly", "location": "Bedford Gym"},
-		{"time": "9:00 AM – 9:50 AM", "title": "Session 1", "location": "", "people": []}, // index 2
-		{"time": "9:55 AM – 10:45 AM", "title": "Session 2", "location": "", "people": []}, // index 3
-		{"time": "10:50 AM – 11:25 AM", "title": "Lunch"},
-		{"time": "11:30 AM – 12:20 PM", "title": "Session 3", "location": "", "people": []}, // index 5
-		{"time": "12:25 PM – 1:15 PM", "title": "Session 4", "location": "", "people": []}, // index 6
-		{"time": "1:20 PM – 2:10 PM", "title": "Session 5", "location": "", "people": []}, // index 7
-		{"time": "2:15 PM – 2:40 PM", "title": "Advisory"}
-	];
+	var scheduleResponse = scheduleResponseTemplate.slice();
 	db.search("users", `@path.key: ${userID}`)
 		.then(function (results) {
 			results = results.body.results;
@@ -853,6 +855,150 @@ app.route("/admin/schedule/search").get(function (request, response) {
 				response.status(400).json({
 					"error": err.message
 				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/schedule/all").get(function (request, response) {
+
+});
+app.route("/admin/schedule/get/:username").get(function (request, response) {
+	fs.readFileAsync("components/admin/schedule.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/schedule/get/:username/info").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+	var userID = request.params.username;
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return db.search("users", `@path.key: ${userID}`);
+		})
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Invalid username"
+				});
+				return;
+			}
+			var result = results[0];
+			response.json([{
+				"code": result.value.code,
+				"name": result.value.name,
+				"username": result.path.key,
+				"admin": !!result.value.admin
+			}]);
+		});
+});
+app.route("/admin/schedule/get/:username/schedule").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+	var userID = request.params.username;
+	var user = null;
+	var scheduleResponse = scheduleResponseTemplate.slice();;
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return db.search("users", `@path.key: ${userID}`);
+		})
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Invalid username",
+					"data": [scheduleResponse]
+				});
+				return Q.reject(new CancelError("handled"));
+			}
+			user = results[0];
+			if (!user.value.registered) {
+				response.json({
+					"registered": false,
+					"data": [scheduleResponse]
+				});
+				return Q.reject(new CancelError("handled"));
+			}
+			return db.newGraphReader()
+				.get()
+				.from("users", userID)
+				.related("attendee");
+		})
+		.then(function (results) {
+			results = results.body.results;
+
+			results.forEach(function (session) {
+				session = session.value;
+				var sessionType;
+				if (!session.type) {
+					sessionType = "Panel";
+				}
+				else {
+					if (session.type === "wpp") {
+						sessionType = "Global";
+					}
+					else if (session.type === "science") {
+						sessionType = "Science";
+					}
+				}
+				var unixTimeStart = new Date(session.time.start).valueOf();
+				switch (unixTimeStart) {
+					case 1429707600000: // 9:00 AM - first session
+						applyToSchedule(2);
+						break;
+					case 1429710900000: // 9:55 AM - second session
+						applyToSchedule(3);
+						break;
+					case 1429716600000: // 11:30 AM - third session
+						applyToSchedule(5);
+						break;
+					case 1429719900000: // 12:25 PM - fourth session
+						applyToSchedule(6);
+						break;
+					case 1429723200000: // 1:20 PM - fifth session
+						applyToSchedule(7);
+						break;
+				}
+				function applyToSchedule (index) {
+					scheduleResponse[index].title = session.name + ` (${sessionType})`;
+					scheduleResponse[index].location = session.location;
+					scheduleResponse[index].people = (sessionType === "Panel") ? session.panelists.join(", ") : session.presenter;
+				}
+			});
+
+			response.json({
+				"registered": true,
+				"data": [scheduleResponse]
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				if (err.message !== "handled") {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
 			}
 			else {
 				handleError(err);
