@@ -28,6 +28,9 @@
 				border-radius: 0;
 				text-align: center;
 			}
+			paper-toast[error] {
+				background-color: #ff4136;
+			}
 			:host {
 				height: 100%;
 			}
@@ -61,38 +64,38 @@
 			section.minor paper-button:hover {
 				color: black;
 			}
-			paper-input-decorator /deep/ ::-webkit-input-placeholder {
+			.input-style /deep/ ::-webkit-input-placeholder {
 				color: #3ea346;
 			}
-			paper-input-decorator /deep/ ::-moz-placeholder {
+			.input-style /deep/ ::-moz-placeholder {
 				color: #3ea346;
 			}
-			paper-input-decorator /deep/ :-ms-input-placeholder {
+			.input-style /deep/ :-ms-input-placeholder {
 				color: #3ea346;
 			}
-			paper-input-decorator /deep/ .label-text, paper-input-decorator /deep/ .error {
+			.input-style /deep/ .floated-label .label-text, .input-style /deep/ .error {
 				color: #3ea346;
 			}
-			paper-input-decorator /deep/ .unfocused-underline {
+			.input-style /deep/ .unfocused-underline {
 				background-color: #3ea346;
 			}
-			paper-input-decorator[focused] /deep/ .floated-label .label-text {
+			.input-style[focused] /deep/ .floated-label .label-text {
 				color: #3ea346;
 			}
-			paper-input-decorator /deep/ .focused-underline {
+			.input-style /deep/ .focused-underline {
 				background-color: #3ea346;
 			}
-			paper-input-decorator.invalid /deep/ .floated-label .label-text, paper-input-decorator /deep/ .error {
+			.input-style.invalid /deep/ .floated-label .label-text, .input-style /deep/ .error {
 				color: #3ea346;
 			}
-			paper-input-decorator.invalid /deep/ .focused-underline {
+			.input-style.invalid /deep/ .focused-underline {
 				background-color: #3ea346;
 			}
-			paper-input-decorator {
+			.input-style {
 				color: #3ea346;
 				text-align: left;
 			}
-			textarea {
+			.input-style /deep/ textarea, .input-style /deep/ input {
 				color: black;
 			}
 			content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
@@ -112,6 +115,7 @@
 		<core-ajax id="add-students-ajax" method="POST" url="/admin/add/students" handleAs="json" on-core-response="{{addStudentsResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="add-faculty-ajax" method="POST" url="/admin/add/faculty" handleAs="json" on-core-response="{{addFacultyResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="send-emails-ajax" method="POST" url="/admin/send" handleAs="json" on-core-response="{{sendEmailsResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<core-ajax id="search-schedule-ajax" url="/admin/schedule/search" handleAs="json" on-core-response="{{seachScheduleResponse}}" on-core-error="{{handleError}}"></core-ajax>
 
 		<core-toolbar>
 			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
@@ -136,9 +140,26 @@
 				</ul>
 			</section>
 		</section>
+		<content-section>
+			<h2>Schedules</h2>
+			<paper-input id="schedulesearch" class="input-style" label="Name" floatingLabel></paper-input>
+			<template repeat="{{result in searchResults}}">
+				<p><a style="color: black;" href="/admin/schedule/get/{{result.username}}" target="_blank">{{result.name}}</a></p>
+			</template>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="{{allSchedules}}">
+					Get All
+				</paper-button>
+				<paper-button raised on-click="{{searchSchedule}}">
+					Search
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
 		<content-section id="addstudents">
 			<h2>Add students</h2>
-			<paper-input-decorator label="Paste .csv file of students" floatingLabel>
+			<paper-input-decorator class="input-style" label="Paste .csv file of students" floatingLabel>
 				<paper-autogrow-textarea>
 					<textarea></textarea>
 				</paper-autogrow-textarea>
@@ -153,7 +174,7 @@
 		</content-section>
 		<content-section id="addfaculty">
 			<h2>Add faculty</h2>
-			<paper-input-decorator label="Paste .csv file of faculty" floatingLabel>
+			<paper-input-decorator class="input-style" label="Paste .csv file of faculty" floatingLabel>
 				<paper-autogrow-textarea>
 					<textarea></textarea>
 				</paper-autogrow-textarea>
@@ -257,6 +278,18 @@
 				this.$.loading.dismiss();
 				this.$.sendemails.querySelector("paper-button").disabled = true;
 				this.$.sendemails.querySelector("paper-button").style.backgroundColor = "grey";
+			},
+			searchSchedule: function() {
+				var query = this.$.schedulesearch.value;
+				this.$["search-schedule-ajax"].params = JSON.stringify({
+					q: query
+				});
+				this.$["search-schedule-ajax"].go();
+				this.$.loading.show();
+			},
+			seachScheduleResponse: function() {
+				this.$.loading.dismiss();
+				this.searchResults = this.$["search-schedule-ajax"].response.results;
 			},
 			handleError: function(e) {
 				this.$.loading.dismiss();

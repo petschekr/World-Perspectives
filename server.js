@@ -816,6 +816,52 @@ The GFA World Perspectives Program Team`
 			}
 		});
 });
+app.route("/admin/schedule/search").get(function (request, response) {
+	var userID = request.signedCookies.username;
+	var search = request.query.q;
+
+	db.search("users", `@path.key: ${userID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			if (!search) {
+				return Q.reject(new CancelError("Missing search query"));
+			}
+			return db.search("users", `value.name: ${search}`);
+		})
+		.then(function (searchResults) {
+			searchResults = searchResults.body.results.map(function (result) {
+				var newResult = {};
+				newResult.name = result.value.name;
+				newResult.username = result.path.key;
+				newResult.registered = !!result.value.registered;
+				return newResult;
+			});
+			response.json({
+				"success": true,
+				"results": searchResults
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
 
 // 404 page
 app.use(function (request, response, next) {
