@@ -209,7 +209,7 @@ app.route("/info").get(function (request, response) {
 app.route("/schedule").get(function (request, response) {
 	var userID = request.signedCookies.username;
 	var user = null;
-	var scheduleResponse = scheduleResponseTemplate.slice();
+	var scheduleResponse = JSON.parse(JSON.stringify(scheduleResponseTemplate)); // Deep copy hack
 	db.search("users", `@path.key: ${userID}`)
 		.then(function (results) {
 			results = results.body.results;
@@ -1163,7 +1163,7 @@ app.route("/admin/schedule/get/:username/schedule").get(function (request, respo
 	var adminUserID = request.signedCookies.username;
 	var userID = request.params.username;
 	var user = null;
-	var scheduleResponse = scheduleResponseTemplate.slice();
+	var scheduleResponse = JSON.parse(JSON.stringify(scheduleResponseTemplate)); // Deep copy hack
 	db.search("users", `@path.key: ${adminUserID}`)
 		.then(function (results) {
 			results = results.body.results;
