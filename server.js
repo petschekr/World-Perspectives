@@ -865,7 +865,247 @@ app.route("/admin/schedule/search").get(function (request, response) {
 		});
 });
 app.route("/admin/schedule/all").get(function (request, response) {
+	fs.readFileAsync("components/admin/schedule.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/schedule/all/info").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
 
+	function searchGetAll (collection, search) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition()) {
+					return done.resolve(allResults);
+				}
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newSearchBuilder()
+			.collection(collection)
+			.limit(100)
+			.query(search)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return searchGetAll("users", "*");
+		})
+		.then(function (results) {
+			if (results.length < 1) {
+				response.status(403).json({
+					"error": "No users"
+				});
+				return;
+			}
+			results = results.map(function (result) {
+				var newResult = {};
+				newResult.code = result.value.code;
+				newResult.name = result.value.name;
+				newResult.username = result.path.key;
+				newResult.admin = !!result.value.admin;
+				return newResult;
+			}).sort(function (a, b) {
+				a = a.name.toLowerCase();
+				b = b.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			});
+			response.json(results);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/schedule/all/schedule").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+
+	function searchGetAll (collection, search) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition()) {
+					return done.resolve(allResults);
+				}
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newSearchBuilder()
+			.collection(collection)
+			.limit(100)
+			.query(search)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return searchGetAll("users", "*");
+		})
+		.then(function (results) {
+			if (results.length < 1) {
+				response.status(403).json({
+					"error": "No users",
+					"data": [scheduleResponseTemplate.slice()]
+				});
+				return Q.reject(new CancelError("handled"));
+			}
+
+			var graphPromises = results.sort(function (a, b) {
+				a = a.value.name.toLowerCase();
+				b = b.value.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			}).map(function (user) {
+				var scheduleResponse = JSON.parse(JSON.stringify(scheduleResponseTemplate)); // Deep copy hack
+				if (!user.value.registered) {
+					return scheduleResponse; // Return the default schedule for this user
+				}
+				var deferrer = Q.defer();
+
+				db.newGraphReader()
+					.get()
+					.from("users", user.path.key)
+					.related("attendee")
+					.then(function (results) {
+						results = results.body.results;
+
+						results.forEach(function (session) {
+							session = session.value;
+							var sessionType;
+							if (!session.type) {
+								sessionType = "Panel";
+							}
+							else {
+								if (session.type === "wpp") {
+									sessionType = "Global";
+								}
+								else if (session.type === "science") {
+									sessionType = "Science";
+								}
+							}
+							var unixTimeStart = new Date(session.time.start).valueOf();
+							switch (unixTimeStart) {
+								case 1429707600000: // 9:00 AM - first session
+									applyToSchedule(2);
+									break;
+								case 1429710900000: // 9:55 AM - second session
+									applyToSchedule(3);
+									break;
+								case 1429716600000: // 11:30 AM - third session
+									applyToSchedule(5);
+									break;
+								case 1429719900000: // 12:25 PM - fourth session
+									applyToSchedule(6);
+									break;
+								case 1429723200000: // 1:20 PM - fifth session
+									applyToSchedule(7);
+									break;
+							}
+							function applyToSchedule (index) {
+								scheduleResponse[index].title = session.name + ` (${sessionType})`;
+								scheduleResponse[index].location = session.location;
+								scheduleResponse[index].people = (sessionType === "Panel") ? session.panelists.join(", ") : session.presenter;
+							}
+						});
+						deferrer.resolve(scheduleResponse);
+					})
+					.fail(deferrer.reject);
+
+				return deferrer.promise;
+			});
+			return Q.all(graphPromises);
+		})
+		.then(function (results) {
+			response.json({
+				"data": results
+			});
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				if (err.message !== "handled") {
+					response.status(400).json({
+						"error": err.message
+					});
+				}
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
 });
 app.route("/admin/schedule/get/:username").get(function (request, response) {
 	fs.readFileAsync("components/admin/schedule.html", {"encoding": "utf8"})
@@ -904,13 +1144,26 @@ app.route("/admin/schedule/get/:username/info").get(function (request, response)
 				"username": result.path.key,
 				"admin": !!result.value.admin
 			}]);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
 		});
 });
 app.route("/admin/schedule/get/:username/schedule").get(function (request, response) {
 	var adminUserID = request.signedCookies.username;
 	var userID = request.params.username;
 	var user = null;
-	var scheduleResponse = scheduleResponseTemplate.slice();;
+	var scheduleResponse = scheduleResponseTemplate.slice();
 	db.search("users", `@path.key: ${adminUserID}`)
 		.then(function (results) {
 			results = results.body.results;

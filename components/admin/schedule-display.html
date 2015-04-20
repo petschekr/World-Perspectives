@@ -141,10 +141,6 @@
 						this.schedules[j][i].time = time.join("–");
 					}
 				}
-				setTimeout(function () {
-					window.print();
-					window.history.back();
-				}, 1000);
 			},
 			handleError: function(e) {
 				var errorMessage = e.detail.response.response.error;
