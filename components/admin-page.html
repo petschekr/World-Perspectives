@@ -247,8 +247,11 @@
 				this.$.addfaculty.querySelector("textarea").blur();
 			},
 			sendEmails: function() {
-				this.$["send-emails-ajax"].go();
-				this.$.loading.show();
+				var shouldSend = confirm("Are you sure you want to send out registration emails?");
+				if (shouldSend) {
+					this.$["send-emails-ajax"].go();
+					this.$.loading.show();
+				}
 			},
 			sendEmailsResponse: function() {
 				this.$.loading.dismiss();
