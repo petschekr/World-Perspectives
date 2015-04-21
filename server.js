@@ -1262,6 +1262,12 @@ app.route("/admin/schedule/get/:username/schedule").get(function (request, respo
 		});
 });
 app.route("/admin/panels/all").get(function (request, response) {
+	fs.readFileAsync("components/admin/panel.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/panels/all/info").get(function (request, response) {
 	var adminUserID = request.signedCookies.username;
 
 	function searchGetAll (collection, search) {
@@ -1372,7 +1378,8 @@ app.route("/admin/panels/all").get(function (request, response) {
 						toResolve.attendees = attendees.map(function (attendee) {
 							return {
 								"name": attendee.value.name,
-								"username": attendee.path.key
+								"username": attendee.path.key,
+								"faculty": !!attendee.value.faculty
 							};
 						});
 						deferrer.resolve(toResolve);
@@ -1506,6 +1513,12 @@ app.route("/admin/panels/get/:id/info").get(function (request, response) {
 		});
 });
 app.route("/admin/sessions/all").get(function (request, response) {
+	fs.readFileAsync("components/admin/session.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/sessions/all/info").get(function (request, response) {
 	var adminUserID = request.signedCookies.username;
 
 	function searchGetAll (collection, search) {
@@ -1616,7 +1629,8 @@ app.route("/admin/sessions/all").get(function (request, response) {
 						toResolve.attendees = attendees.map(function (attendee) {
 							return {
 								"name": attendee.value.name,
-								"username": attendee.path.key
+								"username": attendee.path.key,
+								"faculty": !!attendee.value.faculty
 							};
 						});
 						deferrer.resolve(toResolve);
