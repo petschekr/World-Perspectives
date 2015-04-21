@@ -112,6 +112,8 @@
 		</style>
 
 		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<core-ajax id="panels-ajax" auto url="/admin/panels/all" handleAs="json" on-core-response="{{panelsResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<core-ajax id="sessions-ajax" auto url="/admin/sessions/all" handleAs="json" on-core-response="{{sessionsResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="add-students-ajax" method="POST" url="/admin/add/students" handleAs="json" on-core-response="{{addStudentsResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="add-faculty-ajax" method="POST" url="/admin/add/faculty" handleAs="json" on-core-response="{{addFacultyResponse}}" on-core-error="{{handleError}}"></core-ajax>
 		<core-ajax id="send-emails-ajax" method="POST" url="/admin/send" handleAs="json" on-core-response="{{sendEmailsResponse}}" on-core-error="{{handleError}}"></core-ajax>
@@ -156,6 +158,36 @@
 				</paper-button>
 				<span flex></span>
 			</div>
+		</content-section>
+		<content-section>
+			<h2>Panels</h2>
+			<template if="{{panels.length == 0}}">
+				<p><em>Loading...</em></p>
+			</template>
+			<template repeat="{{panel in panels}}">
+				<p>
+					<a style="color: black; text-decoration: none;" href="/admin/panels/get/{{panel.id}}" target="_blank">
+						{{panel.name}}
+						<br />
+						<small><strong>({{panel.panelists}})</strong></small>
+					</a>
+				</p>
+			</template>
+		</content-section>
+		<content-section>
+			<h2>Sessions</h2>
+			<template if="{{sessions.length == 0}}">
+				<p><em>Loading...</em></p>
+			</template>
+			<template repeat="{{session in sessions}}">
+				<p>
+					<a style="color: black; text-decoration: none;" href="/admin/sessions/get/{{session.id}}" target="_blank">
+						{{session.name}}
+						<br />
+						<small><strong>({{session.presenter}})</strong></small>
+					</a>
+				</p>
+			</template>
 		</content-section>
 		<content-section id="addstudents">
 			<h2>Add students</h2>
@@ -208,6 +240,8 @@
 				name: "Loading..."
 			},
 			schedule: [],
+			panels: [],
+			sessions: [],
 			ready: function() {
 
 			},
@@ -290,6 +324,15 @@
 			seachScheduleResponse: function() {
 				this.$.loading.dismiss();
 				this.searchResults = this.$["search-schedule-ajax"].response.results;
+			},
+			panelsResponse: function() {
+				this.panels = this.$["panels-ajax"].response;
+				for (var i = 0; i < this.panels.length; i++) {
+					this.panels[i].panelists = this.panels[i].panelists.join(", ");
+				}
+			},
+			sessionsResponse: function() {
+				this.sessions = this.$["sessions-ajax"].response;
 			},
 			handleError: function(e) {
 				this.$.loading.dismiss();

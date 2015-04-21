@@ -1261,6 +1261,494 @@ app.route("/admin/schedule/get/:username/schedule").get(function (request, respo
 			}
 		});
 });
+app.route("/admin/panels/all").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+
+	function searchGetAll (collection, search) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition()) {
+					return done.resolve(allResults);
+				}
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newSearchBuilder()
+			.collection(collection)
+			.limit(100)
+			.query(search)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+	function graphReaderGetAll (collection, key, relation) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition())
+					return done.resolve(allResults);
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newGraphReader()
+			.get()
+			.limit(100)
+			.from(collection, key)
+			.related(relation)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return searchGetAll("panels", "*");
+		})
+		.then(function (results) {
+			if (results.length < 1) {
+				response.status(403).json({
+					"error": "No panels"
+				});
+				return;
+			}
+			var graphPromises = results.sort(function (a, b) {
+				a = a.value.name.toLowerCase();
+				b = b.value.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			}).map(function (panel) {
+				var deferrer = Q.defer();
+
+				graphReaderGetAll("panels", panel.path.key, "attendee")
+					.then(function(attendees) {
+						var toResolve = panel.value;
+						toResolve.id = panel.path.key;
+						toResolve.attendees = attendees.map(function (attendee) {
+							return {
+								"name": attendee.value.name,
+								"username": attendee.path.key
+							};
+						});
+						deferrer.resolve(toResolve);
+					})
+					.fail(deferrer.reject);
+
+				return deferrer.promise;
+			});
+			return Q.all(graphPromises);
+		})
+		.then(function (results) {
+			response.json(results);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/panels/get/:id").get(function (request, response) {
+	fs.readFileAsync("components/admin/panel.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/panels/get/:id/info").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+	var panelID = request.params.id;
+
+	function graphReaderGetAll (collection, key, relation) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition())
+					return done.resolve(allResults);
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newGraphReader()
+			.get()
+			.limit(100)
+			.from(collection, key)
+			.related(relation)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	var panel = null;
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return db.search("panels", `@path.key: ${panelID}`);
+		})
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Unknown panel"
+				});
+				return;
+			}
+			panel = results[0];
+			return graphReaderGetAll("panels", panelID, "attendee");
+		})
+		.then(function (attendees) {
+			attendees = attendees.sort(function (a, b) {
+				a = a.value.name.toLowerCase();
+				b = b.value.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			}).map(function (attendee) {
+				return {
+					"name": attendee.value.name,
+					"username": attendee.path.key,
+					"faculty": !!attendee.value.faculty
+				};
+			});
+			panel = panel.value;
+			panel.id = panelID;
+			panel.attendees = attendees;
+			response.json([panel]);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/sessions/all").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+
+	function searchGetAll (collection, search) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition()) {
+					return done.resolve(allResults);
+				}
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newSearchBuilder()
+			.collection(collection)
+			.limit(100)
+			.query(search)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+	function graphReaderGetAll (collection, key, relation) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition())
+					return done.resolve(allResults);
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newGraphReader()
+			.get()
+			.limit(100)
+			.from(collection, key)
+			.related(relation)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return searchGetAll("sessions", "*");
+		})
+		.then(function (results) {
+			if (results.length < 1) {
+				response.status(403).json({
+					"error": "No sessions"
+				});
+				return;
+			}
+			var graphPromises = results.sort(function (a, b) {
+				a = a.value.name.toLowerCase();
+				b = b.value.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			}).map(function (session) {
+				var deferrer = Q.defer();
+
+				graphReaderGetAll("sessions", session.path.key, "attendee")
+					.then(function(attendees) {
+						var toResolve = session.value;
+						toResolve.id = session.path.key;
+						toResolve.attendees = attendees.map(function (attendee) {
+							return {
+								"name": attendee.value.name,
+								"username": attendee.path.key
+							};
+						});
+						deferrer.resolve(toResolve);
+					})
+					.fail(deferrer.reject);
+
+				return deferrer.promise;
+			});
+			return Q.all(graphPromises);
+		})
+		.then(function (results) {
+			response.json(results);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
+app.route("/admin/sessions/get/:id").get(function (request, response) {
+	fs.readFileAsync("components/admin/session.html", {"encoding": "utf8"})
+		.then(function (html) {
+			response.send(html);
+		});
+});
+app.route("/admin/sessions/get/:id/info").get(function (request, response) {
+	var adminUserID = request.signedCookies.username;
+	var sessionID = request.params.id;
+
+	function graphReaderGetAll (collection, key, relation) {
+		var allResults = [];
+
+		function promiseWhile (condition, body) {
+			var done = Q.defer();
+			function loop() {
+				if (!condition())
+					return done.resolve(allResults);
+				body().then(loop).fail(done.reject);
+			}
+			Q.fcall(loop);
+			return done.promise;
+		}
+
+		return db.newGraphReader()
+			.get()
+			.limit(100)
+			.from(collection, key)
+			.related(relation)
+			.then(function (results) {
+				allResults = allResults.concat(results.body.results);
+				var currentResults = results;
+				return promiseWhile(
+					function () {
+						return currentResults.links && currentResults.links.next;
+					},
+					function () {
+						return currentResults.links.next.get().then(function (newResults) {
+							allResults = allResults.concat(newResults.body.results);
+							currentResults = newResults;
+							return Q.resolve();
+						});
+					}
+				);
+			});
+	}
+
+	var session = null;
+
+	db.search("users", `@path.key: ${adminUserID}`)
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				return Q.reject(new CancelError("Invalid indentification cookie"));
+			}
+			// Reject request if not admin
+			if (!results[0].value.admin) {
+				return Q.reject(new CancelError("You don't have permission to do that"));
+			}
+			return db.search("sessions", `@path.key: ${sessionID}`);
+		})
+		.then(function (results) {
+			results = results.body.results;
+			if (results.length !== 1) {
+				response.status(403).json({
+					"error": "Unknown session"
+				});
+				return;
+			}
+			session = results[0];
+			return graphReaderGetAll("sessions", sessionID, "attendee");
+		})
+		.then(function (attendees) {
+			attendees = attendees.sort(function (a, b) {
+				a = a.value.name.toLowerCase();
+				b = b.value.name.toLowerCase();
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			}).map(function (attendee) {
+				return {
+					"name": attendee.value.name,
+					"username": attendee.path.key,
+					"faculty": !!attendee.value.faculty
+				};
+			});
+			session = session.value;
+			session.id = sessionID;
+			session.attendees = attendees;
+			response.json([session]);
+		})
+		.fail(function (err) {
+			if (err instanceof CancelError) {
+				response.status(400).json({
+					"error": err.message
+				});
+			}
+			else {
+				handleError(err);
+				response.status(500).json({
+					"error": "An internal server error occurred."
+				});
+			}
+		});
+});
 
 // 404 page
 app.use(function (request, response, next) {

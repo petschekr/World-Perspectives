@@ -1,0 +1,151 @@
+<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/core-item/core-item.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" />
+
+<polymer-element name="panel-display">
+	<template>
+		<style>
+			@media print {
+				button {
+					display: none;
+				}
+				.presentation {
+					page-break-after: always;
+				}
+				.presentation:last-of-type {
+					page-break-after: auto;
+				}
+			}
+			.presentation {
+				margin-top: 30px;
+			}
+			.presentation table:first-of-type {
+				margin-bottom: 15px;
+			}
+			img {
+				display: block;
+				margin: 20px auto;
+			}
+			button {
+				position: absolute;
+				top: 5px;
+				left: 5px;
+			}
+			th {
+				font-family: "Ubuntu", sans-serif;
+				font-size: 16px;
+				font-weight: bold;
+				text-align: left;
+			}
+			h4 {
+				margin: 5px 10px 5px 10px;
+				font-family: "Ubuntu", sans-serif;
+				font-size: 22px;
+				margin-left: 0;
+			}
+			h4 > small {
+				font-weight: normal;
+				/*margin-left: 6px;*/
+				font-size: 16px;
+			}
+			h4 > small::before {
+				content: " — ";
+			}
+			hr {
+				border: 1px dashed rgba(0, 0, 0, 0.2);
+			}
+			tr td {
+				font-family: 'Raleway', sans-serif;
+				font-size: 95%;
+			}
+			table {
+				border: 1px solid #DDD;
+				width: 100%;
+				border-collapse: collapse;
+				border-spacing: 0;
+			}
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+			table td, th {
+				padding: 5px;
+				border: 1px solid #DDD;
+			}
+			table tr {
+				vertical-align: top;
+			}
+		</style>
+
+		<core-ajax id="info-ajax" handleAs="json" on-core-response="{{infoResponse}}" on-core-error="{{handleError}}"></core-ajax>
+
+		<button onclick="window.print()">Print</button>
+		<template repeat="{{panel in panels}}">
+			<div class="presentation">
+				<h4>
+					{{panel.name}}
+					<small>{{panel.panelists}}</small>
+				</h4>
+				<table>
+					<tr><th>Faculty ({{panel.attendees.faculty.length}})</th></tr>
+					<tr template repeat="{{attendee in panel.attendees.faculty}}">
+						<td>{{attendee.name}}</td>
+					</tr>
+				</table>
+				<table>
+					<tr><th>Students ({{panel.attendees.students.length}})</th></tr>
+					<tr template repeat="{{attendee in panel.attendees.students}}">
+						<td>{{attendee.name}}</td>
+					</tr>
+				</template>
+			</div>
+		</template>
+	</template>
+	<script>
+		Polymer({
+			schedules: [],
+			panels: [],
+			ready: function () {
+				this.$["info-ajax"].url = window.location.pathname + "/info";
+				this.$["info-ajax"].go();
+			},
+			infoResponse: function() {
+				this.panels = this.$["info-ajax"].response;
+				for (var i = 0; i < this.panels.length; i++) {
+					this.panels[i].panelists = this.panels[i].panelists.join(", ");
+					var faculty = [];
+					var students = [];
+					this.panels[i].attendees.forEach(function (attendee) {
+						if (attendee.faculty) {
+							faculty.push(attendee);
+						}
+						else {
+							students.push(attendee);
+						}
+					});
+					this.panels[i].attendees = {};
+					this.panels[i].attendees.faculty = faculty;
+					this.panels[i].attendees.students = students;
+				}
+			},
+			handleError: function(e) {
+				var errorMessage = e.detail.response.response.error;
+				if (e.detail.xhr.status === 403) {
+					// User not logged in
+					this.$.errorSection.style.display = "block";
+
+					if (e.detail.response.response.data) {
+						this.schedule = e.detail.response.response.data;
+						for (var i = 0; i < this.schedule.length; i++) {
+							if (!this.schedule[i].location) {
+								this.schedule[i].location = "";
+							}
+						}
+					}
+				}
+			}
+		});
+	</script>
+</polymer-element>
