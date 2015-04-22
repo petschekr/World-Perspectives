@@ -937,8 +937,10 @@ app.route("/admin/schedule/all/info").get(function (request, response) {
 				newResult.admin = !!result.value.admin;
 				return newResult;
 			}).sort(function (a, b) {
-				a = a.name.toLowerCase();
-				b = b.name.toLowerCase();
+				a = a.name.toLowerCase().split(" ");
+				a = a[a.length - 1];
+				b = b.name.toLowerCase().split(" ");
+				b = b[b.length - 1];
 				if (a < b) return -1;
 				if (a > b) return 1;
 				return 0;
