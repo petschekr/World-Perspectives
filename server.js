@@ -108,9 +108,7 @@ app.route("/login/:code").get(function (request, response) {
 			var user = results[0].value;
 			var username = results[0].path.key;
 			// Set a cookie to identify this user later
-			if (request.signedCookies.username !== username) {
-				response.cookie("username", username, cookieOptions);
-			}
+			response.cookie("username", username, cookieOptions);
 			// Direct request by whether the user has already registered
 			if (user.registered) {
 				response.redirect("/");
