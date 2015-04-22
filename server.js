@@ -1375,7 +1375,15 @@ app.route("/admin/panels/all/info").get(function (request, response) {
 					.then(function(attendees) {
 						var toResolve = panel.value;
 						toResolve.id = panel.path.key;
-						toResolve.attendees = attendees.map(function (attendee) {
+						toResolve.attendees = attendees.sort(function (a, b) {
+							a = a.value.name.toLowerCase().split(" ");
+							a = a[a.length - 1];
+							b = b.value.name.toLowerCase().split(" ");
+							b = b[b.length - 1];
+							if (a < b) return -1;
+							if (a > b) return 1;
+							return 0;
+						}).map(function (attendee) {
 							return {
 								"name": attendee.value.name,
 								"username": attendee.path.key,
@@ -1481,8 +1489,10 @@ app.route("/admin/panels/get/:id/info").get(function (request, response) {
 		})
 		.then(function (attendees) {
 			attendees = attendees.sort(function (a, b) {
-				a = a.value.name.toLowerCase();
-				b = b.value.name.toLowerCase();
+				a = a.value.name.toLowerCase().split(" ");
+				a = a[a.length - 1];
+				b = b.value.name.toLowerCase().split(" ");
+				b = b[b.length - 1];
 				if (a < b) return -1;
 				if (a > b) return 1;
 				return 0;
@@ -1626,7 +1636,15 @@ app.route("/admin/sessions/all/info").get(function (request, response) {
 					.then(function(attendees) {
 						var toResolve = session.value;
 						toResolve.id = session.path.key;
-						toResolve.attendees = attendees.map(function (attendee) {
+						toResolve.attendees = attendees.sort(function (a, b) {
+							a = a.value.name.toLowerCase().split(" ");
+							a = a[a.length - 1];
+							b = b.value.name.toLowerCase().split(" ");
+							b = b[b.length - 1];
+							if (a < b) return -1;
+							if (a > b) return 1;
+							return 0;
+						}).map(function (attendee) {
 							return {
 								"name": attendee.value.name,
 								"username": attendee.path.key,
@@ -1732,8 +1750,10 @@ app.route("/admin/sessions/get/:id/info").get(function (request, response) {
 		})
 		.then(function (attendees) {
 			attendees = attendees.sort(function (a, b) {
-				a = a.value.name.toLowerCase();
-				b = b.value.name.toLowerCase();
+				a = a.value.name.toLowerCase().split(" ");
+				a = a[a.length - 1];
+				b = b.value.name.toLowerCase().split(" ");
+				b = b[b.length - 1];
 				if (a < b) return -1;
 				if (a > b) return 1;
 				return 0;
