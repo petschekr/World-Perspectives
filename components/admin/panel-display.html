@@ -54,6 +54,15 @@
 			h4 > small::before {
 				content: " — ";
 			}
+			h4 > span.location {
+				font-weight: normal;
+			}
+			h4 > span.location::before {
+				content: "(";
+			}
+			h4 > span.location::after {
+				content: ")";
+			}
 			hr {
 				border: 1px dashed rgba(0, 0, 0, 0.2);
 			}
@@ -86,6 +95,7 @@
 			<div class="presentation">
 				<h4>
 					{{panel.name}}
+					<span class="location">{{panel.location}}</span>
 					<small>{{panel.panelists}}</small>
 				</h4>
 				<table>
