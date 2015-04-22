@@ -478,14 +478,21 @@ app.route("/sessions/:period")
 					var currentResults = results;
 					return promiseWhile(
 						function () {
-							return currentResults.links && currentResults.links.next;
+							return !!currentResults.body.next;
 						},
 						function () {
-							return currentResults.links.next.get().then(function (newResults) {
-								allResults = allResults.concat(newResults.body.results);
-								currentResults = newResults;
-								return Q.resolve();
-							});
+							var offset = parseInt(urllib.parse(currentResults.body.next, true).query.offset, 10);
+							return db.newGraphReader()
+								.get()
+								.limit(100)
+								.offset(offset)
+								.from(collection, key)
+								.related(relation)
+								.then(function (newResults) {
+									allResults = allResults.concat(newResults.body.results);
+									currentResults = newResults;
+									return Q.resolve();
+								});
 						}
 					);
 				});
@@ -1332,14 +1339,21 @@ app.route("/admin/panels/all/info").get(function (request, response) {
 				var currentResults = results;
 				return promiseWhile(
 					function () {
-						return currentResults.links && currentResults.links.next;
+						return !!currentResults.body.next;
 					},
 					function () {
-						return currentResults.links.next.get().then(function (newResults) {
-							allResults = allResults.concat(newResults.body.results);
-							currentResults = newResults;
-							return Q.resolve();
-						});
+						var offset = parseInt(urllib.parse(currentResults.body.next, true).query.offset, 10);
+						return db.newGraphReader()
+							.get()
+							.limit(100)
+							.offset(offset)
+							.from(collection, key)
+							.related(relation)
+							.then(function (newResults) {
+								allResults = allResults.concat(newResults.body.results);
+								currentResults = newResults;
+								return Q.resolve();
+							});
 					}
 				);
 			});
@@ -1451,14 +1465,21 @@ app.route("/admin/panels/get/:id/info").get(function (request, response) {
 				var currentResults = results;
 				return promiseWhile(
 					function () {
-						return currentResults.links && currentResults.links.next;
+						return !!currentResults.body.next;
 					},
 					function () {
-						return currentResults.links.next.get().then(function (newResults) {
-							allResults = allResults.concat(newResults.body.results);
-							currentResults = newResults;
-							return Q.resolve();
-						});
+						var offset = parseInt(urllib.parse(currentResults.body.next, true).query.offset, 10);
+						return db.newGraphReader()
+							.get()
+							.limit(100)
+							.offset(offset)
+							.from(collection, key)
+							.related(relation)
+							.then(function (newResults) {
+								allResults = allResults.concat(newResults.body.results);
+								currentResults = newResults;
+								return Q.resolve();
+							});
 					}
 				);
 			});
@@ -1593,14 +1614,21 @@ app.route("/admin/sessions/all/info").get(function (request, response) {
 				var currentResults = results;
 				return promiseWhile(
 					function () {
-						return currentResults.links && currentResults.links.next;
+						return !!currentResults.body.next;
 					},
 					function () {
-						return currentResults.links.next.get().then(function (newResults) {
-							allResults = allResults.concat(newResults.body.results);
-							currentResults = newResults;
-							return Q.resolve();
-						});
+						var offset = parseInt(urllib.parse(currentResults.body.next, true).query.offset, 10);
+						return db.newGraphReader()
+							.get()
+							.limit(100)
+							.offset(offset)
+							.from(collection, key)
+							.related(relation)
+							.then(function (newResults) {
+								allResults = allResults.concat(newResults.body.results);
+								currentResults = newResults;
+								return Q.resolve();
+							});
 					}
 				);
 			});
@@ -1712,14 +1740,21 @@ app.route("/admin/sessions/get/:id/info").get(function (request, response) {
 				var currentResults = results;
 				return promiseWhile(
 					function () {
-						return currentResults.links && currentResults.links.next;
+						return !!currentResults.body.next;
 					},
 					function () {
-						return currentResults.links.next.get().then(function (newResults) {
-							allResults = allResults.concat(newResults.body.results);
-							currentResults = newResults;
-							return Q.resolve();
-						});
+						var offset = parseInt(urllib.parse(currentResults.body.next, true).query.offset, 10);
+						return db.newGraphReader()
+							.get()
+							.limit(100)
+							.offset(offset)
+							.from(collection, key)
+							.related(relation)
+							.then(function (newResults) {
+								allResults = allResults.concat(newResults.body.results);
+								currentResults = newResults;
+								return Q.resolve();
+							});
 					}
 				);
 			});
