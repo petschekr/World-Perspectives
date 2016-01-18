@@ -2,26 +2,17 @@
 /*jslint esnext: true */
 "use strict";
 var Q = require("kew");
-var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
-var sendgrid  = require("sendgrid")("petschekr", "WPP 2015");
+var fs = require("fs");
+var keys = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
+var db = require("orchestrate")(keys.orchestrate);
+var sendgrid  = require("sendgrid")(keys.sendgrid.username, keys.sendgrid.password);
 
 db.newSearchBuilder()
 	.collection("users")
 	.limit(100)
 	.query("value.registered: (NOT true)")
 	.then(function (results) {
-		var allPeople = [
-			{
-				"path": {
-					"key": "petschekr"
-				},
-				"value": {
-					"name": "Ryan Petschek",
-					"code": "a1bd5967ba0f9d55ee4e84d268078b83"
-				}
-			}
-		];
-		allPeople = allPeople.concat(results.body.results);
+		var allPeople = results.body.results;
 
 		function promiseWhile (condition, body) {
 			var done = Q.defer();

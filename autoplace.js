@@ -2,7 +2,9 @@
 /*jslint esnext: true */
 "use strict";
 var Q = require("kew");
-var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
+var fs = require("fs");
+var keys = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
+var db = require("orchestrate")(keys.orchestrate);
 var moment = require("moment");
 var urllib = require("url");
 

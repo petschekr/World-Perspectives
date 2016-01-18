@@ -13,7 +13,8 @@ var BPromise = require("bluebird");
 fs = BPromise.promisifyAll(fs);
 var Q = require("kew"); // Because the Orchestrate driver for Node.js forces its use
 // Initialize the database connection
-var db = require("orchestrate")("60e990e2-53e5-4be4-ba5c-5d4adf0cb6ca");
+var keys = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
+var db = require("orchestrate")(keys.orchestrate);
 db.ping()
 	.then(function () {
 		console.log("Successfully connected to Orchestrate");
@@ -22,8 +23,8 @@ db.ping()
 		console.error("Failed to connect to Orchestrate");
 		process.exit(1);
 	});
-var pusher = new (require("pushbullet"))("gxCTjdJQa7PMjNUFGY3j5ITVWDQ9xvNQ");
-var sendgrid  = require("sendgrid")("petschekr", "WPP 2015");
+var pusher = new (require("pushbullet"))(keys.pushbullet);
+var sendgrid  = require("sendgrid")(keys.sendgrid.username, keys.sendgrid.password);
 
 // Set up the Express server
 var express = require("express");
@@ -60,7 +61,7 @@ var cookieOptions = {
 	"signed": true
 };
 app.use(cookieParser(
-	"2ecdd4ffeacce64fa760f0be9cdfc7f9422eb8048564e5c2779167be66a19819", // Secret for signing cookies
+	keys.cookieSecret, // Secret for signing cookies
 	cookieOptions
 ));
 app.use("/bower_components", serveStatic("bower_components"));
@@ -719,18 +720,7 @@ app.route("/admin/send").post(function (request, response) {
 				.query("value.registered: (NOT true)");
 		})
 		.then(function (results) {
-			var allPeople = [
-				{
-					"path": {
-						"key": "petschekr"
-					},
-					"value": {
-						"name": "Ryan Petschek",
-						"code": "a1bd5967ba0f9d55ee4e84d268078b83"
-					}
-				}
-			];
-			allPeople = allPeople.concat(results.body.results);
+			var allPeople = results.body.results;
 
 			function promiseWhile (condition, body) {
 				var done = Q.defer();
